@@ -1,4 +1,3 @@
-import NAL
 
 extension Bag where I == Concept {
     func consider(_ j: Judgement) -> [Judgement] {

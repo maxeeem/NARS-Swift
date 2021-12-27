@@ -13,10 +13,8 @@ public func or(_ xs: Double...) -> Double {
 
 /// NAL-1
 public func revision(j1: Judgement, j2: Judgement) -> Judgement {
-    let f1 = j1.truthValue.frequency
-    let c1 = j1.truthValue.confidence
-    let f2 = j2.truthValue.frequency
-    let c2 = j2.truthValue.confidence
+    let (f1, c1) = (j1.truthValue.frequency, j1.truthValue.confidence)
+    let (f2, c2) = (j2.truthValue.frequency, j2.truthValue.confidence)
     let f = ((f1 * c1) * (1 - c2) + (f2 * c2) * (1 - c1)) / (c1 * (1 - c2) + c2 * (1 - c1))
     let c = (c1 * (1 - c2) + c2 * (1 - c1)) / (c1 * (1 - c2) + c2 * (1 - c1) + (1 - c1) * (1 - c2))
     return Judgement(j1.statement, TruthValue(f, c))

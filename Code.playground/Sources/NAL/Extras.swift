@@ -43,6 +43,27 @@ extension Statement {
 //    }
 //}
 
+
+extension Copula {
+    var term: Term { .word(rawValue) }
+}
+
+extension Term {
+    var copula: Copula? { Copula(rawValue: description) }
+    var statement: Statement? {
+        switch self {
+        case .word:
+            return nil
+        case .compound(let connector, let terms):
+            // TODO: perform additional checks for number of terms and their types
+            if let copula = Copula(rawValue: connector.description) {
+                return Statement(terms[0], copula, terms[1])
+            }
+            return nil
+        }
+    }
+}
+
 extension Statement {
     public init(_ subject: Term, _ copula: Copula, _ predicate: Term) {
         self.subject = subject

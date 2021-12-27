@@ -24,10 +24,10 @@ public enum Connector: String {
     case intSet = "[]"
 }
 
-public protocol a: CustomStringConvertible {
-    func word(_ s: String) -> a
-    func compound(_ t: a, _ ts: [a]) -> a
-}
+//public protocol a: CustomStringConvertible {
+//    func word(_ s: String) -> a
+//    func compound(_ t: a, _ ts: [a]) -> a
+//}
 
 public indirect enum Term: Hashable {
     case word(String)
@@ -37,6 +37,7 @@ public indirect enum Term: Hashable {
     case compound(Term, [Term])
 }
 
+/*
 extension Term: a {
     public func word(_ s: String) -> a {
         Term.word(s)
@@ -46,3 +47,4 @@ extension Term: a {
 //        Term.compound(t, ts)
     }
 }
+*/

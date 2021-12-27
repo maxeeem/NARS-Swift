@@ -1,4 +1,3 @@
-import NAL
 
 public enum Sentence {
     case judgement(Judgement)

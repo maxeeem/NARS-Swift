@@ -78,6 +78,7 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
             }
             if i == 3 { helper(i, t) }
         }
+        @discardableResult
         func helper(_ i: Int, _ t: Term) -> Bool {
             if tmp.contains(t) {
                 if let idx = firstIndex(of: t, in: res) {

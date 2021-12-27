@@ -1,30 +1,8 @@
 import XCTest
-@testable import NAL
 @testable import NARS
 
 // Experimental
-
 import Foundation
-
-extension Copula {
-    var term: Term { .word(rawValue) }
-}
-
-extension Term {
-    var copula: Copula? { Copula(rawValue: description) }
-    var statement: Statement? {
-        switch self {
-        case .word:
-            return nil
-        case .compound(let connector, let terms):
-            // TODO: perform additional checks for number of terms and their types
-            if let copula = Copula(rawValue: connector.description) {
-                return Statement(terms[0], copula, terms[1])
-            }
-            return nil
-        }
-    }
-}
 
 // MARK: Tests
 
@@ -40,12 +18,12 @@ final class NARS_Tests: XCTestCase {
         bag.put(TermLink(robin, 0.9))
         print(bag)
         var item = bag.get()
-        print(item)
+        print(item!)
         print(bag)
         bag.put(item!)
         print(bag)
         item = bag.get("bird")
-        print(item)
+        print(item!)
         print(bag)
         print(
             "//----------- Test Logic\n"
@@ -118,7 +96,7 @@ final class NARS_Tests: XCTestCase {
         let y = Term.word("VAR#y")
         let z = Term.word("VAR#z")
         let cond = Term.word("if")
-        let then = Term.word("then")
+//        let then = Term.word("then")
         let premise = Term.compound(
             cond,
             [.compound(inheritance, [x, y]),

@@ -1,4 +1,3 @@
-import NAL
 
 public protocol Item {
     var identifier: String { get }
