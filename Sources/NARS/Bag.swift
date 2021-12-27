@@ -16,7 +16,7 @@ public final class Bag<I: Item> {
     @discardableResult
     public func put(_ item: I) -> I? {
         var item = item
-        var oldItem = items[item.identifier]
+        let oldItem = items[item.identifier]
         if let oldItem = oldItem {
             item.priority = max(oldItem.priority, item.priority)
             removeFromBucket(oldItem)

@@ -1,10 +1,4 @@
-//public struct NARS_Swift {
-//    public private(set) var text = "Hello, World!"
-//
-//    public init() {
-//    }
-//}
-//import NAL
+import NAL
 
 public func debugPrint(_ item: Any, _ separator: String = "-------") {
     print("\n"+separator+"\(type(of: item))"+separator+"\n")
@@ -25,7 +19,7 @@ extension Question {
     }
     public var variableTerm: Term! {
         switch self {
-        case .statement(let s):
+        case .statement:
             return nil
         case .special(_, let term):
             fallthrough

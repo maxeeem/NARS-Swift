@@ -1,9 +1,3 @@
-public struct NAL_Swift {
-    public private(set) var text = "Hello, World!"
-
-    public init() {
-    }
-}
 
 struct Evidence {
     let positive: Double

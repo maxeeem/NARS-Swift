@@ -8,11 +8,11 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
-            name: "NARS-Swift",
-            targets: ["NARS-Swift"]),
+            name: "NARS",
+            targets: ["NARS", "NAL"]),
         .library(
-                name: "NAL-Swift",
-                targets: ["NAL-Swift"]),
+                name: "NAL",
+                targets: ["NAL"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -21,12 +21,12 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
-        .target(name: "NAL-Swift"),
+        .target(name: "NAL"),
         .target(
-            name: "NARS-Swift",
-            dependencies: ["NAL-Swift"]),
+            name: "NARS",
+            dependencies: ["NAL"]),
         .testTarget(
-            name: "NARS-SwiftTests",
-            dependencies: ["NARS-Swift"]),
+            name: "NARS-Tests",
+            dependencies: ["NARS", "NAL"]),
     ]
 )

@@ -1,4 +1,4 @@
-//import NAL
+import NAL
 
 public protocol Item {
     var identifier: String { get }
@@ -98,4 +98,3 @@ extension Concept {
         return winner == nil ? [] : [winner!]
     }
 }
-
