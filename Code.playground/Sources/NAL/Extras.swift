@@ -22,9 +22,11 @@ public func -* (_ s: Statement, _ fc: (Double, Double)) -> Judgement {
 postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Judgement {
-        s -* (1, 0.9)
+        s.subject == s.predicate ?
+            s -* (1, 1) // tautology
+        :
+            s -* (1, 0.9) // fact
     }
-    
 }
 
 //prefix operator •
@@ -101,19 +103,16 @@ extension Evidence {
 }
 
 extension TruthValue {
-    public init(_ frequency: Double, _ confidence: Double) {
+    public init(_ frequency: Double, _ confidence: Double, _ rule: Rules = .identity) {
         self.frequency = rounded(frequency)
         self.confidence = rounded(confidence)
+        self.rule = rule
     }
-    init(_ ev: Evidence) {
+    init(_ ev: Evidence, _ rule: Rules = .identity) {
         self.frequency = rounded(ev.frequency)
         self.confidence = rounded(ev.confidence)
+        self.rule = rule
     }
-    var positiveEvidence: Double { Double(evidentialHorizon) * frequency * confidence / (1 - confidence) }
-    var totalEvidence: Double { Double(evidentialHorizon) * confidence / (1 - confidence) }
-    var lowerFrequency: Double { frequency * confidence }
-    var upperFrequency: Double { 1 - confidence * (1 - frequency) }
-    var expectation: Double { (lowerFrequency + upperFrequency) / 2 }
 }
 
 extension FrequencyInterval {
@@ -156,7 +155,21 @@ extension Evidence: CustomStringConvertible {
 
 extension TruthValue: CustomStringConvertible {
     public var description: String {
-        "<\(frequency), \(confidence)>"
+        "<\(frequency), \(confidence)>\(rule)"
+    }
+}
+
+extension Rules: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .identity:        return "."
+        case .deduction:       return ".ded"
+        case .induction:       return ".ind"
+        case .abduction:       return ".abd"
+        case .conversion:      return ".con"
+        case .exemplification: return ".exe"
+        case .comparison:      return ".com"
+        }
     }
 }
 

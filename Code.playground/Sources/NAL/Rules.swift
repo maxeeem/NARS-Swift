@@ -8,13 +8,24 @@ public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
 
 public enum Rules: CaseIterable {
+    case identity // tautology
     // NAL-1
     case deduction
     case induction
     case abduction
+    case conversion
     case exemplification
     // NAL-2
     case comparison
+}
+
+extension Rules {
+    var tf: TruthFunction {
+        TruthValue.truthFunction(self)
+    }
+    var apply: (_ judgements: (Judgement, Judgement)) -> Judgement? {
+        rule_generator(rule)
+    }
 }
 
 // MARK: Rule application

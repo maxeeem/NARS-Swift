@@ -78,7 +78,8 @@ extension Concept {
         if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
-            let j = Judgement(s, TruthValue(1, 0.45)) // TODO: finish
+            let j = Judgement(s, TruthValue(1, 0.45)) // TODO: finish 
+            // (^ should this be a question?)
             return Rules.allCases.compactMap { r in r.apply((j, b.judgement)) }
         }
         return [] // no results found

@@ -65,9 +65,8 @@ public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
 postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Sentence {
-        s -* (1, 0.9)
+        Sentence(s-*)
     }
-    
 }
 
 postfix operator -?
