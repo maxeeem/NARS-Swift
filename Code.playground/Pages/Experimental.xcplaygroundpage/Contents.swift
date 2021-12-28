@@ -17,6 +17,17 @@ actor SELF {
     }
 }
 
+let tweety = "Tweety"
+let cartoon_bird = "cartoon_bird"
+let yellow = "yellow"
+print(tweety•->cartoon_bird)
+
+var statement = "Bart Simpson" •-> "cartoon_character"
+print(statement)
+statement     = "Bart Simpson" •->• "yellow"
+print(statement, "\n")
+
+
 // military uses made up language to teach their staff
 // use it to teach nars
 
@@ -29,6 +40,10 @@ extension Term {
         switch self {
         case .word:
             id = ".word"
+            case .instance:
+                id = ".instance"
+                case .property:
+                    id = ".property"
         case .compound:
             id = ".compound"
         }
@@ -36,13 +51,13 @@ extension Term {
     }
     public var compoundStatement: Statement? {
         switch self {
-        case .word: return nil
         case .compound(let connector, let terms):
             if terms.count == 2, let copula = Copula(rawValue: connector.description) {
                 return Statement(terms[0], copula, terms[1])
             } else {
                 return nil
             }
+        default: return nil
         }
     }
 }

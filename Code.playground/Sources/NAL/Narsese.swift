@@ -24,6 +24,12 @@ public enum Connector: String {
     case intSet = "[]"
 }
 
+extension Connector {
+    var term: Term {
+        Term.word(rawValue)
+    }
+}
+
 //public protocol a: CustomStringConvertible {
 //    func word(_ s: String) -> a
 //    func compound(_ t: a, _ ts: [a]) -> a
@@ -31,20 +37,40 @@ public enum Connector: String {
 
 public indirect enum Term: Hashable {
     case word(String)
-//      case instance([Term])
-//      case property([Term])
+    case instance(String)
+    case property(String)
     
     case compound(Term, [Term])
 }
 
-/*
-extension Term: a {
-    public func word(_ s: String) -> a {
-        Term.word(s)
-    }
-    public func compound(_ t: a, _ ts: [a]) -> a {
-        Term.word(t.description)
-//        Term.compound(t, ts)
-    }
+extension Term {
+    static func instance(_ t: Term) -> Term { Term.instance("\(t)") }
+    static func property(_ t: Term) -> Term { Term.property("\(t)") }
 }
-*/
+
+postfix operator •->
+prefix  operator ->•
+public extension Term {
+    public static postfix func •->(_ t: Term) -> Term { instance(t) }
+    public static prefix  func ->•(_ t: Term) -> Term { property(t) }
+}
+
+postfix operator •
+prefix  operator •
+public extension String {
+    public static postfix func •(_ s: String) -> Term { Term.word("\(s)") }
+    public static prefix  func •(_ s: String) -> Term { Term.word("\(s)") }
+}
+//    ("Goofy"•)•->
+//    Term("Pluto")•->
+//    Term("yellow")->•
+
+//extension Term: a {
+//    public func word(_ s: String) -> a {
+//        Term.word(s)
+//    }
+//    public func compound(_ t: a, _ ts: [a]) -> a {
+//        Term.compound(t, ts)
+//    }
+//}
+
