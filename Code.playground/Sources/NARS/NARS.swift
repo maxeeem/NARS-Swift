@@ -35,6 +35,9 @@ public final class NARS {
 extension NARS {
     private func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
+        if case .judgement(let j) = input, j.statement.subject == j.statement.predicate {
+            return // tautology
+        }
         switch input {
         case .judgement(let judgement):
             let derivedJudgements = memory.consider(judgement)
