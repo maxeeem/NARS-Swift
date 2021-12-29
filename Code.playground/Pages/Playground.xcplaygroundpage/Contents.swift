@@ -7,11 +7,11 @@
 import Foundation 
 import PlaygroundSupport
 
-// set the view and indefinite execution
-let vc = MyViewController()
+let output = Output()
 
+// set the view and indefinite execution
 PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = vc
+PlaygroundPage.current.liveView = output
 
 let robin = Term.word("robin")
 let bird = Term.word("bird")
@@ -25,13 +25,18 @@ let nars = NARS { s in
     history.append(s); print(s)
     if !verbose && s.contains("⏱") { return }
     usleep(100000) // 1/100th second
-    vc.text = "...\(vc.text.suffix(300))\n\n" + s
+    output.text = "...\(output.text.suffix(200))\n" + s
 }
 
-vc.callback = { s in
-    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1) { 
+output.callback = { s in
+    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now()+1) { 
         nars.perform(s)
     }
+}
+
+output.reset = {
+    nars.reset()
+    output.text = "..."
 }
 
 nars.perform(
@@ -48,7 +53,18 @@ nars.perform(
     ("?" --> mammal)-?,
     ("?" --> "?")-?
 )
-
+/*
+nars.perform(
+    ("robin" --> "animal")-*,
+    ("robin" --> "bird")-*
+)
+sleep(1)
+nars.reset()
+nars.perform(
+    ("tiger" --> "animal")-*,
+    ("tiger" --> "bird")-*(0, 0.9)
+)
+*/
 sleep(5)
 debugPrint(nars.memory)
 

@@ -1,15 +1,6 @@
 import UIKit
-import SwiftUI
 
-@available(iOSApplicationExtension 13.0, *)
-public struct MyView: View {
-    public var body: Text {
-        Text("Hello")
-    }
-    public init() {}
-}
-
-public final class MyViewController: UIViewController {
+public final class Output: UIViewController {
     let bview = ButtonView()
     public var text = "" {
         didSet {
@@ -19,7 +10,7 @@ public final class MyViewController: UIViewController {
         }
     }
     public var callback: (Sentence) -> () = {_ in}
-    
+    public var reset: () -> () = {}
     
     override public func loadView() {
         bview.button.addTarget(self, action: #selector(buttonDidTap), for: .touchDown)
@@ -31,6 +22,9 @@ public final class MyViewController: UIViewController {
         let controller = DetailViewController()
         controller.callback = { s in
             self.callback(s)
+        }
+        controller.reset = {
+            self.reset()
         }
         present(controller, animated: true, completion: nil)
     }
@@ -71,12 +65,16 @@ class ButtonView: UIView {
 
 final class DetailViewController: UIViewController {
     var callback: (Sentence) -> () = {_ in}
+    var reset: () -> () = {}
+    
     let dview = DetailUIView()
     
     override func loadView() {
         dview.button.addTarget(self, action: #selector(buttonDidTap), for: .touchDown)
+        dview.reset.addTarget(self, action: #selector(resetButtonDidTap), for: .touchDown)
         dview.go.addTarget(self, action: #selector(goButtonDidTap), for: .touchDown)
         self.view = dview
+        dview.subject.becomeFirstResponder()
     }
     
     @objc
@@ -84,11 +82,19 @@ final class DetailViewController: UIViewController {
         dismiss(animated: true, completion: nil)
     }
     @objc
+    private func resetButtonDidTap() {
+        reset()
+//        dismiss(animated: true, completion: nil)
+    }
+    @objc
     private func goButtonDidTap() {
-        let truth = dview.toggle.isOn ? (1.0, 0.9) : (0, 0.9)
+        var truth = dview.toggle.isOn ? (1.0, 0.9) : (0, 0.9)
         let s = dview.subject.text!.trimmingCharacters(in: [" "])
         let p = dview.predicate.text!.trimmingCharacters(in: [" "])
         if !s.isEmpty, !p.isEmpty {
+            if s == p { // tautology 
+                truth = (1.0, 1.0)
+            }
             let sentence: Sentence = (s-->p)-*truth
             callback(sentence)
         }
@@ -98,6 +104,7 @@ final class DetailViewController: UIViewController {
 
 class DetailUIView: UIView {
     let button = UIButton(type: .custom)
+    let reset = UIButton(type: .custom)
     let go = UIButton(type: .custom)
     let subject = UITextField()
     let predicate = UITextField()
@@ -123,6 +130,13 @@ class DetailUIView: UIView {
         
         self.addSubview(button)
         
+        reset.frame = CGRect(x: 250, y: 10, width: 200, height: 20)
+        reset.setTitle("Memory reset", for: .normal)
+        reset.setTitleColor(.systemRed, for: .normal)
+        reset.isUserInteractionEnabled = true
+        
+        self.addSubview(reset)
+        
         button.translatesAutoresizingMaskIntoConstraints = false
         button.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
         button.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
@@ -130,26 +144,30 @@ class DetailUIView: UIView {
         self.addSubview(button)
         
         subject.placeholder = "  bear"
+        subject.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0);
         subject.autocapitalizationType = .none
-        subject.frame = CGRect(x: 40, y: 200, width: 100, height: 40)
+        subject.frame = CGRect(x: 40, y: 150, width: 100, height: 40)
         subject.backgroundColor = .systemBlue
+        subject.textColor = .white
         subject.isUserInteractionEnabled = true
         self.addSubview(subject)
         
         let copula = UILabel()
         copula.text = " -> "
-        copula.frame = CGRect(x: 140, y: 200, width: 40, height: 40)
+        copula.frame = CGRect(x: 140, y: 150, width: 40, height: 40)
         copula.textColor = .systemBlue
         copula.backgroundColor = .white
         self.addSubview(copula)
         
         predicate.placeholder = "  animal"
+        predicate.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0);
         predicate.autocapitalizationType = .none
-        predicate.frame = CGRect(x: 169, y: 200, width: 100, height: 40)
+        predicate.frame = CGRect(x: 169, y: 150, width: 100, height: 40)
         predicate.backgroundColor = .systemBlue
+        predicate.textColor = .white
         self.addSubview(predicate)
         
-        go.frame = CGRect(x: 300, y: 200, width: 100, height: 40)
+        go.frame = CGRect(x: 300, y: 150, width: 100, height: 40)
         go.backgroundColor = .systemGreen
         go.setTitle("Go", for: .normal)
         go.setTitleColor(.white, for: .normal)
@@ -159,14 +177,14 @@ class DetailUIView: UIView {
         self.addSubview(go)
         
         let label = UILabel()
-        label.frame = CGRect(x: 60, y: 250, width: 250, height: 40)
+        label.frame = CGRect(x: 60, y: 200, width: 250, height: 40)
         label.text = "positive or negative evidence?"
         label.textColor = .gray
         label.backgroundColor = .white
         self.addSubview(label)
         
         toggle.isOn = true
-        toggle.frame = CGRect(x: 320, y: 250, width: 100, height: 40)
+        toggle.frame = CGRect(x: 320, y: 200, width: 100, height: 40)
         
         self.addSubview(toggle)
     }
