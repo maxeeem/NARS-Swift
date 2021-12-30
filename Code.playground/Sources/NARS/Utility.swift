@@ -115,7 +115,8 @@ extension Sentence: CustomStringConvertible {
             default:
                 return "\(question)"
             }
-            
+        case .pause(let t):
+            return "💤 \(t) seconds"
         }
     }
 }

@@ -16,6 +16,12 @@ public struct Belief: Item {
     public let judgement: Judgement
 }
 
+public struct Task: Item {
+    public var identifier: String { sentence.description }
+    public var priority: Double = 0.9
+    public let sentence: Sentence
+}
+
 // MARK: Concept
 
 public struct Concept: Item {
@@ -77,9 +83,9 @@ extension Concept {
         if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
-            let j = Judgement(s, TruthValue(1, 0.45)) // TODO: finish 
+            let j = Judgement(s, TruthValue(1, 0.9)) // TODO: finish -- s-*
             // (^ should this be a question?)
-            return Rules.allCases.compactMap { r in r.apply((b.judgement, j)) }
+            return Rules.allCases.compactMap { r in r.apply((j, b.judgement)) }
         }
         return [] // no results found
     }
@@ -87,6 +93,8 @@ extension Concept {
     private func answer(_ f: (Statement) -> Bool) -> [Judgement] {
         let winner = beliefs.items
             .filter { b in
+//                let (s, p) = b.value.judgement.statement.terms
+//                return s == p ? false :
                 f(b.value.judgement.statement)
             }.map { b in
                 b.value.judgement

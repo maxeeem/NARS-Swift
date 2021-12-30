@@ -2,6 +2,7 @@ import UIKit
 
 public final class Output: UIViewController {
     let bview = ButtonView()
+    let controller = DetailViewController()
     public var text = "" {
         didSet {
             DispatchQueue.main.async {
@@ -11,6 +12,8 @@ public final class Output: UIViewController {
     }
     public var callback: (Sentence) -> () = {_ in}
     public var reset: () -> () = {}
+    public var isVerbose = false
+    public var onVerbose: (Bool) -> () = {_ in}
     
     override public func loadView() {
         bview.button.addTarget(self, action: #selector(buttonDidTap), for: .touchDown)
@@ -19,12 +22,15 @@ public final class Output: UIViewController {
     
     @objc
     private func buttonDidTap() {
-        let controller = DetailViewController()
+        controller.dview.verbose.isOn = isVerbose
         controller.callback = { s in
             self.callback(s)
         }
         controller.reset = {
             self.reset()
+        }
+        controller.verbose = { v in
+            self.onVerbose(v)
         }
         present(controller, animated: true, completion: nil)
     }
@@ -66,6 +72,7 @@ class ButtonView: UIView {
 final class DetailViewController: UIViewController {
     var callback: (Sentence) -> () = {_ in}
     var reset: () -> () = {}
+    var verbose: (Bool) -> () = {_ in}
     
     let dview = DetailUIView()
     
@@ -88,6 +95,7 @@ final class DetailViewController: UIViewController {
     }
     @objc
     private func goButtonDidTap() {
+        verbose(dview.verbose.isOn)
         var truth = dview.toggle.isOn ? (1.0, 0.9) : (0, 0.9)
         let s = dview.subject.text!.trimmingCharacters(in: [" "])
         let p = dview.predicate.text!.trimmingCharacters(in: [" "])
@@ -98,7 +106,7 @@ final class DetailViewController: UIViewController {
             let sentence: Sentence = (s-->p)-*truth
             callback(sentence)
         }
-        dismiss(animated: true, completion: nil)
+        //dismiss(animated: true, completion: nil)
     }
 }
 
@@ -109,7 +117,7 @@ class DetailUIView: UIView {
     let subject = UITextField()
     let predicate = UITextField()
     let toggle = UISwitch()
-    
+    let verbose = UISwitch()
     override init(frame: CGRect) {
         super.init(frame: frame)
         createSubviews()
@@ -121,7 +129,11 @@ class DetailUIView: UIView {
     }
     
     func createSubviews() {
-        self.backgroundColor = .white
+        self.backgroundColor = .clear
+        let v = UIView()
+        v.backgroundColor = .white
+        v.frame = CGRect(x: 0, y: 0, width: 420, height: 300)
+        addSubview(v)
         button.frame = CGRect(x: 0, y: 0, width: 200, height: 20)
         button.setTitle("Tap to dismiss view", for: .normal)
         button.setTitleColor(.systemBlue, for: .normal)
@@ -187,5 +199,17 @@ class DetailUIView: UIView {
         toggle.frame = CGRect(x: 320, y: 200, width: 100, height: 40)
         
         self.addSubview(toggle)
+        
+        let l = UILabel()
+        l.frame = CGRect(x: 169, y: 60, width: 250, height: 40)
+        l.text = "verbose output?"
+        l.textColor = .gray
+        l.backgroundColor = .white
+        self.addSubview(l)
+        
+        verbose.isOn = false
+        verbose.frame = CGRect(x: 320, y: 60, width: 100, height: 40)
+        
+        self.addSubview(verbose)
     }
 }

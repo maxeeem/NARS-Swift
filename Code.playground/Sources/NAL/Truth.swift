@@ -6,11 +6,18 @@ public struct TruthValue: Hashable {
     let rule: Rules // for derived values
 }
 
-extension TruthValue: Equatable {
-    public static func ==(_ lhs: TruthValue, _ rhs: TruthValue) -> Bool {
-        lhs.f == rhs.f && lhs.c == rhs.c // ignore rule
-    }
-}
+//extension TruthValue: Hashable {
+//    public func hash(into hasher: inout Hasher) {
+//        hasher.combine(frequency)
+//        hasher.combine(confidence)
+//    }
+//}
+//
+//extension TruthValue: Equatable {
+//    public static func ==(_ lhs: TruthValue, _ rhs: TruthValue) -> Bool {
+//        lhs.f == rhs.f && lhs.c == rhs.c // ignore rule
+//    }
+//}
 
 extension TruthValue {
     var f: Double {frequency}

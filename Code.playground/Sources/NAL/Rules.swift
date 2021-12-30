@@ -8,7 +8,7 @@ public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
 
 public enum Rules: CaseIterable {
-    case identity // tautology
+    case identity
     // NAL-1
     case deduction
     case induction
