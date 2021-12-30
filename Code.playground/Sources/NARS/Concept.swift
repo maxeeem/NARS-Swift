@@ -54,7 +54,9 @@ extension Concept {
             // apply rules
             return Rules.allCases.compactMap { r in r.apply((b.judgement, judgement)) }
         }
-        return [] // revision does not produce derived judgements
+//        print("ljlkhkjhkjhk", j, judgement)
+        // values will be different if revision happened 
+        return j == judgement ? [] : [judgement] 
     }
     
     // returns relevant belief or derived judgements if any

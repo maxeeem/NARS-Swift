@@ -3,6 +3,8 @@ public enum Sentence {
     case pause(UInt32)
     case judgement(Judgement)
     case question(Question)
+    /// default wait time in t * 0.1 of a second
+    public static var pause: Sentence { .pause(10) }
 }
 
 import Dispatch
@@ -30,14 +32,14 @@ public final class NARS {
     public func perform(_ script: [Sentence]) {
         // TODO: add buffer
         //DispatchQueue.global(qos: .userInitiated).async {
+        
             script.forEach { s in
                 self.queue.async {
                     self.process(s, in: self.memory, userInitiated: true)
                 }
                 if case .pause(let t) = s {
-                    sleep(t)
+                    usleep(t * 100000) // 0.1 second
                 }
-                
             }
                 //}
     }
@@ -54,32 +56,58 @@ public final class NARS {
 // MARK: Private
 
 extension NARS {
-    // TODO: remove
-    public static var derivationLevels = 1
-    public static var sleeping = 0
-    
     private func process(_ input: Sentence, in conceptBag: Bag<Concept>, recurse: Bool = true, userInitiated: Bool = false) {
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
         
         if case .judgement(let j) = input, j.statement.subject == j.statement.predicate {
+            // TODO: is there a better way?
+            // is it needed for conversion? 
             return // tautology is ignored
         }
         
         switch input {
         case .judgement(let judgement):
-            let derivedJudgements = conceptBag.consider(judgement) // memory or imagination
-            
+            var derivedJudgements: [Judgement] = []
+            if userInitiated { // memory or imagination
+                derivedJudgements = memory.consider(judgement)
+            } else {
+                derivedJudgements = imagination.consider(judgement) 
+            }
+            //print(judgement, userInitiated, "\n", derivedJudgements)
             if recurse {
-                derivedJudgements.forEach { j in
-                    self.queue.async {
-                        self.process(.judgement(j), in: conceptBag, recurse: false)
+//                print("===", j)
+                    if userInitiated {
+                        
+//                        self.queue.async {
+                            derivedJudgements.forEach { j in
+//                                print("===", j)
+                                
+                            self.process(.judgement(j), in: self.memory,
+                                         recurse: false, 
+                                         userInitiated: false)
+                            }
+//                        }
+                    } else {
+                    self.iqueue.addOperation {
+                        derivedJudgements.forEach { j in
+                            
+                        self.process(.judgement(j), in: self.imagination,
+                                     recurse: true, 
+                                     userInitiated: false)
+                            
+                    }
                     }
                 }
             }
             
         case .question(let question):
-            let derivedJudgements = memory.consider(question) // always consider in memory
-            
+            //let derivedJudgements = memory.consider(question) // always consider in memory
+            var derivedJudgements: [Judgement] = []
+            if userInitiated { // memory or imagination
+                derivedJudgements = memory.consider(question)
+            } else {
+                derivedJudgements = imagination.consider(question) 
+            }
             if case .statement(let statement) = question {
                 
                 if let winner = derivedJudgements.first, winner.statement == statement {
@@ -87,38 +115,51 @@ extension NARS {
                     
                     if !userInitiated {
                         // cancel all in-flight activities
-                        self.queue.async {
+                        //self.queue.async {
                             self.iqueue.isSuspended = true
                             self.iqueue.cancelAllOperations()
                             self.iqueue.isSuspended = false
-                        }
+                                }
                         // process winning judgement
-                        self.queue.async {
-                            self.process(.judgement(winner), in: self.memory, recurse: false)
-                        }
-                    }
-                    return // interrupt the flow
+                    //self.queue.async {
+                    if !userInitiated {
+                            self.process(.judgement(winner), in: self.memory, 
+                                         recurse: false, // determines if derived judgements are inserted
+                                         userInitiated: true) // will cause insertion into main memory
+                                //}
+                            }
+                    //break // interrupt the flow
                     
                 } else if recurse {
                     // switch to imagination flow
-                    
                     if userInitiated {
                         // very inefficient but just a poc
                         imagination = Bag<Concept>() // TODO: create wrapper
-                        memory.items.forEach { (key: String, value: Concept) in
-                            imagination.put(value)
+                        iqueue.addOperation { 
+                            self.memory.items.forEach { (key: String, value: Concept) in
+                                let c = Concept(term: value.term)
+                                value.termLinks.items.forEach {
+                                    c.termLinks.put($0.value)
+                                }
+                                value.beliefs.items.forEach {
+                                    c.beliefs.put($0.value)
+                                }
+                                self.imagination.put(c)
+                            }
                         }
                     }
                     
                     derivedJudgements.forEach { j in
                         self.iqueue.addOperation {
-                            self.process(.judgement(j), in: self.imagination)
+                            self.process(.judgement(j), in: self.imagination, recurse: true)
+                            // re-process question
+                            self.process(.question(question), in: self.imagination, recurse: true)
                         }
                     }
                 
                     // re-process question
-                    self.iqueue.addOperation {
-                        self.process(.question(question), in: self.imagination)
+                    self.iqueue.addOperation { 
+                        //self.process(.question(question), in: self.imagination, recurse: true)
                     }
                 }
 //            } else if let winner = derivedJudgements.first {

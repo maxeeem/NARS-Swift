@@ -116,16 +116,18 @@ extension Sentence: CustomStringConvertible {
                 return "\(question)"
             }
         case .pause(let t):
-            return "💤 \(t) seconds"
+            return "💤 \(Double(t)*0.1) seconds"
         }
     }
 }
 
 extension Bag: CustomStringConvertible {
     public var description: String {
-        let x = I.self == Concept.self ? "" : ".  "
-        let o = items.values.reduce("", { $0 + "\($1)\n" + x })
-        return String(o.dropLast(x.count))
+        queue.sync {
+            let x = I.self == Concept.self ? "" : ".  "
+            let o = items.values.reduce("", { $0 + "\($1)\n" + x })
+            return String(o.dropLast(x.count))
+        }
     }
 }
 

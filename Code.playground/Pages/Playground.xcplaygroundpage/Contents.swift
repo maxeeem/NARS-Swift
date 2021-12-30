@@ -7,7 +7,7 @@
 import Foundation 
 import PlaygroundSupport
 
-var verbose = true
+var verbose = false
 
 let output = Output()
 output.isVerbose = verbose
@@ -44,32 +44,31 @@ output.reset = {
 let defaultScript = [
     ("bird" --> "animal")-*, // (1, 0.9)
     ( robin -->  bird   )-*,
+    .pause, // 1/4 seconds 
     ( bird  -->  animal )-?,
-    .pause(2),
     ( bird  --> "mammal")-?,
-    .pause(5),
+    .pause,
     ( bird  -->  mammal )-*(0, 0.9),
-    ( bird  -->  mammal )-?//,
-//    .pause(1),
+    ( bird  -->  mammal )-?,
+    .pause
 //    ("bird" --> "?")-?,
 //    ("?"    -->  mammal)-?,
 //    ("?"    --> "?")-?
 ]
 
-
 nars.perform(defaultScript)
-
+//sleep(5)
 debugPrint(nars.memory)
 
-//nars.reset()
+output.reset()
 //nars.perform((robin-->animal)-*(0, 0.9)) // not an animal
-//nars.perform(
-//    (robin-->bird)-*,
-//    (robin-->animal)-?,
-//    .pause(5)
-//)
+nars.perform(
+    (robin-->bird)-*,
+    (robin-->animal)-?,
+    .pause
+)
 //sleep(5)
-//debugPrint(nars.memory)
+debugPrint(nars.memory)
 //print(nars.pendingTasks)
 
 

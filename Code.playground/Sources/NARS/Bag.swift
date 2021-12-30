@@ -1,4 +1,4 @@
-
+import Dispatch
 public final class Bag<I: Item> {
     var buckets: [[I]]
     var items: [String: I] = [:]
@@ -7,6 +7,7 @@ public final class Bag<I: Item> {
     private let capacity: Int
     private var currentLevel: Int = 0
     
+    var queue = DispatchQueue(label: "ioqueue", qos: .background)
     public init(_ levels: Int = 10, _ capacity: Int = 100) {
         buckets = Array(repeating: [], count: levels)
         self.levels = levels
@@ -30,6 +31,9 @@ public final class Bag<I: Item> {
             return nil
         }
         currentLevel = selectNonEmptyLevel()
+        if buckets[currentLevel].isEmpty {
+            return nil
+        }
         let item = buckets[currentLevel].removeFirst()
         items.removeValue(forKey: item.identifier)
         return item
@@ -66,6 +70,7 @@ public final class Bag<I: Item> {
     }
     
     private func addToBucket(_ item: I) -> I? {
+        queue.sync {
         var oldItem: I?
         if items.count > capacity {
             var level = 0
@@ -78,10 +83,17 @@ public final class Bag<I: Item> {
         buckets[level].append(item)
         return oldItem
     }
+    }
     
+    var vueue = DispatchQueue(label: "rmqueue", qos: .background)
     private func removeFromBucket(_ item: I) {
         let level = getLevel(item)
-        buckets[level].removeAll(where: { $0.identifier == item.identifier })
+        var items = buckets[level]
+        queue.sync {
+            items.removeAll(where: { $0.identifier == item.identifier })
+            buckets[level] = items
+        }
+        
     }
 }
 
