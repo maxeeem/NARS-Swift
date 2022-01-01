@@ -1,5 +1,9 @@
 
-public protocol Item {
+public protocol Copying { // TODO: remove
+    func copy() -> Self
+}
+
+public protocol Item: Copying {
     var identifier: String { get }
     var priority: Double { get set }
 }
@@ -30,9 +34,9 @@ public struct Concept: Item {
     
     let term: Term
     
-    let termLinks = Bag<TermLink>()
+    internal var termLinks = Bag<TermLink>()
     //let tasks = Bag<TermLink>() // sentences
-    let beliefs = Bag<Belief>() // judgements
+    internal var beliefs = Bag<Belief>() // judgements
 }
 
 extension Concept {
@@ -40,21 +44,22 @@ extension Concept {
     func accept(_ j: Judgement, subject: Bool = true) -> [Judgement] {
         var judgement = j
         defer {
-            beliefs.put(Belief(judgement, 0.9))
+            if !j.statement.isTautology {
+                let term = subject ? j.statement.predicate : j.statement.subject
+                termLinks.put(TermLink(term, 0.9))
+            }
+            beliefs.put(judgement + 0.9) // put back original belief 
         }
-        let term = subject ? j.statement.predicate : j.statement.subject
-        termLinks.put(TermLink(term, 0.9))
         /// apply rules
         if let b = beliefs.get(j.statement.description) {
             // revision goes first
             judgement = revision(j1: j, j2: b.judgement)
-        }
+        } // wait to put back original belief to process another one 
         if let b = beliefs.get() {
-            beliefs.put(b) // put back
+            beliefs.put(b) // put back another belief
             // apply rules
             return Rules.allCases.compactMap { r in r.apply((b.judgement, judgement)) }
         }
-//        print("ljlkhkjhkjhk", j, judgement)
         // values will be different if revision happened 
         return j == judgement ? [] : [judgement] 
     }
@@ -81,13 +86,10 @@ extension Concept {
         if let b = beliefs.get(s.description) {
             beliefs.put(b) // put back
             return [b.judgement]
-        }
-        if let b = beliefs.get() {
+        } else if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
-            let j = Judgement(s, TruthValue(1, 0.9)) // TODO: finish -- s-*
-            // (^ should this be a question?)
-            return Rules.allCases.compactMap { r in r.apply((j, b.judgement)) }
+            return Rules.allCases.compactMap { r in r.apply((s-*, b.judgement)) }
         }
         return [] // no results found
     }
@@ -95,8 +97,6 @@ extension Concept {
     private func answer(_ f: (Statement) -> Bool) -> [Judgement] {
         let winner = beliefs.items
             .filter { b in
-//                let (s, p) = b.value.judgement.statement.terms
-//                return s == p ? false :
                 f(b.value.judgement.statement)
             }.map { b in
                 b.value.judgement

@@ -11,9 +11,8 @@ var verbose = false
 
 let output = Output()
 output.isVerbose = verbose
-output.onVerbose = { v in
-    verbose = v
-}
+output.onVerbose = { verbose = $0 }
+
 // set the view and indefinite execution
 PlaygroundPage.current.needsIndefiniteExecution = true
 PlaygroundPage.current.liveView = output
@@ -50,27 +49,35 @@ let defaultScript = [
     .pause,
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
+    .pause,
+    ("bird" --> "?")-?,
+    ("?"    -->  mammal)-?,
+    ("?"    --> "?")-?,
     .pause
-//    ("bird" --> "?")-?,
-//    ("?"    -->  mammal)-?,
-//    ("?"    --> "?")-?
 ]
 
-nars.perform(defaultScript)
-//sleep(5)
-debugPrint(nars.memory)
+// dispatch execution to background thread
+// to update the user interface
+DispatchQueue.global().async { 
+    
+    nars.perform(defaultScript)
 
-output.reset()
-//nars.perform((robin-->animal)-*(0, 0.9)) // not an animal
-nars.perform(
-    (robin-->bird)-*,
-    (robin-->animal)-?,
-    .pause
-)
-//sleep(5)
-debugPrint(nars.memory)
-//print(nars.pendingTasks)
+    debugPrint(nars.memory)
+        
+    output.reset()
 
+    nars.perform(
+        (robin-->bird)-*,
+        (robin-->animal)-?,
+        .pause(20)
+    )
+
+    debugPrint(nars.memory)
+    //print(nars.pendingTasks)
+
+    output.text += "\ndone\n..."
+    
+}
 
 
 // MARK: Tests

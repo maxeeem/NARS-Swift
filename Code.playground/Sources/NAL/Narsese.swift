@@ -51,19 +51,19 @@ extension Term {
 postfix operator •->
 prefix  operator ->•
 public extension Term {
-    public static postfix func •->(_ t: Term) -> Term { instance(t) }
-    public static prefix  func ->•(_ t: Term) -> Term { property(t) }
+    static postfix func •->(_ t: Term) -> Term { instance(t) }
+    static prefix  func ->•(_ t: Term) -> Term { property(t) }
 }
 
 postfix operator •
 prefix  operator •
 public extension String {
-    public static postfix func •(_ s: String) -> Term { Term.word("\(s)") }
-    public static prefix  func •(_ s: String) -> Term { Term.word("\(s)") }
+    static postfix func •(_ s: String) -> Term { Term.word("\(s)") }
+    static prefix  func •(_ s: String) -> Term { Term.word("\(s)") }
 }
 //    ("Goofy"•)•->
 //    Term("Pluto")•->
-//    Term("yellow")->•
+//    ->•Term("yellow")
 
 //extension Term: a {
 //    public func word(_ s: String) -> a {

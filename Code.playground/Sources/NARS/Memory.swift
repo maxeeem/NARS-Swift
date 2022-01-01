@@ -1,5 +1,12 @@
 
 extension Bag where I == Concept {
+    func consider(_ s: Sentence) -> [Judgement] {
+        switch s {
+        case .judgement(let j): return consider(j)
+        case .question(let q): return consider(q)
+        case .pause: return []
+        }
+    }
     func consider(_ j: Judgement) -> [Judgement] {
         consider(j.statement) { c in
             c.accept(j, subject: c.term == j.statement.subject)

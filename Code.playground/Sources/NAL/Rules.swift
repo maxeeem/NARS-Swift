@@ -56,7 +56,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             let predicate = firstIndex(of: c.predicate, in: terms)!
             terms = t1.terms + t2.terms
             let statement = Statement(term(at: subject, in: terms)!, c.copula, term(at: predicate, in: terms)!)
-            let truthValue = tf(j1.truthValue, j2.truthValue)
+            let truthValue = statement.isTautology ? TruthValue(1, 1) : tf(j1.truthValue, j2.truthValue)
             return Judgement(statement, truthValue)
         }
         return nil

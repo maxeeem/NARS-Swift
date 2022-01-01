@@ -69,10 +69,10 @@ final class NARS_Tests: XCTestCase {
         )) ==
             ("C" <-> "B")-*(1, 0.4475) ? "pass" : XCTFail("fail"))
 
-        //print(Rules.comparison.apply((
-        //    ("A" --> "B")-*,
-        //    ("A" --> "C")-*
-        //)))
+//        print(Rules.comparison.apply((
+//            ("A" --> "B")-*,
+//            ("A" --> "C")-*
+//        )))
 
         print("\n",
             "//----------- Experimental\n"

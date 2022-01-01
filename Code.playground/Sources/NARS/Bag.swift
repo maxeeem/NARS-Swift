@@ -1,13 +1,15 @@
 import Dispatch
+
 public final class Bag<I: Item> {
     var buckets: [[I]]
     var items: [String: I] = [:]
     
-    private let levels: Int
-    private let capacity: Int
-    private var currentLevel: Int = 0
+    internal let levels: Int
+    internal let capacity: Int
+    internal var currentLevel: Int = 0
     
-    var queue = DispatchQueue(label: "ioqueue", qos: .background)
+    internal var queue = DispatchQueue(label: "ioqueue", qos: .background)
+    
     public init(_ levels: Int = 10, _ capacity: Int = 100) {
         buckets = Array(repeating: [], count: levels)
         self.levels = levels
@@ -71,21 +73,20 @@ public final class Bag<I: Item> {
     
     private func addToBucket(_ item: I) -> I? {
         queue.sync {
-        var oldItem: I?
-        if items.count > capacity {
-            var level = 0
-            while buckets[level].isEmpty, level < levels {
-                level += 1
+            var oldItem: I?
+            if items.count > capacity {
+                var level = 0
+                while buckets[level].isEmpty, level < levels {
+                    level += 1
+                }
+                oldItem = buckets[level].removeFirst()
             }
-            oldItem = buckets[level].removeFirst()
+            let level = getLevel(item)
+            buckets[level].append(item)
+            return oldItem
         }
-        let level = getLevel(item)
-        buckets[level].append(item)
-        return oldItem
-    }
     }
     
-    var vueue = DispatchQueue(label: "rmqueue", qos: .background)
     private func removeFromBucket(_ item: I) {
         let level = getLevel(item)
         var items = buckets[level]
@@ -93,7 +94,5 @@ public final class Bag<I: Item> {
             items.removeAll(where: { $0.identifier == item.identifier })
             buckets[level] = items
         }
-        
     }
 }
-

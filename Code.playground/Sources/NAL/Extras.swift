@@ -9,6 +9,20 @@ struct FrequencyInterval {
     let upper: Double
 }
 
+
+//extension TruthValue: Hashable {
+//    public func hash(into hasher: inout Hasher) {
+//        hasher.combine(frequency)
+//        hasher.combine(confidence)
+//    }
+//}
+
+extension TruthValue: Equatable {
+    public static func ==(_ lhs: TruthValue, _ rhs: TruthValue) -> Bool {
+        lhs.f == rhs.f && lhs.c == rhs.c // ignore rule
+    }
+}
+
 // convenience initializer for Judgement
 public func +(_ s: Statement, fc: (Double, Double)) -> Judgement {
     Judgement(s, TruthValue(fc.0, fc.1))
@@ -26,6 +40,12 @@ extension Statement {
             s -* (1, 1) // tautology
         :
             s -* (1, 0.9) // fact
+    }
+}
+
+extension Statement {
+    var isTautology: Bool {
+        copula == .inheritance && subject == predicate
     }
 }
 
