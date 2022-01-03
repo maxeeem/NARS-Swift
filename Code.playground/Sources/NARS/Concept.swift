@@ -37,11 +37,24 @@ public struct Concept: Item {
     internal var termLinks = Bag<TermLink>()
     //let tasks = Bag<TermLink>() // sentences
     internal var beliefs = Bag<Belief>() // judgements
+    
+    // TODO: how much should the input change
+    // before it is considered different?
+    // for how long should we keep the cache?
+    // after n seconds or instances of the same input
+    // should we still permit the signal to go through?
+    // implementing a debounce of sorts
+    internal var lastInput: Judgement!
+    internal var lastAccepted: Set<Judgement> = []
+    internal var lastQuestion: Question!
+    internal var lastAnswered: Set<Judgement> = []
 }
 
 extension Concept {
     // returns derived judgements if any
-    func accept(_ j: Judgement, subject: Bool = true) -> [Judgement] {
+    mutating func accept(_ j: Judgement, subject: Bool = true) -> [Judgement] {
+        if j == lastInput { return Array(lastAccepted) }
+        lastInput = j
         var judgement = j
         defer {
             if !j.statement.isTautology {
@@ -58,26 +71,39 @@ extension Concept {
         if let b = beliefs.get() {
             beliefs.put(b) // put back another belief
             // apply rules
-            return Rules.allCases.compactMap { r in r.apply((b.judgement, judgement)) }
+            let derived = Rules.allCases
+                .compactMap { r in r.apply((b.judgement, judgement)) }
+            lastAccepted = Set(derived)
+            return derived
         }
         // values will be different if revision happened 
-        return j == judgement ? [] : [judgement] 
+        let derived = j == judgement ? [] : [judgement]
+        lastAccepted = Set(derived)
+        return derived
     }
     
     // returns relevant belief or derived judgements if any
-    func answer(_ q: Question) -> [Judgement] {
+    mutating func answer(_ q: Question) -> [Judgement] {
+        var result: [Judgement] = []
         switch q {
         case .statement(let statement):
-            return answer(statement)
+            result = answer(statement)
         case .general(let term, let copula):
-            return answer { s in
+            result = answer { s in
                 s.subject == term && s.copula == copula
             }
         case .special(let copula, let term):
-            return answer { s in
+            result = answer { s in
                 s.predicate == term && s.copula == copula
             }
         }
+        if q == lastQuestion &&
+            Set(result) == lastAnswered {
+            return []
+        }
+        lastQuestion = q
+        lastAnswered = Set(result)
+        return result
     }
     
     // MARK: Private
@@ -88,8 +114,11 @@ extension Concept {
             return [b.judgement]
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
-            // all other rules // backwards inference
+            // all other rules // backwards inference // filter out identity
             return Rules.allCases.compactMap { r in r.apply((s-*, b.judgement)) }
+//                .filter { j in
+//                    j != b.judgement
+//                }
         }
         return [] // no results found
     }

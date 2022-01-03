@@ -27,6 +27,7 @@ print(statement)
 statement     = "Bart Simpson" •->• "yellow"
 print(statement, "\n")
 
+print(TruthValue.induction(TruthValue(1, 0.9), TruthValue(0, 0.9)))
 
 // military uses made up language to teach their staff
 // use it to teach nars
@@ -157,6 +158,18 @@ var narseseToEnglish: (String) -> String = { narsese in
 [
     false, true,
     true, nil
+]
+/// P --> M
+/// M --> S
+[
+    false, true,
+    true, nil
+]
+/// M --> P
+/// S --> M
+[
+    true, nil,
+    false, true
 ]
 
 /// Optional<Bool> is represented as a Triple

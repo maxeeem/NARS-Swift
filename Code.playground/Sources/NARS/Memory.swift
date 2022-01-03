@@ -24,22 +24,22 @@ extension Bag where I == Concept {
 // MARK: Private
 
 extension Bag where I == Concept {
-    private func consider(_ s: Statement, _ f: (Concept) -> [Judgement]) -> [Judgement] {
+    private func consider(_ s: Statement, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
-        let subjectConcept = get(s.subject.description) ?? Concept(term: s.subject)
-        let predicateConcept = get(s.predicate.description) ?? Concept(term: s.predicate)
-        derivedJudgements.append(contentsOf: f(subjectConcept))
-        derivedJudgements.append(contentsOf: f(predicateConcept))
+        var subjectConcept = get(s.subject.description) ?? Concept(term: s.subject)
+        var predicateConcept = get(s.predicate.description) ?? Concept(term: s.predicate)
+        derivedJudgements.append(contentsOf: f(&subjectConcept))
+        derivedJudgements.append(contentsOf: f(&predicateConcept))
         put(subjectConcept)
         put(predicateConcept)
         return derivedJudgements
     }
-    private func consider(_ t: Term, _ f: (Concept) -> [Judgement]) -> [Judgement] {
-        guard let concept = get(t.description) else { return [] }
+    private func consider(_ t: Term, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
+        guard var concept = get(t.description) else { return [] }
         defer { put(concept) } // put back
-        return f(concept)
+        return f(&concept)
     }
 }
 

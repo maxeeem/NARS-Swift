@@ -9,13 +9,12 @@ struct FrequencyInterval {
     let upper: Double
 }
 
-
-//extension TruthValue: Hashable {
-//    public func hash(into hasher: inout Hasher) {
-//        hasher.combine(frequency)
-//        hasher.combine(confidence)
-//    }
-//}
+extension TruthValue {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(frequency)
+        hasher.combine(confidence)
+    }
+}
 
 extension TruthValue: Equatable {
     public static func ==(_ lhs: TruthValue, _ rhs: TruthValue) -> Bool {
@@ -227,5 +226,6 @@ extension Array where Element == Bool {
 
 /// from https://stackoverflow.com/a/38036978
 public func rounded(_ d: Double, _ x: Int = 10000) -> Double {
-    (d * Double(x)).rounded() / Double(x)
+    let result = (d * Double(x)).rounded() / Double(x)
+    return result.isNaN ? 1 : result
 }

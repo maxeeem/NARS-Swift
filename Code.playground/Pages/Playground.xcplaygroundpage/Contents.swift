@@ -25,14 +25,14 @@ let mammal = Term.word("mammal")
 var history = [String]()
 
 let nars = NARS { s in
-    if !verbose && s.contains("⏱") { return }
+    if !verbose && (s.contains("⏱") || s.contains("💤")) { return }
     history.append(s); print(s)
     //usleep(100000) // 1/100th second
     output.text = "...\(output.text.suffix(600))\n" + s
 }
 
 output.callback = { s in
-    nars.perform(s)
+    nars.perform(s, .pause)
 }
 
 output.reset = {
@@ -60,21 +60,38 @@ let defaultScript = [
 // to update the user interface
 DispatchQueue.global().async { 
     
+    var timestamp = Date().timeIntervalSinceReferenceDate
+        
     nars.perform(defaultScript)
-
+    
     debugPrint(nars.memory)
         
     output.reset()
-
+ 
     nars.perform(
         (robin-->bird)-*,
         (robin-->animal)-?,
-        .pause(20)
+        .pause(50)
     )
-
+    
+    timestamp = Date().timeIntervalSinceReferenceDate - timestamp
+    print(timestamp)
+//    sleep(5)
     debugPrint(nars.memory)
     //print(nars.pendingTasks)
 
+        
+    output.reset()
+    
+    nars.perform(
+        (bird-->animal)-*,
+        ("{Tweety}"-->bird)-*,
+        ("{Tweety}"-->animal)-?,
+        .pause
+    )
+    
+    debugPrint(nars.memory)
+ 
     output.text += "\ndone\n..."
     
 }

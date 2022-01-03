@@ -5,7 +5,7 @@ public enum Sentence {
     case judgement(Judgement)
     case question(Question)
     /// default wait time in t * 0.1 of a second
-    public static var pause: Sentence { .pause(10) }
+    public static var pause: Sentence { .pause(100) }
 }
 
 public final class NARS {
@@ -51,9 +51,26 @@ extension NARS {
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
         
         // memory or imagination
-        let derivedJudgements = (userInitiated ? memory : imagination).consider(input)
+        var derivedJudgements = (userInitiated ? memory : imagination).consider(input)
+        derivedJudgements = derivedJudgements.filter({ j in
+            if case .judgement(let judgement) = input, (judgement.statement == j.statement) || judgement.statement.isTautology {
+                return false
+            }
+            return true
+        })
         
+        derivedJudgements = Array(Set(derivedJudgements))
+//        print(derivedJudgements)
+        if derivedJudgements.isEmpty { 
+            if case .question = input {
+                output("\tI don't know 🤷‍♂️")
+            } 
+            return 
+        }
+        
+        // helper
         func imagine(recurse r: Bool = true) {
+            //print("dj \(derivedJudgements)")
             derivedJudgements.forEach { j in
                 if dreaming {
                     process(.judgement(j), recurse: r)
@@ -69,7 +86,7 @@ extension NARS {
             
             if userInitiated {
                 derivedJudgements.forEach { j in
-                    process(.judgement(j), recurse: false)
+                    process(.judgement(j), recurse: false, userInitiated: true)
                 }
             } else {
                 imagine(recurse: false)
@@ -78,9 +95,8 @@ extension NARS {
         case .question(let question):
             /// consider a question 
             if case .statement(let statement) = question {
-                
+
                 if let winner = derivedJudgements.first, winner.statement == statement {
-                    output(".  💡 \(winner)")
                     
                     if !userInitiated {
                         // cancel all in-flight activities
@@ -91,6 +107,8 @@ extension NARS {
                                      recurse: false, // determines if derived judgements are inserted
                                      userInitiated: true) // will cause insertion into main memory
                     }
+                    
+                    output(".  💡 \(winner)")
                     
                 } else if recurse { // switch to imagination flow
                     

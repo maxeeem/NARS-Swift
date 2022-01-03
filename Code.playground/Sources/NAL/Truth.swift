@@ -52,7 +52,7 @@ extension TruthValue {
         let c = and(f1, f2, c1, c2)
         return TruthValue(f, c)
     }
-    static var induction: TruthFunction = { (tv1, tv2) in
+    public static var induction: TruthFunction = { (tv1, tv2) in
         let (f1, f2) = (tv1.frequency, tv2.frequency)
         let (c1, c2) = (tv1.confidence, tv2.confidence)
         let positive = and(f2, c2, f1, c1) // w+
@@ -92,4 +92,17 @@ extension TruthValue {
         let evidence = Evidence(positive, total)
         return TruthValue(evidence)
     }
+}
+
+
+/// Extended Boolean operators
+/// bounded by the range from 0 to 1
+public func not(_ x: Double) -> Double {
+    1 - x
+}
+public func and(_ xs: Double...) -> Double {
+    xs.reduce(1, { $0 * $1 })
+}
+public func or(_ xs: Double...) -> Double {
+    1 - xs.reduce(1, { $0 * (1 - $1)})
 }

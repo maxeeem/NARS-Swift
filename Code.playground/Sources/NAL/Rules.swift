@@ -33,22 +33,68 @@ extension Rules {
 let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
     let (p1, p2, c, tf) = arg
     let commonTerms = identifyCommonTerms((p1, p2))
-    // TODO: validate there is at least two true
-    //       validate that not all are true
-    //       validate copulas
-    //       create statements from copula
+    let total = countTruths(in: commonTerms)
+    if //total == 4 || // .identity
+        total < 2 { // no conclusion
+        return { _ in nil }
+    }
+    
     return { (arg) in
         let (j1, j2) = arg
         let t1 = j1.statement // test
         let t2 = j2.statement // test
-        let s1 = Statement(t1.subject, p1.copula, t1.predicate)
-        let s2 = Statement(
-            commonTerms.2 == true ? commonTerms.0 == true ?
-            t1.subject : t1.predicate : t2.subject
-        , p2.copula,
-            commonTerms.3 == true ? commonTerms.0 == true ?
-            t1.subject : t1.predicate : t2.predicate
-        )
+//        print(p1, p2, j1, j2)
+//        print("=", commonTerms)
+//        return nil
+        
+        
+        if p1.isTautology && !t1.isTautology || !p1.isTautology && t1.isTautology {
+            return nil
+        }
+        
+        if p2.isTautology && !t2.isTautology || !p2.isTautology && t2.isTautology {
+            return nil
+        }
+        
+        let first = firstIndex(of: false, in: commonTerms)! // 1
+        let common = firstIndex(of: true, in: commonTerms)! // 0
+        let second = firstIndex(of: nil, in: commonTerms) ?? common // 2
+        let x1 = term(at: first, in: (t1.terms + t2.terms)) // animal
+        let xc = term(at: common, in: (t1.terms + t2.terms)) // bird
+        let x2 = term(at: second, in: (t1.terms + t2.terms)) // robin
+        
+        let ct1 = commonTerms.0 == true ? xc : // bird
+            commonTerms.0 == false ? x1 : // animal
+            x2 // robin
+        let ct2 = commonTerms.1 == true ? xc : // bird
+            commonTerms.1 == false ? x1 : // animal
+            x2 // robin
+        let ct3 = commonTerms.2 == true ? xc : // bird
+            commonTerms.2 == false ? x1 : // animal
+            x2 // robin
+        let ct4 = commonTerms.3 == true ? xc : // bird
+            commonTerms.3 == false ? x1 : // animal
+            x2 // robin
+        let s1 = Statement(ct1!, p1.copula, ct2!)
+        let s2 = Statement(ct3!, p1.copula, ct4!)
+        
+//        print(s1, s2)
+        
+        //        
+//        case .deduction:
+//        ///    true, false,      nil, true
+//        return (M --> P,         S --> M, S --> P, tf)
+//                bird-->animal     robin-->bird
+        
+//        let s1 = Statement(t1.subject, p1.copula, t1.predicate)
+//        let s2 = Statement(
+//            commonTerms.2 == true ? commonTerms.0 == true ?
+//            t1.subject : t1.predicate : commonTerms.1 == true ? "null"• : t2.subject
+//        , p2.copula, // validate copula
+//            commonTerms.3 == true ? commonTerms.0 == true ?
+//            t1.subject : t1.predicate : commonTerms.1 == true ? "null"• : t2.predicate
+//        )
+
         if s1 == t1, s2 == t2 {
             // conclusion
             var terms = p1.terms + p2.terms
@@ -82,12 +128,16 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
             }
             if i == 1 && !helper(i, t) {
                 tmp.append(t)
+                set(&out, i, false)
             }
             if i == 2 && !helper(i, t) {
                 tmp.append(t)
                 set(&out, i, nil)
             }
-            if i == 3 { helper(i, t) }
+            if i == 3 { 
+                helper(i, t)             
+//                set(&out, i, nil)
+            }
         }
         @discardableResult
         func helper(_ i: Int, _ t: Term) -> Bool {
@@ -100,7 +150,7 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
             }
             return false
         }
-        /*
+ /*
         .forEach { (arg: (Int, Term)) in
             let (i, t) = arg
             let seen = helper(i, t)
@@ -125,13 +175,15 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
 
 // MARK: Utility
 
-private typealias Terms  = (Term, Term, Term, Term)
+internal typealias Terms  = Quadra<Term>
+
+public typealias Quadra<T: Equatable> = (T, T, T, T)
 
 private func +(_ a: (Term, Term), b: (Term, Term)) -> Terms {
     (a.0, a.1, b.0, b.1)
 }
 
-private func firstIndex(of t: Term, in q: Terms) -> Int? {
+private func firstIndex<T>(of t: T, in q: Quadra<T>) -> Int? {
     (q.0 == t ? 0 :
     (q.1 == t ? 1 :
     (q.2 == t ? 2 :
@@ -152,13 +204,13 @@ private func set(_ q: inout Quad, _ i: Int, _ value: Bool?) {
     (i == 3 ? q.3 = value : () ))))
 }
 
-//private func countTruths(in q: Quad) -> Int {
-//    var i = 0
-//    let x = true
-//    if q.0 == x { i += 1 }
-//    if q.1 == x { i += 1 }
-//    if q.2 == x { i += 1 }
-//    if q.3 == x { i += 1 }
-//    return i
-//}
+private func countTruths(in q: Quad) -> Int {
+    var i = 0
+    let x = true
+    if q.0 == x { i += 1 }
+    if q.1 == x { i += 1 }
+    if q.2 == x { i += 1 }
+    if q.3 == x { i += 1 }
+    return i
+}
 
