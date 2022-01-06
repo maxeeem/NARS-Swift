@@ -13,21 +13,25 @@ public enum Sentence {
 
 public final class NARS {
     public let name: String
-    public private(set) var memory = Bag<Concept>()
-    public private(set) var imagination = Bag<Concept>()
+    public internal(set) var memory = Bag<Concept>()
+    public internal(set) var imagination = Bag<Concept>()
     public let output: (String) -> Void
     private var queue = DispatchQueue(label: "input", qos: .userInitiated)
-    private var iqueue = DispatchQueue(label: "imagination", qos: .background)
-    private var dreaming = false // TODO: workaround to avoid using OperationQueue
+    private var iqueue = OperationQueue()//(label: "imagination", qos: .background)
+//    private var dreaming = false // TODO: workaround to avoid using OperationQueue
     
 //    public var pendingTasks = Bag<Task>()
     
     public init(_ name: String = "𝝥𝝠𝗟", _ output: @escaping (String) -> Void = { print($0) }) {
         self.name = name
         self.output = output
+        self.iqueue.maxConcurrentOperationCount = 1
     }
     public func reset() {
-        dreaming = false
+//        dreaming = false
+        iqueue.isSuspended = true
+        iqueue.cancelAllOperations()
+        iqueue.isSuspended = false
         memory = Bag<Concept>()
         imagination = Bag<Concept>()
     }
@@ -79,9 +83,9 @@ extension NARS {
         func imagine(recurse r: Bool = true) {
             //print("dj \(derivedJudgements)")
             derivedJudgements.forEach { j in
-                if dreaming {
+//                if dreaming {
                     process(.judgement(j), recurse: r)
-                }
+//                }
             }
         }
         
@@ -107,7 +111,10 @@ extension NARS {
                     
                     if !userInitiated {
                         // cancel all in-flight activities
-                        dreaming = false
+//                        dreaming = false
+                        iqueue.isSuspended = true
+                        iqueue.cancelAllOperations()
+                        iqueue.isSuspended = false
                         
                         // process winning judgement
                         process(.judgement(winner),
@@ -120,13 +127,14 @@ extension NARS {
                 } else if recurse { // switch to imagination flow
                     
                     if userInitiated {
-                        iqueue.sync { // very inefficient but just a poc
-                            imagination = memory.copy()
-                            dreaming = true
-                        }
+                        // very inefficient but just a poc
+                        iqueue.addOperations([MemCopy(self)], waitUntilFinished: true)
+//                            self.imagination = self.memory.copy()
+//                            self.dreaming = true
+//                        }
                     }
                     
-                    iqueue.async {
+                    iqueue.addOperation {
                         imagine()
                         // re-process question
                         self.process(.question(question))
@@ -142,5 +150,15 @@ extension NARS {
         case .pause: 
             break // do nothing
         }
+    }
+}
+
+class MemCopy: Operation {
+    weak var nars: NARS!
+    init(_ nars: NARS) {
+        self.nars = nars
+    }
+    override func main() {
+        nars!.imagination = nars!.memory.copy()
     }
 }
