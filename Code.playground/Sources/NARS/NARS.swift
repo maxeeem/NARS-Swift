@@ -48,6 +48,9 @@ public final class NARS {
                 let ms = 1000 // millisecond
                 usleep(useconds_t(t * ms))
             }
+            iqueue.isSuspended = true
+            iqueue.cancelAllOperations()
+            iqueue.isSuspended = false
         }
     }
 }

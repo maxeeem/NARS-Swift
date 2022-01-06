@@ -8,7 +8,7 @@
 import Foundation 
 import PlaygroundSupport
 
-var verbose = false
+var verbose = true
 
 let output = Output()
 output.isVerbose = verbose
@@ -53,7 +53,7 @@ let defaultScript = [
     .pause,
     ("bird" --> "?")-?,
     ("?"    -->  mammal)-?,
-    ("?"    --> "?")-?,
+//    ("?"    --> "?")-?,
     .pause
 ]
 
