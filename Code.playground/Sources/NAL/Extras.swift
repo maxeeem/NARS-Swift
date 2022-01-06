@@ -73,12 +73,12 @@ extension Term {
     var copula: Copula? { Copula(rawValue: description) }
     var statement: Statement? {
         switch self {
-        case .compound(let connector, let terms):
-            // TODO: perform additional checks for number of terms and their types
-            if let copula = Copula(rawValue: connector.description) {
-                return Statement(terms[0], copula, terms[1])
-            }
-            return nil
+//        case .compound(let connector, let terms):
+//            // TODO: perform additional checks for number of terms and their types
+//            if let copula = Copula(rawValue: connector.description) {
+//                return Statement(terms[0], copula, terms[1])
+//            }
+//            return nil
         default: return nil
         }
     }
@@ -91,6 +91,9 @@ extension Statement {
         self.predicate = predicate
     }
     public var terms: (Term, Term) { (subject, predicate) }
+    public var simplicity: Double {
+        subject.simplicity + predicate.simplicity
+    }
 }
 
 public func ==(_ s1: Statement, s2: Statement) -> Bool {
@@ -153,15 +156,18 @@ extension Term: CustomStringConvertible {
         switch self {
         case .word(let word):
             return word
-        case .instance(let word):
-            return "{"+word+"}"
-        case .property(let word):
-            return "["+word+"]"
+        case .instance(let term):
+            return term.description.first == "{" ?
+                "\(term)" : "{\(term)}"
+        case .property(let term):
+            return term.description.first == "[" ?
+                "\(term)" : "[\(term)]"
         case .compound(let connector, let terms):
-            if terms.count == 2, let copula = Copula(rawValue: connector.description) {
-                return "\(Statement(terms[0], copula, terms[1]))"
+            if terms.count == 2 {
+                return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
+            } else {
+                return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }
-            return "\(connector) \(terms)"
         }
     }
 }
@@ -181,13 +187,18 @@ extension TruthValue: CustomStringConvertible {
 extension Rules: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .identity:        return "."
-        case .deduction:       return ".ded"
-        case .induction:       return ".ind"
-        case .abduction:       return ".abd"
-        case .conversion:      return ".con"
-        case .exemplification: return ".exe"
-        case .comparison:      return ".com"
+        case .identity:        
+            return "."
+        default:
+            return "." + rawValue.prefix(3)
+//        case .deduction:       return ".ded"
+//        case .induction:       return ".ind"
+//        case .abduction:       return ".abd"
+//        case .conversion:      return ".con"
+//        case .exemplification: return ".exe"
+//        case .comparison:      return ".com"
+//        case .analogy:         return ".ana"
+//        case .resemblance:     return ".res"
         }
     }
 }
@@ -226,6 +237,5 @@ extension Array where Element == Bool {
 
 /// from https://stackoverflow.com/a/38036978
 public func rounded(_ d: Double, _ x: Int = 10000) -> Double {
-    let result = (d * Double(x)).rounded() / Double(x)
-    return result.isNaN ? 1 : result
+    (d * Double(x)).rounded() / Double(x)
 }

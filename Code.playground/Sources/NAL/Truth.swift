@@ -24,7 +24,7 @@ extension TruthValue {
 
 public typealias TruthFunction = (TruthValue, TruthValue) -> TruthValue
 
-infix operator ~
+infix operator ~ // rule to truth function mapping
 private func ~(_ r: Rules, _ tf: @escaping TruthFunction) -> TruthFunction {
     { (tv1, tv2) in
         let tv = tf(tv1, tv2)
@@ -42,6 +42,10 @@ extension TruthValue {
         case .conversion:      return r~conversion
         case .exemplification: return r~exemplification
         case .comparison:      return r~comparison
+        case .analogy:         return r~analogy
+        case .resemblance:     return r~resemblance
+            
+        case .intersection:    return r~intersection
         }
     }
     
@@ -92,8 +96,31 @@ extension TruthValue {
         let evidence = Evidence(positive, total)
         return TruthValue(evidence)
     }
+    static var analogy: TruthFunction = { (tv1, tv2) in
+        let (f1, f2) = (tv1.frequency, tv2.frequency)
+        let (c1, c2) = (tv1.confidence, tv2.confidence)
+        let f = and(f1, f2)
+        let c = and(f2, c1, c2)
+        return TruthValue(f, c)
+    }
+    static var resemblance: TruthFunction = { (tv1, tv2) in
+        let (f1, f2) = (tv1.frequency, tv2.frequency)
+        let (c1, c2) = (tv1.confidence, tv2.confidence)
+        let f = and(f1, f2)
+        let c = and(or(f1, f2), c1, c2)
+        return TruthValue(f, c)
+    }
 }
 
+extension TruthValue {
+    static var intersection: TruthFunction = { (tv1, tv2) in
+        let (f1, f2) = (tv1.frequency, tv2.frequency)
+        let (c1, c2) = (tv1.confidence, tv2.confidence)
+        let f = and(f1, f2)
+        let c = and(c1, c2)
+        return TruthValue(f, c)
+    }
+}
 
 /// Extended Boolean operators
 /// bounded by the range from 0 to 1

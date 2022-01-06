@@ -12,39 +12,67 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
     j1.statement == j2.statement ?
         (j1.truthValue.c > j2.truthValue.c) ? j1 : j2
     :
-        (j1.truthValue.e > j2.truthValue.e) ? j1 : j2
+        (and(j1.truthValue.e, j1.statement.simplicity) 
+            > 
+            and(j2.truthValue.e, j1.statement.simplicity)) ? j1 : j2
 }
 
 extension Rules {
-    public var rule: Rule {
+    public var rule: [Rule] {
         let S = Term.word("S")
         let P = Term.word("P")
         let M = Term.word("M")
+        let T1 = Term.word("T1")
+        let T2 = Term.word("T2")
         /// first unique term is `false`, second and third are `nil`
         /// if there is no common term term identified by `true`
         /// then a conclusion could not be derived
         switch self {
         case .identity:
             /// all true
-            return (S --> S, S --> S, S --> S, tf)
+            return [(S --> S, S --> S, S --> S, tf)]
         case .deduction:
             ///    true, false, nil, true
-            return (M --> P,     S --> M, S --> P, tf)
+            return [(M --> P,     S --> M, S --> P, tf)]
         case .induction:
             ///    true, false, true, nil
-            return (M --> P,     M --> S, S --> P, tf)
+            return [(M --> P,     M --> S, S --> P, tf)]
         case .abduction:
             ///    false, true, nil, true
-            return (P --> M,     S --> M, S --> P, tf)
+            return [(P --> M,     S --> M, S --> P, tf)]
         case .conversion:
             ///    false, true, true, true
-            return (P --> S,     S --> S, S --> P, tf)
+            return [(P --> S,     S --> S, S --> P, tf)]
         case .exemplification:
             ///    false, true, true, nil
-            return (P --> M,     M --> S, S --> P, tf)
+            return [(P --> M,     M --> S, S --> P, tf)]
         case .comparison:
             ///    true, false, true, nil
-            return (M --> P,     M --> S, S <-> P, tf)
+            return [(M --> P,     M --> S, S <-> P, tf)]
+        case .analogy:
+            ///    true, false, nil, true
+            return [(M --> P,     S <-> M, S --> P, tf),
+            ///    true, false, true, nil
+                    (M --> P,     M <-> S, S --> P, tf)]
+        case .resemblance:
+            ///    true, false, nil, true
+            return [(M <-> P,     S <-> M, S <-> P, tf),
+            ///    true, false, true, nil
+                    (M <-> P,     M <-> S, S <-> P, tf),
+            ///    false, true, nil, true
+                    (P <-> M,     S <-> M, S <-> P, tf),
+            ///    false, true, true, nil
+                    (P <-> M,     M <-> S, S <-> P, tf)]
+            
+        // Compositional rules
+        
+        case .intersection:
+            ///    true, false, true, nil
+            return [(M --> T1,    M --> T2,    
+                     M --> ç.U_(T1, T2), tf)]
+//                    ,
+//                    ///    true, false, true, nil
+//                    (M --> P,     M <-> S,    S --> P, tf)]
         }
     }
 }

@@ -2,11 +2,13 @@ import Foundation
 import Dispatch
 
 public enum Sentence {
-    case pause(UInt32)
+    case pause(Int)
     case judgement(Judgement)
     case question(Question)
-    /// default wait time in t * 0.1 of a second
-    public static var pause: Sentence { .pause(100) }
+    
+    /// default wait time in milliseconds (0.001s)
+    /// neurons spike between 5ms and 1000ms
+    public static var pause: Sentence { .pause(1000) }
 }
 
 public final class NARS {
@@ -39,7 +41,8 @@ public final class NARS {
                 self.process(s, userInitiated: true)
             }
             if case .pause(let t) = s {
-                usleep(t * 100000) // 0.1 second
+                let ms = 1000 // millisecond
+                usleep(useconds_t(t * ms))
             }
         }
     }
@@ -54,6 +57,9 @@ extension NARS {
         // memory or imagination
         var derivedJudgements = (userInitiated ? memory : imagination).consider(input)
         derivedJudgements = derivedJudgements.filter({ j in
+            if j.truthValue.confidence == 0 {
+                return false
+            }
             if case .judgement(let judgement) = input, (judgement.statement == j.statement) || judgement.statement.isTautology {
                 return false
             }

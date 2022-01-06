@@ -72,7 +72,8 @@ extension Concept {
             beliefs.put(b) // put back another belief
             // apply rules
             let derived = Rules.allCases
-                .compactMap { r in r.apply((b.judgement, judgement)) }
+                .flatMap { r in r.apply((b.judgement, judgement)) }
+                .compactMap { $0 }
             lastAccepted = Set(derived)
             return derived
         }
@@ -115,7 +116,9 @@ extension Concept {
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference // filter out identity
-            return Rules.allCases.compactMap { r in r.apply((s-*, b.judgement)) }
+            return Rules.allCases
+                .flatMap { r in r.apply((s-*, b.judgement)) }
+                .compactMap { $0 }
 //                .filter { j in
 //                    j != b.judgement
 //                }

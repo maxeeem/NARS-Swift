@@ -44,29 +44,29 @@ final class NARS_Tests: XCTestCase {
         print("deduction", Rules.deduction.rule, Rules.deduction.apply((
             ("A" --> "B")-*,
             ("C" --> "A")-*
-        )) ==
+        )).first ==
             ("C" --> "B")-*(1, 0.81) ? "pass" : XCTFail("fail"))
 
         print("induction", Rules.induction.rule, Rules.induction.apply((
             ("A" --> "B")-*,
             ("A" --> "Z")-*
-        )) ==
+        )).first ==
             ("Z" --> "B")-*(1, 0.4475) ? "pass" : XCTFail("fail"))
         
         print("abduction", Rules.abduction.rule, Rules.abduction.apply((
             ("A" --> "B")-*,
             ("C" --> "B")-*
-        )) ==
+        )).first ==
             ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail"))
 
         let exemplificationRule = Rules.exemplification.apply
         let applied = exemplificationRule((("A" --> "B")-*, ("B" --> "C")-*))
-        print("exemplification", Rules.exemplification.rule, (applied == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
+        print("exemplification", Rules.exemplification.rule, (applied.first == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
 
         print("comparison", Rules.comparison.rule, Rules.comparison.apply((
             ("A" --> "B")-*,
             ("A" --> "C")-*
-        )) ==
+        )).first ==
             ("C" <-> "B")-*(1, 0.4475) ? "pass" : XCTFail("fail"))
 
 //        print(Rules.comparison.apply((
@@ -77,7 +77,7 @@ final class NARS_Tests: XCTestCase {
         print("\n",
             "//----------- Experimental\n"
         )
-
+/*
         let car = Term.word("car")
         let vehicle = Term.word("vehicle")
         let inheritance = Term.word("->")
@@ -111,5 +111,6 @@ final class NARS_Tests: XCTestCase {
         let apply = Term.compound(rule, [carIsAVehicle, iKnowCarIsAVehicle])
         print(apply)
 
+*/
     }
 }

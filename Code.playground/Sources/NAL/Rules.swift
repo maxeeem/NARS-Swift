@@ -7,7 +7,7 @@ typealias Quad   = (Bool?, Bool?, Bool?, Bool?)
 public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
 
-public enum Rules: CaseIterable {
+public enum Rules: String, CaseIterable {
     case identity
     // NAL-1
     case deduction
@@ -17,14 +17,22 @@ public enum Rules: CaseIterable {
     case exemplification
     // NAL-2
     case comparison
+    case analogy
+    case resemblance
+    // Compositional
+    case intersection
 }
 
 extension Rules {
     var tf: TruthFunction {
         TruthValue.truthFunction(self)
     }
-    var apply: (_ judgements: (Judgement, Judgement)) -> Judgement? {
-        rule_generator(rule)
+    public var apply: (_ judgements: (Judgement, Judgement)) -> [Judgement?] {
+        { j in
+            self.rule.map { r in
+                rule_generator(r)(j)
+            }
+        }
     }
 }
 
@@ -76,9 +84,10 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             commonTerms.3 == false ? x1 : // animal
             x2 // robin
         let s1 = Statement(ct1!, p1.copula, ct2!)
-        let s2 = Statement(ct3!, p1.copula, ct4!)
+        let s2 = Statement(ct3!, p2.copula, ct4!)
         
 //        print(s1, s2)
+//        print("))))", c.predicate)
         
         //        
 //        case .deduction:
@@ -97,11 +106,30 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 
         if s1 == t1, s2 == t2 {
             // conclusion
+            var statement: Statement!
             var terms = p1.terms + p2.terms
-            let subject = firstIndex(of: c.subject, in: terms)!
-            let predicate = firstIndex(of: c.predicate, in: terms)!
-            terms = t1.terms + t2.terms
-            let statement = Statement(term(at: subject, in: terms)!, c.copula, term(at: predicate, in: terms)!)
+            
+            if case .compound(let ct, let ts) = c.predicate, ts.count == 2 { // compound term
+                
+                // TODO: check that compounds do not contain each other
+                
+                // apply composition
+                let subject = firstIndex(of: c.subject, in: terms)! // M, 0
+                let pT1 = firstIndex(of: ts[0], in: terms)!
+                let pT2 = firstIndex(of: ts[1], in: terms)!
+                terms = t1.terms + t2.terms
+                let sTerm = term(at: subject, in: terms)!
+                let pTerm1 = term(at: pT1, in: terms)!
+                let pTerm2 = term(at: pT2, in: terms)!
+                let compound = ç.connect(pTerm1, ct, pTerm2)
+                statement = Statement(sTerm, c.copula, compound)
+            } else {
+                let subject = firstIndex(of: c.subject, in: terms)!
+                let predicate = firstIndex(of: c.predicate, in: terms)!
+                terms = t1.terms + t2.terms
+                statement = Statement(term(at: subject, in: terms)!, c.copula, term(at: predicate, in: terms)!)
+            }
+            
             let truthValue = statement.isTautology ? TruthValue(1, 1) : tf(j1.truthValue, j2.truthValue)
             return Judgement(statement, truthValue)
         }

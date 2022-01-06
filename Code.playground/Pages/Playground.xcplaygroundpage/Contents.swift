@@ -1,8 +1,9 @@
 
-/*
- * each rock has a functionality
- * @author Nicknames
- */
+///
+/// "Each rock has a functionality"
+///
+/// - Nick Names
+///
 
 import Foundation 
 import PlaygroundSupport
@@ -65,7 +66,7 @@ DispatchQueue.global().async {
     nars.perform(defaultScript)
     
     debugPrint(nars.memory)
-        
+      
     output.reset()
  
     nars.perform(
@@ -91,9 +92,66 @@ DispatchQueue.global().async {
     )
     
     debugPrint(nars.memory)
- 
+    
+    output.reset()
+        
+    nars.perform(
+        (robin<->"swallow")-*,
+        ("lark"<->robin)-*,
+        .pause
+    )
+    
     output.text += "\ndone\n..."
     
+    let t1 = Term.compound(.U, ["{Mars}", "{Pluto}", "{Venus}"])
+    
+    let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
+    
+        print("\n", t1, "\n", t2, "\n")
+    
+    let c1 = ç.U_(t1, t2) // {Mars, Pluto, Saturn, Venus}
+    let c2 = ç.Ω_(t1, t2) // {Pluto}
+    let c3 = ç.l_(t1, t2) // {Mars, Venus}
+    let c4 = ç.ø_(t2, t1) // {Saturn}
+    
+    print(c1, c1.complexity, "\n", 
+          c2, c2.complexity, "\n", 
+          c3, c3.complexity, "\n", 
+          c4, c4.complexity, "\n")
+    
+    let c5 = ç.U_("{Earth}", t2)
+    print(c5, c5.complexity)
+    
+    let x = ç.U_("[yellow]", "bird")
+    print(x, x.complexity)
+    let y = ç.Ω_("dog", "cat")
+    print(y, y.complexity)
+    let z = ç.l_("[yellow]", "bird")
+    print(z, z.complexity)
+    print(z.simplicity)
+    
+    let l = Term(stringLiteral: "blue")
+    print(l)
+    
+    output.reset()
+    
+    let relation = ç.x_("water", "salt") --> "dissolve"
+    let knowledge = "rain" --> "water"
+    
+    nars.perform(
+        relation-*,
+        knowledge-*,
+        .pause
+    )
+    
+    output.reset()
+    
+    let image = "water" --> ç.e_("dissolve", "º", "salt")
+    nars.perform(
+        image-*,
+        knowledge-*,
+        .pause
+    )
 }
 
 

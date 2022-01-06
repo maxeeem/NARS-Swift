@@ -5,6 +5,8 @@ let name = "𝝥𝝠𝗟"
 //
 //PlaygroundPage.current.needsIndefiniteExecution = true
 
+//let SELF = Term("SELF")
+
 actor SELF {
     let nars: NARS
     init(_ output: @escaping (String) -> () = { print($0) }) async {
@@ -28,6 +30,7 @@ statement     = "Bart Simpson" •->• "yellow"
 print(statement, "\n")
 
 print(TruthValue.induction(TruthValue(1, 0.9), TruthValue(0, 0.9)))
+
 
 // military uses made up language to teach their staff
 // use it to teach nars
