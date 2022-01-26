@@ -154,7 +154,7 @@ extension Sentence: CustomStringConvertible {
                 return "\(question)"
             }
         case .pause(let t):
-            return "💤 \(Double(t)*0.1) seconds"
+            return "💤 \(Double(t)/1000) seconds"
         }
     }
 }

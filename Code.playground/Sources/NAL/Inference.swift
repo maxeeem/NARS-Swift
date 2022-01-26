@@ -68,11 +68,16 @@ extension Rules {
         
         case .intersection:
             ///    true, false, true, nil
-            return [(M --> T1,    M --> T2,    
-                     M --> ç.U_(T1, T2), tf)]
-//                    ,
-//                    ///    true, false, true, nil
-//                    (M --> P,     M <-> S,    S --> P, tf)]
+            return [(M --> T1,    M --> T2,    M --> ç.Ω_(T1, T2), tf),
+                    (T1 --> M,    T2 --> M,    ç.U_(T1, T2) --> M, tf)]
+        case .union:
+            return [(M --> T1,    M --> T2,    M --> ç.U_(T1, T2), tf),
+                    (T1 --> M,    T2 --> M,    ç.Ω_(T1, T2) --> M, tf)]
+        case .difference:
+            return [(M --> T1,    M --> T2,    M --> ç.l_(T1, T2), tf),
+                    (M --> T1,    M --> T2,    M --> ç.l_(T2, T1), tf),
+                    (T1 --> M,    T2 --> M,    ç.ø_(T1, T2) --> M, tf),
+                    (T1 --> M,    T2 --> M,    ç.ø_(T2, T1) --> M, tf)]
         }
     }
 }

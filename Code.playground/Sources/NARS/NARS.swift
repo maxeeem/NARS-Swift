@@ -8,7 +8,7 @@ public enum Sentence {
     
     /// default wait time in milliseconds (0.001s)
     /// neurons spike between 5ms and 1000ms
-    public static var pause: Sentence { .pause(1000) }
+    public static var pause: Sentence { .pause(10000) }
 }
 
 public final class NARS {
@@ -48,9 +48,9 @@ public final class NARS {
                 let ms = 1000 // millisecond
                 usleep(useconds_t(t * ms))
             }
-            iqueue.isSuspended = true
-            iqueue.cancelAllOperations()
-            iqueue.isSuspended = false
+//            iqueue.isSuspended = true
+//            iqueue.cancelAllOperations()
+//            iqueue.isSuspended = false
         }
     }
 }
@@ -77,9 +77,18 @@ extension NARS {
 //        print(derivedJudgements)
         if derivedJudgements.isEmpty { 
             if case .question = input {
-                output("\tI don't know 🤷‍♂️")
-            } 
-            return 
+//                output("\t(1)I don't know 🤷‍♂️")
+                output("thinking...")
+                // iqueue.addOperations([MemCopy(self)], waitUntilFinished: true)
+                iqueue.addOperation {
+                    self.imagination = self.memory.copy()
+                    //imagine()
+                    // re-process question
+                    self.process(input)
+                }
+            } else {
+                return
+            }
         }
         
         // helper
@@ -147,7 +156,7 @@ extension NARS {
             } else if let winner = derivedJudgements.first {
                 output(".  💡 \(winner)")
             } else {
-                output("\tI don't know 🤷‍♂️")
+                output("\t(2)I don't know 🤷‍♂️")
             }
             
         case .pause: 

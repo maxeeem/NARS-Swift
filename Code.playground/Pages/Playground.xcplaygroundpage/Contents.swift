@@ -8,7 +8,7 @@
 import Foundation 
 import PlaygroundSupport
 
-var verbose = true
+var verbose = false
 
 let output = Output()
 output.isVerbose = verbose
@@ -65,20 +65,20 @@ DispatchQueue.global().async {
         
     nars.perform(defaultScript)
     
-    debugPrint(nars.memory)
+    //debugPrint(nars.memory)
       
     output.reset()
  
     nars.perform(
         (robin-->bird)-*,
         (robin-->animal)-?,
-        .pause(50)
+        .pause
     )
     
     timestamp = Date().timeIntervalSinceReferenceDate - timestamp
     print(timestamp)
 //    sleep(5)
-    debugPrint(nars.memory)
+    //debugPrint(nars.memory)
     //print(nars.pendingTasks)
 
         
@@ -91,7 +91,7 @@ DispatchQueue.global().async {
         .pause
     )
     
-    debugPrint(nars.memory)
+    //debugPrint(nars.memory)
     
     output.reset()
         

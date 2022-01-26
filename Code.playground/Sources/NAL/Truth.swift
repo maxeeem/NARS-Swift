@@ -46,6 +46,8 @@ extension TruthValue {
         case .resemblance:     return r~resemblance
             
         case .intersection:    return r~intersection
+        case .union:           return r~union
+        case .difference:      return r~difference
         }
     }
     
@@ -117,6 +119,20 @@ extension TruthValue {
         let (f1, f2) = (tv1.frequency, tv2.frequency)
         let (c1, c2) = (tv1.confidence, tv2.confidence)
         let f = and(f1, f2)
+        let c = and(c1, c2)
+        return TruthValue(f, c)
+    }
+    static var union: TruthFunction = { (tv1, tv2) in
+        let (f1, f2) = (tv1.frequency, tv2.frequency)
+        let (c1, c2) = (tv1.confidence, tv2.confidence)
+        let f = or(f1, f2)
+        let c = and(c1, c2)
+        return TruthValue(f, c)
+    }
+    static var difference: TruthFunction = { (tv1, tv2) in
+        let (f1, f2) = (tv1.frequency, tv2.frequency)
+        let (c1, c2) = (tv1.confidence, tv2.confidence)
+        let f = and(f1, not(f2))
         let c = and(c1, c2)
         return TruthValue(f, c)
     }

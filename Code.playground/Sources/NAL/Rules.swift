@@ -21,6 +21,8 @@ public enum Rules: String, CaseIterable {
     case resemblance
     // Compositional
     case intersection
+    case union
+    case difference
 }
 
 extension Rules {
@@ -123,6 +125,22 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 let pTerm2 = term(at: pT2, in: terms)!
                 let compound = ç.connect(pTerm1, ct, pTerm2)
                 statement = Statement(sTerm, c.copula, compound)
+                
+            } else if case .compound(let ct, let ts) = c.subject, ts.count == 2 { // compound term
+                    
+                    // TODO: check that compounds do not contain each other
+                    
+                    // apply composition
+                    let predicate = firstIndex(of: c.predicate, in: terms)! // M, 0
+                    let sT1 = firstIndex(of: ts[0], in: terms)!
+                    let sT2 = firstIndex(of: ts[1], in: terms)!
+                    terms = t1.terms + t2.terms
+                    let pTerm = term(at: predicate, in: terms)!
+                    let sTerm1 = term(at: sT1, in: terms)!
+                    let sTerm2 = term(at: sT2, in: terms)!
+                    let compound = ç.connect(sTerm1, ct, sTerm2)
+                    statement = Statement(compound, c.copula, pTerm)
+                
             } else {
                 let subject = firstIndex(of: c.subject, in: terms)!
                 let predicate = firstIndex(of: c.predicate, in: terms)!
