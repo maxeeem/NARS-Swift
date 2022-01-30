@@ -8,7 +8,8 @@ public enum Sentence {
     
     /// default wait time in milliseconds (0.001s)
     /// neurons spike between 5ms and 1000ms
-    public static var pause: Sentence { .pause(10000) }
+    public static var pause: Sentence { .pause(defaultPause) }
+    public static var defaultPause = 10000
 }
 
 public final class NARS {
@@ -121,7 +122,7 @@ extension NARS {
 
                 if let winner = derivedJudgements.first, winner.statement == statement {
                     
-                    if !userInitiated {
+//                    if !userInitiated {
                         // cancel all in-flight activities
 //                        dreaming = false
                         iqueue.isSuspended = true
@@ -132,7 +133,7 @@ extension NARS {
                         process(.judgement(winner),
                                      recurse: false, // determines if derived judgements are inserted
                                      userInitiated: true) // will cause insertion into main memory
-                    }
+//                    }
                     
                     output(".  💡 \(winner)")
                     

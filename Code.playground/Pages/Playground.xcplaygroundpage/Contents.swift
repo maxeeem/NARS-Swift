@@ -41,6 +41,8 @@ output.reset = {
     output.text += "\n/// memory reset"
 }
 
+Sentence.defaultPause = 13000 // set default pause duration (ms)
+
 let defaultScript = [
     ("bird" --> "animal")-*, // (1, 0.9)
     ( robin -->  bird   )-*,
