@@ -35,16 +35,26 @@ public func -* (_ s: Statement, _ fc: (Double, Double)) -> Judgement {
 postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Judgement {
-        s.subject == s.predicate ?
-            s -* (1, 1) // tautology
-        :
-            s -* (1, 0.9) // fact
+        switch s {
+        case .term:
+            return s -* (1, 0.9)
+        case .statement(let subject, _, let predicate):
+            return subject == predicate ?
+                s -* (1, 1) // tautology
+                :
+                s -* (1, 0.9) // fact
+        }
     }
 }
 
 extension Statement {
     var isTautology: Bool {
-        copula == .inheritance && subject == predicate
+        switch self {
+        case .term:
+            return false
+        case .statement(let subject, let copula, let predicate):
+            return copula == .inheritance && subject == predicate
+        }
     }
 }
 
@@ -64,7 +74,7 @@ extension Statement {
 //    }
 //}
 
-
+/*
 extension Copula {
     var term: Term { .word(rawValue) }
 }
@@ -83,22 +93,38 @@ extension Term {
         }
     }
 }
+*/
 
 extension Statement {
     public init(_ subject: Term, _ copula: Copula, _ predicate: Term) {
-        self.subject = subject
-        self.copula = copula
-        self.predicate = predicate
+        self = .statement(subject, copula, predicate)
     }
-    public var terms: (Term, Term) { (subject, predicate) }
+    public var terms: [Term] { // TODO: can this be an array?
+        switch self {
+        case .term(let term):
+            return [term]
+        case .statement(let subject, _, let predicate):
+            return [subject, predicate]
+        }
+    }
     public var simplicity: Double {
-        subject.simplicity + predicate.simplicity
+        switch self {
+        case .term(let term):
+            return term.simplicity
+        case .statement(let subject, _, let predicate):
+            return subject.simplicity + predicate.simplicity
+        }
     }
 }
 
-public func ==(_ s1: Statement, s2: Statement) -> Bool {
-    s1.copula == s2.copula && s1.terms == s2.terms
-}
+// TODO: do we now get Equatable conformance for free with Statement being an enum?
+
+//public func ==(_ s1: Statement, s2: Statement) -> Bool {
+//    if case .term(let t1) = s1, case .term(let t2) = s2 {
+//        return t1 == t2
+//    }
+//    s1.copula == s2.copula && s1.terms == s2.terms
+//}
 
 extension Judgement {
     public init(_ statement: Statement, _ truthValue: TruthValue) {
@@ -168,6 +194,8 @@ extension Term: CustomStringConvertible {
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }
+        case .statement(let statement):
+            return "\(statement)"
         }
     }
 }
@@ -224,7 +252,12 @@ extension Judgement: CustomStringConvertible {
 
 extension Statement: CustomStringConvertible {
     public var description: String {
-        "\(subject) " + copula.rawValue + " \(predicate)"
+        switch self {
+        case .term(let term):
+            return "\(term)"
+        case .statement(let subject, let copula, let predicate):
+            return "\(subject) " + copula.rawValue + " \(predicate)"
+        }
     }
 }
 

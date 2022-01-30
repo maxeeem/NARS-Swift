@@ -13,10 +13,14 @@ public enum Question: Equatable {
     case special(Copula, Term)
 }
 
-public struct Statement: Hashable {
-    public let subject: Term
-    public let copula: Copula
-    public let predicate: Term
+//public struct Statement: Hashable {
+//    public let subject: Term
+//    public let copula: Copula
+//    public let predicate: Term
+//}
+public enum Statement: Hashable {
+    case term(Term)
+    case statement(Term, Copula, Term)
 }
 
 public enum Connector: String {
@@ -110,15 +114,20 @@ public indirect enum Term: Hashable {
     case instance(Term)
     case property(Term)
     case compound(Connector, [Term])
+    case statement(Statement)
 }
 
 extension Term {
     var terms: [Term] {
         switch self {
+        case .word,
+             .instance,
+             .property:
+            return [self]
         case .compound(_, let terms):
             return terms
-        default:
-            return [self]
+        case .statement(let statement):
+            return statement.terms
         }
     }
     
@@ -128,8 +137,12 @@ extension Term {
              .instance,
              .property:
             return 1
-        case.compound(_, let terms):
+        case .compound(_, let terms):
             return 1 + terms
+                .map { $0.complexity }
+                .reduce(0, +)
+        case .statement(let statement):
+            return 1 + statement.terms
                 .map { $0.complexity }
                 .reduce(0, +)
         }

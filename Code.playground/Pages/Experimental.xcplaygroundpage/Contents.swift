@@ -31,7 +31,8 @@ print(statement, "\n")
 
 print(TruthValue.induction(TruthValue(1, 0.9), TruthValue(0, 0.9)))
 
-
+/*
+ 
 // military uses made up language to teach their staff
 // use it to teach nars
 
@@ -94,6 +95,7 @@ extension Connector {
     var term: Term! { Term.word(rawValue) }
 }
 
+*/
 
 // English "I" refers to Narsese "SELF"
 //
@@ -101,6 +103,8 @@ extension Connector {
 // "Hi, I'm \(name) 👋"
 
 // experimental
+
+/*
 
 print("Hi, I'm \(name) 👋")
 print() // ready for input
@@ -114,6 +118,7 @@ let reproduced = Term(compound.description)
 print("Swift: ", reproduced == compound)
 print("Swift: ", reproduced?.compoundStatement ?? "")
 
+*/
 
 // Quine ( translates between Swift and Narsese )
 

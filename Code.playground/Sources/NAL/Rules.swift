@@ -41,7 +41,15 @@ extension Rules {
 // MARK: Rule application
 
 let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
-    let (p1, p2, c, tf) = arg
+    var (p1, p2, c, tf) = arg
+    
+    // add implicit terms
+    if case .term(let t) = p1 {
+        p1 = .statement(.word("E"), .implication, t)
+    } else if case .term(let t) = p2 {
+        p2 = .statement(.word("E"), .implication, t)
+    }
+    
     let commonTerms = identifyCommonTerms((p1, p2))
     let total = countTruths(in: commonTerms)
     if //total == 4 || // .identity
@@ -85,8 +93,14 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         let ct4 = commonTerms.3 == true ? xc : // bird
             commonTerms.3 == false ? x1 : // animal
             x2 // robin
-        let s1 = Statement(ct1!, p1.copula, ct2!)
-        let s2 = Statement(ct3!, p2.copula, ct4!)
+        
+        guard case .statement(_, let c1, _) = p1,
+              case .statement(_, let c2, _) = p2 else {
+            return nil // should never happen
+        }
+        
+        let s1 = Statement(ct1!, c1, ct2!)
+        let s2 = Statement(ct3!, c2, ct4!)
         
 //        print(s1, s2)
 //        print("))))", c.predicate)
@@ -111,12 +125,18 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             var statement: Statement!
             var terms = p1.terms + p2.terms
             
-            if case .compound(let ct, let ts) = c.predicate, ts.count == 2 { // compound term
+            // from original conclusion (c) get
+            // subject (cs) copula (cc) predicate (cp)
+            guard case .statement(let cs, let cc, let cp) = c else {
+                return nil // should never happen
+            }
+            
+            if case .compound(let ct, let ts) = cp, ts.count == 2 { // compound term
                 
                 // TODO: check that compounds do not contain each other
                 
                 // apply composition
-                let subject = firstIndex(of: c.subject, in: terms)! // M, 0
+                let subject = firstIndex(of: cs, in: terms)! // M, 0
                 let pT1 = firstIndex(of: ts[0], in: terms)!
                 let pT2 = firstIndex(of: ts[1], in: terms)!
                 terms = t1.terms + t2.terms
@@ -124,14 +144,14 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 let pTerm1 = term(at: pT1, in: terms)!
                 let pTerm2 = term(at: pT2, in: terms)!
                 let compound = ç.connect(pTerm1, ct, pTerm2)
-                statement = Statement(sTerm, c.copula, compound)
+                statement = Statement(sTerm, cc, compound)
                 
-            } else if case .compound(let ct, let ts) = c.subject, ts.count == 2 { // compound term
+            } else if case .compound(let ct, let ts) = cs, ts.count == 2 { // compound term
                     
                     // TODO: check that compounds do not contain each other
                     
                     // apply composition
-                    let predicate = firstIndex(of: c.predicate, in: terms)! // M, 0
+                    let predicate = firstIndex(of: cp, in: terms)! // M, 0
                     let sT1 = firstIndex(of: ts[0], in: terms)!
                     let sT2 = firstIndex(of: ts[1], in: terms)!
                     terms = t1.terms + t2.terms
@@ -139,13 +159,18 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     let sTerm1 = term(at: sT1, in: terms)!
                     let sTerm2 = term(at: sT2, in: terms)!
                     let compound = ç.connect(sTerm1, ct, sTerm2)
-                    statement = Statement(compound, c.copula, pTerm)
+                    statement = Statement(compound, cc, pTerm)
                 
             } else {
-                let subject = firstIndex(of: c.subject, in: terms)!
-                let predicate = firstIndex(of: c.predicate, in: terms)!
+                let subject = firstIndex(of: cs, in: terms)!
+                let predicate = firstIndex(of: cp, in: terms)!
                 terms = t1.terms + t2.terms
-                statement = Statement(term(at: subject, in: terms)!, c.copula, term(at: predicate, in: terms)!)
+                statement = Statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
+            }
+            
+            // remove implicit terms
+            if case .statement(let s, let c, let p) = statement, s == .word("E"), c == .implication {
+                statement = .term(p)
             }
             
             let truthValue = statement.isTautology ? TruthValue(1, 1) : tf(j1.truthValue, j2.truthValue)
@@ -225,8 +250,9 @@ internal typealias Terms  = Quadra<Term>
 
 public typealias Quadra<T: Equatable> = (T, T, T, T)
 
-private func +(_ a: (Term, Term), b: (Term, Term)) -> Terms {
-    (a.0, a.1, b.0, b.1)
+private func +(_ a: [Term], b: [Term]) -> Terms {
+    assert(a.count == 2 && b.count == 2)
+    return (a[0], a[1], b[0], b[1])
 }
 
 private func firstIndex<T>(of t: T, in q: Quadra<T>) -> Int? {

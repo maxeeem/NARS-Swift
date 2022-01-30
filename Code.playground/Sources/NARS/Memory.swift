@@ -9,7 +9,12 @@ extension Bag where I == Concept {
     }
     func consider(_ j: Judgement) -> [Judgement] {
         consider(j.statement) { c in
-            c.accept(j, subject: c.term == j.statement.subject)
+            switch j.statement {
+            case .term(let term):
+                return c.accept(j, isSubject: c.term == term)
+            case .statement(let subject, _, _):
+                return c.accept(j, isSubject: c.term == subject)
+            }
         }
     }
     func consider(_ q: Question) -> [Judgement] {
@@ -28,13 +33,21 @@ extension Bag where I == Concept {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
-        var subjectConcept = get(s.subject.description) ?? Concept(term: s.subject)
-        var predicateConcept = get(s.predicate.description) ?? Concept(term: s.predicate)
-        derivedJudgements.append(contentsOf: f(&subjectConcept))
-        derivedJudgements.append(contentsOf: f(&predicateConcept))
-        put(subjectConcept)
-        put(predicateConcept)
-        return derivedJudgements
+        switch s {
+        case .term(let term):
+            var concept = get(term.description) ?? Concept(term: term)
+            derivedJudgements.append(contentsOf: f(&concept))
+            put(concept)
+            return derivedJudgements
+        case .statement(let subject, _, let predicate):
+            var subjectConcept = get(subject.description) ?? Concept(term: subject)
+            var predicateConcept = get(predicate.description) ?? Concept(term: predicate)
+            derivedJudgements.append(contentsOf: f(&subjectConcept))
+            derivedJudgements.append(contentsOf: f(&predicateConcept))
+            put(subjectConcept)
+            put(predicateConcept)
+            return derivedJudgements
+        }
     }
     private func consider(_ t: Term, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         guard var concept = get(t.description) else { return [] }

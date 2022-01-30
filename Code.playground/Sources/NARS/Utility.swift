@@ -43,12 +43,17 @@ extension Task: Copying {
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
         let s = f()
-        if case .word(let term) = s.predicate, term.description == "?" {
-            self = .general(s.subject, s.copula)
-        } else if case .word(let term) = s.subject, term.description == "?" {
-            self = .special(s.copula, s.predicate)
-        } else {
+        switch s {
+        case .term:
             self = .statement(s)
+        case .statement(let subject, let copula, let predicate):
+            if case .word(let term) = predicate, term.description == "?" {
+                self = .general(subject, copula)
+            } else if case .word(let term) = subject, term.description == "?" {
+                self = .special(copula, predicate)
+            } else {
+                self = .statement(s)
+            }
         }
     }
     public var variableTerm: Term! {

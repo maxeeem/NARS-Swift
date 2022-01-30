@@ -52,14 +52,19 @@ public struct Concept: Item {
 
 extension Concept {
     // returns derived judgements if any
-    mutating func accept(_ j: Judgement, subject: Bool = true) -> [Judgement] {
+    mutating func accept(_ j: Judgement, isSubject: Bool = true) -> [Judgement] {
         if j == lastInput { return Array(lastAccepted) }
         lastInput = j
         var judgement = j
         defer {
-            if !j.statement.isTautology {
-                let term = subject ? j.statement.predicate : j.statement.subject
+            switch j.statement {
+            case .term(let term):
                 termLinks.put(TermLink(term, 0.9))
+            case .statement(let subject, _, let predicate):
+                if !j.statement.isTautology {
+                    let term = isSubject ? predicate : subject
+                    termLinks.put(TermLink(term, 0.9))
+                }
             }
             beliefs.put(judgement + 0.9) // put back original belief 
         }
@@ -91,11 +96,21 @@ extension Concept {
             result = answer(statement)
         case .general(let term, let copula):
             result = answer { s in
-                s.subject == term && s.copula == copula
+                switch s {
+                case .term(let t):
+                    return term == t
+                case .statement(let s, let c, _):
+                    return term == s && copula == c
+                }
             }
         case .special(let copula, let term):
             result = answer { s in
-                s.predicate == term && s.copula == copula
+                switch s {
+                case .term(let t):
+                    return term == t
+                case .statement(_, let c, let p):
+                    return copula == c && term == p
+                }
             }
         }
         if q == lastQuestion &&
