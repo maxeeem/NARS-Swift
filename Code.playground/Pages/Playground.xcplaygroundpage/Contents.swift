@@ -8,7 +8,7 @@
 import Foundation 
 import PlaygroundSupport
 
-var verbose = false
+var verbose = true
 
 let output = Output()
 output.isVerbose = verbose
@@ -16,7 +16,7 @@ output.onVerbose = { verbose = $0 }
 
 // set the view and indefinite execution
 PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = output
+//PlaygroundPage.current.liveView = output
 
 let robin = Term.word("robin")
 let bird = Term.word("bird")
@@ -65,7 +65,7 @@ DispatchQueue.global().async {
     
     var timestamp = Date().timeIntervalSinceReferenceDate
         
-    nars.perform(defaultScript)
+    //nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
       

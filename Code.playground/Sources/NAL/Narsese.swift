@@ -47,6 +47,7 @@ extension Connector {
     
     var term: Term { Term.word(rawValue) }
     
+    // TODO: may need to return .word("NULL") if valid compound cannot be created -- investigate
     public static func Ω_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .Ω, t2) }
     public static func U_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .U, t2) }
     public static func l_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .l, t2) }
@@ -56,7 +57,7 @@ extension Connector {
     public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, x_(t1, t2)) }
     public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, x_(t1, t2)) }
 
-    internal static func connect(_ t1: Term, _ c: Connector, _ t2: Term) -> Term {
+    internal static func connect(_ t1: Term, _ c: Connector, _ t2: Term) -> Term! {
         guard case .compound = t1, case .compound = t2 else {
             // simple terms
             return .compound(c, [t1, t2])
@@ -85,6 +86,10 @@ extension Connector {
         case .e: return .compound(.e, t1.terms + t2.terms)
         case .i: return .compound(.i, t1.terms + t2.terms)
         }
+        print("--\(t1)++\(t2)==\(res)")
+        
+        //TODO: add validation and return nil if failed
+            // used in rule_generator
         
         return .compound(con, Array(res))
     }
@@ -181,7 +186,7 @@ extension Term: ExpressibleByStringLiteral {
             self = .property(.word(value))
             return
         }
-        
+        // TODO: handle sentences as terms
         let words = value.components(separatedBy: " ")
         
         if words.count == 3,

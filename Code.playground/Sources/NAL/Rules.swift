@@ -41,6 +41,7 @@ extension Rules {
 // MARK: Rule application
 
 let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
+    // premise (p1) premise (p2) conclusion (c) truth-function (tf)
     var (p1, p2, c, tf) = arg
     
     // add implicit terms
@@ -143,7 +144,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 let sTerm = term(at: subject, in: terms)!
                 let pTerm1 = term(at: pT1, in: terms)!
                 let pTerm2 = term(at: pT2, in: terms)!
-                let compound = ç.connect(pTerm1, ct, pTerm2)
+                guard let compound = ç.connect(pTerm1, ct, pTerm2) else {
+                    return nil // invalid compound
+                }
                 statement = Statement(sTerm, cc, compound)
                 
             } else if case .compound(let ct, let ts) = cs, ts.count == 2 { // compound term
@@ -158,7 +161,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     let pTerm = term(at: predicate, in: terms)!
                     let sTerm1 = term(at: sT1, in: terms)!
                     let sTerm2 = term(at: sT2, in: terms)!
-                    let compound = ç.connect(sTerm1, ct, sTerm2)
+                    guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
+                        return nil // invalid compound
+                    }
                     statement = Statement(compound, cc, pTerm)
                 
             } else {
