@@ -3,7 +3,7 @@ public struct TruthValue: Hashable {
     let frequency: Double
     let confidence: Double
     
-    let rule: Rules // for derived values
+    let rule: Rules! // for derived values
 }
 
 extension TruthValue {
@@ -35,7 +35,6 @@ private func ~(_ r: Rules, _ tf: @escaping TruthFunction) -> TruthFunction {
 extension TruthValue {
     static func truthFunction(_ r: Rules) -> TruthFunction {
         switch r {
-        case .identity:        return r~{t,_ in t}
         case .deduction:       return r~deduction
         case .induction:       return r~induction
         case .abduction:       return r~abduction

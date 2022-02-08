@@ -8,7 +8,6 @@ public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
 
 public enum Rules: String, CaseIterable {
-    case identity
     // NAL-1
     case deduction
     case induction
@@ -65,15 +64,6 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 //        print(p1, p2, j1, j2)
 //        print("=", commonTerms)
 //        return nil
-        
-        
-        if p1.isTautology && !t1.isTautology || !p1.isTautology && t1.isTautology {
-            return nil
-        }
-        
-        if p2.isTautology && !t2.isTautology || !p2.isTautology && t2.isTautology {
-            return nil
-        }
         
         let first = firstIndex(of: false, in: commonTerms)! // 1
         let common = firstIndex(of: true, in: commonTerms)! // 0
@@ -173,12 +163,16 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 statement = Statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
             }
             
+            if statement.isTautology {
+                return nil
+            }
+            
             // remove implicit terms
             if case .statement(let s, let c, let p) = statement, s == .word("E"), c == .implication {
                 statement = .term(p)
             }
             
-            let truthValue = statement.isTautology ? TruthValue(1, 1) : tf(j1.truthValue, j2.truthValue)
+            let truthValue = tf(j1.truthValue, j2.truthValue)
             return Judgement(statement, truthValue)
         }
         return nil

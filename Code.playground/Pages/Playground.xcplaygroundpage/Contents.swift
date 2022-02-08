@@ -41,12 +41,12 @@ output.reset = {
     output.text += "\n/// memory reset"
 }
 
-Sentence.defaultPause = 13000 // set default pause duration (ms)
+Sentence.defaultPause = 10000 // set default pause duration (ms)
 
 let defaultScript = [
     ("bird" --> "animal")-*, // (1, 0.9)
     ( robin -->  bird   )-*,
-    .pause, // 1/4 seconds 
+    .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
     .pause,
@@ -65,7 +65,7 @@ DispatchQueue.global().async {
     
     var timestamp = Date().timeIntervalSinceReferenceDate
         
-    //nars.perform(defaultScript)
+    nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
       

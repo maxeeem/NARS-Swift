@@ -151,12 +151,12 @@ extension Evidence {
 }
 
 extension TruthValue {
-    public init(_ frequency: Double, _ confidence: Double, _ rule: Rules = .identity) {
+    public init(_ frequency: Double, _ confidence: Double, _ rule: Rules! = nil) {
         self.frequency = rounded(frequency)
         self.confidence = rounded(confidence)
         self.rule = rule
     }
-    init(_ ev: Evidence, _ rule: Rules = .identity) {
+    init(_ ev: Evidence, _ rule: Rules! = nil) {
         self.frequency = rounded(ev.frequency)
         self.confidence = rounded(ev.confidence)
         self.rule = rule
@@ -182,15 +182,11 @@ extension Term: CustomStringConvertible {
         switch self {
         case .word(let word):
             return word
-        case .instance(let term):
-            return term.description.first == "{" ?
-                "\(term)" : "{\(term)}"
-        case .property(let term):
-            return term.description.first == "[" ?
-                "\(term)" : "[\(term)]"
         case .compound(let connector, let terms):
             if terms.count == 2 {
                 return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
+            } else if connector == .intSet || connector == .extSet {
+                return "\(terms.map{$0.description}.joined(separator: " "))"
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }
@@ -208,26 +204,14 @@ extension Evidence: CustomStringConvertible {
 
 extension TruthValue: CustomStringConvertible {
     public var description: String {
-        "<\(frequency), \(confidence)>\(rule)"
+        let r = rule == nil ? "." : "\(rule!)"
+        return "<\(frequency), \(confidence)>\(r)"
     }
 }
 
 extension Rules: CustomStringConvertible {
     public var description: String {
-        switch self {
-        case .identity:        
-            return "."
-        default:
-            return "." + rawValue.prefix(3)
-//        case .deduction:       return ".ded"
-//        case .induction:       return ".ind"
-//        case .abduction:       return ".abd"
-//        case .conversion:      return ".con"
-//        case .exemplification: return ".exe"
-//        case .comparison:      return ".com"
-//        case .analogy:         return ".ana"
-//        case .resemblance:     return ".res"
-        }
+        "." + rawValue.prefix(3)
     }
 }
 

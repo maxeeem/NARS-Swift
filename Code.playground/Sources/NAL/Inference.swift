@@ -28,9 +28,6 @@ extension Rules {
         /// if there is no common term term identified by `true`
         /// then a conclusion could not be derived
         switch self {
-        case .identity:
-            /// all true
-            return [(S --> S, S --> S, S --> S, tf)]
         case .deduction:
             ///    true, false, nil, true
             return [(M --> P,     S --> M, S --> P, tf)]

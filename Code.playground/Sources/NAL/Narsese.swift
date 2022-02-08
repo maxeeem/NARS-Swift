@@ -13,20 +13,22 @@ public enum Question: Equatable {
     case special(Copula, Term)
 }
 
-//public struct Statement: Hashable {
-//    public let subject: Term
-//    public let copula: Copula
-//    public let predicate: Term
-//}
 public enum Statement: Hashable {
     case term(Term)
     case statement(Term, Copula, Term)
 }
 
+public indirect enum Term: Hashable {
+    case word(String)
+    case compound(Connector, [Term])
+    case statement(Statement)
+}
+
+public typealias ç = Connector
+
 public enum Connector: String {
-//    case a = "ø"
-//    case intSet = "[]"  Ω    ¡™¡!`¡``````````¡™£¢∞§¶•ªº–≠«‘“πøˆ¨¥†®´∑œåß∂ƒ©˙˙∆˚¬…æ÷≥≤µ˜∫√ç≈Ω!@#$%^&*()_+|}{":>?<
-//    case extSet = "{}"  U
+    case intSet = "[]"  /// Ω 
+    case extSet = "{}"  /// U
 
     case Ω = "⋂" /// intensional set
     case U = "⋃" /// extensional set
@@ -37,17 +39,14 @@ public enum Connector: String {
     
     case e = "/" /// extensional image
     case i = "\\" /// intensional image -- two slashes are because swift
+    
+    //    case a = "ø"
+    // ¡™¡!`¡``````````¡™£¢∞§¶•ªº–≠«‘“πøˆ¨¥†®´∑œåß∂ƒ©˙˙∆˚¬…æ÷≥≤µ˜∫√ç≈Ω!@#$%^&*()_+|}{":>?<
 }
 
-public typealias ç = Connector
-
 extension Connector {
-    public static var intSet: Connector { Ω }
-    public static var extSet: Connector { U }
-    
     var term: Term { Term.word(rawValue) }
     
-    // TODO: may need to return .word("NULL") if valid compound cannot be created -- investigate
     public static func Ω_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .Ω, t2) }
     public static func U_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .U, t2) }
     public static func l_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .l, t2) }
@@ -58,17 +57,26 @@ extension Connector {
     public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, x_(t1, t2)) }
 
     internal static func connect(_ t1: Term, _ c: Connector, _ t2: Term) -> Term! {
-        guard case .compound = t1, case .compound = t2 else {
-            // simple terms
-            return .compound(c, [t1, t2])
-        }
-        var res: Set<Term> = []
+        var con = c
         let t1t = Set(t1.terms)
         let t2t = Set(t2.terms)
-        var con = c
-
+        var res = t1t.union(t2t)
+        
+        guard case .compound = t1, case .compound = t2 else {
+            // at least one term is a simple term
+            guard t1t.intersection(t2t).isEmpty else {
+                return nil // terms should not contain each other
+            }
+            return validate(res) ? .compound(c, [t1, t2]) : nil
+        }
+        
         // TODO: should we be filtering terms by intensional/extensional?
+        
         switch c {
+        /// definition 7.1 -- intensional/extensional sets
+        case .intSet: res = t1t.union(t2t)
+        case .extSet: res = t1t.union(t2t)
+        
         /// definition 7.6 -- extensional intersection
         case .Ω: res = t1t.intersection(t2t)
         /// definition 7.7 -- intensional intersection
@@ -86,12 +94,33 @@ extension Connector {
         case .e: return .compound(.e, t1.terms + t2.terms)
         case .i: return .compound(.i, t1.terms + t2.terms)
         }
-        print("--\(t1)++\(t2)==\(res)")
         
-        //TODO: add validation and return nil if failed
-            // used in rule_generator
+        // MARK: Validation
         
-        return .compound(con, Array(res))
+        // intention/extension sets are allowed one component
+        if res.count == 1, case .compound(let c, _) = res.first, c == .intSet || c == .extSet {
+            return .compound(con, Array(res))
+        }
+        
+        return validate(res) ? .compound(con, Array(res)) : nil
+    }
+    
+    /// MARK: helpers
+    private static func getTerms(_ t: Term) -> [Term] {
+        if t.terms.count == 1 {
+            return t.terms
+        }
+        return t.terms.flatMap { getTerms($0) }
+    }
+    
+    private static func validate(_ s: Set<Term>) -> Bool {
+        if s.count < 2 { return false }
+        // check if terms contain each other
+        let result = s.flatMap { getTerms($0) }
+        if result.count != Set(result).count {
+            return false 
+        }
+        return true
     }
 }
 
@@ -114,20 +143,13 @@ extension Connector {
 //    func compound(_ t: a, _ ts: [a]) -> a
 //}
 
-public indirect enum Term: Hashable {
-    case word(String)
-    case instance(Term)
-    case property(Term)
-    case compound(Connector, [Term])
-    case statement(Statement)
-}
-
 extension Term {
+    static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t])}
+    static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
+    
     var terms: [Term] {
         switch self {
-        case .word,
-             .instance,
-             .property:
+        case .word:
             return [self]
         case .compound(_, let terms):
             return terms
@@ -138,9 +160,7 @@ extension Term {
     
     public var complexity: Double {
         switch self {
-        case .word,
-             .instance,
-             .property:
+        case .word:
             return 1
         case .compound(_, let terms):
             return 1 + terms
