@@ -52,7 +52,7 @@ public struct Concept: Item {
 
 extension Concept {
     // returns derived judgements if any
-    mutating func accept(_ j: Judgement, isSubject: Bool = true) -> [Judgement] {
+    mutating func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
         if j == lastInput { return Array(lastAccepted) }
         lastInput = j
         var judgement = j
@@ -73,13 +73,20 @@ extension Concept {
             // revision goes first
             judgement = revision(j1: j, j2: b.judgement)
         } // wait to put back original belief to process another one 
-        if let b = beliefs.get() {
+        if derive, let b = beliefs.get() {
+            // TODO: wait to put back
+            // modify its "usefullness" value 
             beliefs.put(b) // put back another belief
             // apply rules
             let derived = Rules.allCases
                 .flatMap { r in r.apply((b.judgement, judgement)) }
                 .compactMap { $0 }
             lastAccepted = Set(derived)
+            if !derived.isEmpty {
+//                print("because...")
+//                print("+++", b, "\n", "&&", j)
+//                print("it follows...")
+            }
             return derived
         }
         // values will be different if revision happened 

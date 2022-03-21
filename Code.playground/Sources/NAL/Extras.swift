@@ -54,6 +54,7 @@ extension Statement {
             return false
         case .statement(let subject, let copula, let predicate):
             return copula == .inheritance && subject == predicate
+//                Set(subject.terms).intersection(Set(predicate.terms)).isEmpty == false
         }
     }
 }

@@ -1,27 +1,27 @@
 
 extension Bag where I == Concept {
-    func consider(_ s: Sentence) -> [Judgement] {
+    func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
-        case .judgement(let j): return consider(j)
-        case .question(let q): return consider(q)
+        case .judgement(let j): return consider(j, derive: derive)
+        case .question(let q): return consider(q, derive: derive)
         case .pause: return []
         }
     }
-    func consider(_ j: Judgement) -> [Judgement] {
-        consider(j.statement) { c in
+    func consider(_ j: Judgement, derive: Bool) -> [Judgement] {
+        consider(j.statement, derive: derive) { c in
             switch j.statement {
             case .term(let term):
-                return c.accept(j, isSubject: c.term == term)
+                return c.accept(j, isSubject: c.term == term, derive: derive)
             case .statement(let subject, _, _):
-                return c.accept(j, isSubject: c.term == subject)
+                return c.accept(j, isSubject: c.term == subject, derive: derive)
             }
         }
     }
-    func consider(_ q: Question) -> [Judgement] {
+    func consider(_ q: Question, derive: Bool) -> [Judgement] {
         if case .statement(let statement) = q {
-            return consider(statement) { c in c.answer(q) }
+            return consider(statement, derive: derive) { c in c.answer(q) }
         } else {
-            return consider(q.variableTerm) { c in c.answer(q) }
+            return consider(q.variableTerm, derive: derive) { c in c.answer(q) }
         }
     }
 }
@@ -29,7 +29,7 @@ extension Bag where I == Concept {
 // MARK: Private
 
 extension Bag where I == Concept {
-    private func consider(_ s: Statement, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
+    private func consider(_ s: Statement, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
@@ -49,7 +49,7 @@ extension Bag where I == Concept {
             return derivedJudgements
         }
     }
-    private func consider(_ t: Term, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
+    private func consider(_ t: Term, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         guard var concept = get(t.description) else { return [] }
         defer { put(concept) } // put back
         return f(&concept)

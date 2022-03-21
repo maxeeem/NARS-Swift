@@ -9,7 +9,7 @@ public enum Sentence {
     /// default wait time in milliseconds (0.001s)
     /// neurons spike between 5ms and 1000ms
     public static var pause: Sentence { .pause(defaultPause) }
-    public static var defaultPause = 10000
+    public static var defaultPause = 1000
 }
 
 public final class NARS {
@@ -22,6 +22,7 @@ public final class NARS {
 //    private var dreaming = false // TODO: workaround to avoid using OperationQueue
     
 //    public var pendingTasks = Bag<Task>()
+    private var lastQuestion: Statement?
     
     public init(_ name: String = "𝝥𝝠𝗟", _ output: @escaping (String) -> Void = { print($0) }) {
         self.name = name
@@ -60,26 +61,52 @@ public final class NARS {
 
 extension NARS {
     private func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
+        var recurse = recurse
+        var userInitiated = userInitiated
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
         
+        if userInitiated, case .question(let q) = input, case .statement(let s) = q {
+            lastQuestion = s
+        }
+        /*
+        if case .judgement(let j) = input, lastQuestion == j.statement {
+            iqueue.isSuspended = true
+            iqueue.cancelAllOperations()
+            iqueue.isSuspended = false
+                /*
+            // process winning judgement
+            process(.judgement(j),
+                    recurse: false, // determines if derived judgements are inserted
+                    userInitiated: true) // will cause insertion into main memory
+            //                    }
+ */
+            recurse = false
+            userInitiated = true
+            output(".  💡 \(j)")
+            return
+        }
+ */
         // memory or imagination
-        var derivedJudgements = (userInitiated ? memory : imagination).consider(input)
-        derivedJudgements = derivedJudgements.filter({ j in
-            if j.truthValue.confidence == 0 {
-                return false
-            }
-            if case .judgement(let judgement) = input, (judgement.statement == j.statement) || judgement.statement.isTautology {
-                return false
-            }
-            return true
-        })
-        
-        derivedJudgements = Array(Set(derivedJudgements))
+        var derivedJudgements: [Judgement] = {
+            var derivedJudgements = (userInitiated ? memory : imagination).consider(input, derive: recurse)
+            derivedJudgements = derivedJudgements.filter({ j in
+                if j.truthValue.confidence == 0 {
+                    return false
+                }
+                if case .judgement(let judgement) = input, (judgement.statement == j.statement) || judgement.statement.isTautology {
+                    return false
+                }
+                return true
+            })
+            derivedJudgements = Array(Set(derivedJudgements))
 //        print(derivedJudgements)
+            return derivedJudgements
+        }()
+        
         if derivedJudgements.isEmpty { 
             if case .question = input {
 //                output("\t(1)I don't know 🤷‍♂️")
-                output("thinking...")
+                output("thinking... \(input)")
                 // iqueue.addOperations([MemCopy(self)], waitUntilFinished: true)
                 iqueue.addOperation {
                     self.imagination = self.memory.copy()
