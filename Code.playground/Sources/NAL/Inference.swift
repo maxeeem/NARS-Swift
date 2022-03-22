@@ -17,6 +17,16 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
             and(j2.truthValue.e, j1.statement.simplicity)) ? j1 : j2
 }
 
+public func conversion(j1: Judgement) -> Judgement? {
+    guard case .statement(let s, let copula, let p) = j1.statement,
+          copula == .inheritance || copula == .implication else {
+        return nil // invalid statement
+    }
+    let (f, c) = (j1.truthValue.f, j1.truthValue.c)
+    let c1 = f * c / (f * c + k)
+    return Statement(p, copula, s)-*(1, c1)
+}
+
 extension Rules {
     public var rule: [Rule] {
         let S = Term.word("S")
@@ -37,9 +47,6 @@ extension Rules {
         case .abduction:
             ///    false, true, nil, true
             return [(P --> M,     S --> M, S --> P, tf)]
-        case .conversion:
-            ///    false, true, true, true
-            return [(P --> S,     S --> S, S --> P, tf)]
         case .exemplification:
             ///    false, true, true, nil
             return [(P --> M,     M --> S, S --> P, tf)]

@@ -38,7 +38,6 @@ extension TruthValue {
         case .deduction:       return r~deduction
         case .induction:       return r~induction
         case .abduction:       return r~abduction
-        case .conversion:      return r~conversion
         case .exemplification: return r~exemplification
         case .comparison:      return r~comparison
         case .analogy:         return r~analogy
@@ -72,11 +71,6 @@ extension TruthValue {
         let total = and(f1, c1, c2) // w
         let evidence = Evidence(positive, total)
         return TruthValue(evidence)
-    }
-    static var conversion: TruthFunction = { (tv1, _) in
-        let (f, c) = (tv1.f, tv1.c)
-        let c1 = f * c / (f * c + k)
-        return TruthValue(1, c1)
     }
     static var exemplification: TruthFunction = { (tv1, tv2) in
         let (f1, f2) = (tv1.frequency, tv2.frequency)

@@ -12,7 +12,6 @@ public enum Rules: String, CaseIterable {
     case deduction
     case induction
     case abduction
-    case conversion
     case exemplification
     // NAL-2
     case comparison

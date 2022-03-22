@@ -206,7 +206,9 @@ extension Evidence: CustomStringConvertible {
 extension TruthValue: CustomStringConvertible {
     public var description: String {
         let r = rule == nil ? "." : "\(rule!)"
-        return "<\(frequency), \(confidence)>\(r)"
+        let f = String(format: "%.2f", frequency)
+        let c = String(format: "%.2f", confidence)
+        return "%\(f);\(c)%\(r)"
     }
 }
 
@@ -231,7 +233,7 @@ extension Question: CustomStringConvertible {
 
 extension Judgement: CustomStringConvertible {
     public var description: String {
-        "\(statement)" + "\(truthValue)"
+        "<\(statement)>. " + "\(truthValue)"
     }
 }
 
@@ -254,6 +256,6 @@ extension Array where Element == Bool {
 
 
 /// from https://stackoverflow.com/a/38036978
-public func rounded(_ d: Double, _ x: Int = 10000) -> Double {
+public func rounded(_ d: Double, _ x: Int = 100) -> Double {
     (d * Double(x)).rounded() / Double(x)
 }

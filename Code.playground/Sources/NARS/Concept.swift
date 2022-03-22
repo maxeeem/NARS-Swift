@@ -56,6 +56,7 @@ extension Concept {
         if j == lastInput { return Array(lastAccepted) }
         lastInput = j
         var judgement = j
+        var converted: Judgement?
         defer {
             switch j.statement {
             case .term(let term):
@@ -66,21 +67,40 @@ extension Concept {
                     termLinks.put(TermLink(term, 0.9))
                 }
             }
-            beliefs.put(judgement + 0.9) // put back original belief 
+            beliefs.put(judgement + 0.9) // put back original belief
+            
+            if let c = converted { // store result of conversion
+                beliefs.put(c + 0.9)
+            }
         }
+        
+        var derived: [Judgement] = []
+        
         /// apply rules
         if let b = beliefs.get(j.statement.description) {
             // revision goes first
             judgement = revision(j1: j, j2: b.judgement)
-        } // wait to put back original belief to process another one 
+            // wait to put back original belief to process another one
+            derived.append(judgement)
+        } else {
+            // apply conversion
+            if let c = conversion(j1: j) {
+                converted = c
+                derived.append(c)
+            }
+        }
         if derive, let b = beliefs.get() {
             // TODO: wait to put back
             // modify its "usefullness" value 
             beliefs.put(b) // put back another belief
             // apply rules
-            let derived = Rules.allCases
-                .flatMap { r in r.apply((b.judgement, judgement)) }
+            let results = Rules.allCases
+                .flatMap { r in
+                    r.apply((b.judgement, judgement))
+                    + r.apply((judgement, b.judgement)) // switch order of premises
+                }
                 .compactMap { $0 }
+            derived.append(contentsOf: results)
             lastAccepted = Set(derived)
             if !derived.isEmpty {
 //                print("because...")
@@ -89,9 +109,7 @@ extension Concept {
             }
             return derived
         }
-        // values will be different if revision happened 
-        let derived = j == judgement ? [] : [judgement]
-        lastAccepted = Set(derived)
+        lastAccepted = Set(derived) // TODO: filter out symmetric duplicates eg. <->
         return derived
     }
     
@@ -139,7 +157,10 @@ extension Concept {
             beliefs.put(b) // put back
             // all other rules // backwards inference // filter out identity
             return Rules.allCases
-                .flatMap { r in r.apply((s-*, b.judgement)) }
+                .flatMap { r in
+                    r.apply((s-*, b.judgement))
+                    + r.apply((b.judgement, s-*)) // switch order of premises
+                }
                 .compactMap { $0 }
 //                .filter { j in
 //                    j != b.judgement

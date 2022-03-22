@@ -49,7 +49,7 @@ let defaultScript = [
     .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
-    .pause(5000),
+    .pause,//(5000),
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
     .pause,
@@ -74,7 +74,7 @@ DispatchQueue.global().async {
     nars.perform(
         (robin-->bird)-*,
         (robin-->animal)-?,
-        .pause(15000)
+        .pause//(15000)
     )
     
     timestamp = Date().timeIntervalSinceReferenceDate - timestamp
@@ -154,6 +154,48 @@ DispatchQueue.global().async {
         knowledge-*,
         .pause
     )
+    
+    output.reset()
+    
+    nars.perform(
+        ("bird"• ->• "[has_wings]"•)-*,
+        ("bird"• ->• "[can_fly]"•)-*,
+        ("bird"• --> "animal"•)-*,
+        ("dog"• --> "animal"•)-*,
+        ("dog"• ->• "[can_fly]"•)-?,
+        .pause
+    )
+    
+    output.reset()
+    
+    nars.perform(
+        ("sport"• --> "competition"•)-*,
+        ("chess"• --> "competition"•)-*,
+        .pause,
+//        ("chess"• --> "sport"•)-*(1.0, 0.4475),
+        .pause
+    )
+    
+    output.reset()
+    
+    nars.perform(
+        ("robin"• --> "animal"•)-*,
+        ("robin"• --> "bird"•)-*,
+        .pause,
+//        ("chess"• --> "sport"•)-*(1.0, 0.4475),
+        .pause
+    )
+    
+    output.reset()
+    
+    nars.perform(
+        ("tiger"• --> "animal"•)-*,
+        ("tiger"• --> "bird"•)-*(0, 0.9),
+        .pause,
+//        ("chess"• --> "sport"•)-*(1.0, 0.4475),
+        .pause
+    )
+        
 }
 
 

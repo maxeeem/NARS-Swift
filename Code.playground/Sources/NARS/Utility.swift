@@ -101,6 +101,9 @@ infix operator -* : Copula
 public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
     Sentence(s -* tv)
 }
+public func -*(_ s: Statement, _ fc: Double) -> Sentence {
+    Sentence(s -* (fc, fc))
+}
 public func -*(_ j: inout Judgement, _ tv: (Double, Double)) {
     j = j.statement -* tv
 }

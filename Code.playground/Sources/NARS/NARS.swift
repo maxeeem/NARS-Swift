@@ -93,7 +93,7 @@ extension NARS {
                 if j.truthValue.confidence == 0 {
                     return false
                 }
-                if case .judgement(let judgement) = input, (judgement.statement == j.statement) || judgement.statement.isTautology {
+                if case .judgement(let judgement) = input, j == judgement || judgement.statement.isTautology {
                     return false
                 }
                 return true
