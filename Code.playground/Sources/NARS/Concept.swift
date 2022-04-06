@@ -55,49 +55,94 @@ extension Concept {
     mutating func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
         if j == lastInput { return Array(lastAccepted) }
         lastInput = j
-        var judgement = j
-        var converted: Judgement?
         defer {
             switch j.statement {
-            case .term(let term):
-                termLinks.put(TermLink(term, 0.9))
+            case .word: fallthrough // TODO: is this accurate?
+            case .compound:
+                termLinks.put(TermLink(j.statement, 0.9))
             case .statement(let subject, _, let predicate):
                 if !j.statement.isTautology {
                     let term = isSubject ? predicate : subject
                     termLinks.put(TermLink(term, 0.9))
                 }
             }
-            beliefs.put(judgement + 0.9) // put back original belief
-            
-            if let c = converted { // store result of conversion
-                beliefs.put(c + 0.9)
-            }
+            beliefs.put(j + 0.9) // store new belief
         }
+        
+        // return if no recursion
+        guard derive else { return [] }
+
         
         var derived: [Judgement] = []
         
-        /// apply rules
+        // revision goes first
         if let b = beliefs.get(j.statement.description) {
-            // revision goes first
-            judgement = revision(j1: j, j2: b.judgement)
+            let judgement = revision(j1: j, j2: b.judgement)
             // wait to put back original belief to process another one
-            derived.append(judgement)
-        } else {
-            // apply conversion
-            if let c = conversion(j1: j) {
-                converted = c
-                derived.append(c)
+            if j != judgement {
+                derived.append(judgement)
             }
         }
-        if derive, let b = beliefs.get() {
+
+        //TODO: these rules should not produce new statements
+        // only to be used for inference and answering questions
+        //
+        // could this be taking place in imagination first?
+        
+        // conversion is special
+        if let c = conversion(j1: j), beliefs.items[c.statement.description] == nil {
+            derived.append(c)
+        }
+        /*
+        
+        // TODO: add handling of S <-> P |- S -> P |- P -> S
+        if case .statement(let s, let c, let p) = j.statement, c == .similarity {
+            let c1 = s --> p
+            if beliefs.items[c1.description] == nil {
+                var tv1 = TruthValue.deduction(j.truthValue, .tautology)
+                tv1 = TruthValue(tv1.f, tv1.c, .deduction)
+                let j1 = Judgement(c1, tv1)
+                derived.append(j1)
+            }
+            let c2 = p <-> s
+            if beliefs.items[c2.description] == nil {
+                var tv2 = TruthValue.deduction(j.truthValue, .tautology)
+                tv2 = TruthValue(tv2.f, tv2.c, .deduction)
+                let j2 = Judgement(c2, tv2)
+                derived.append(j2)
+            }
+            let c3 = p --> s
+            if beliefs.items[c3.description] == nil {
+                var tv3 = TruthValue.deduction(j.truthValue, .tautology)
+                tv3 = TruthValue(tv3.f, tv3.c, .deduction)
+                let j3 = Judgement(c3, tv3)
+                derived.append(j3)
+            }
+        }
+        */
+        
+        let results = Teoremas.allCases.flatMap {
+            $0.rules.compactMap { $0(j.statement) }
+        }.flatMap { t in
+            Rules.strong.flatMap {
+                $0.apply((j, t-*(1,1)))
+            }.compactMap { $0 }
+        }
+            
+//        print("\n\n\(j)\n\n-098765434567890-\n\n", results)
+        
+        derived.append(contentsOf: results)
+        
+        /// apply two-premise rules
+        if let b = beliefs.get() {
             // TODO: wait to put back
             // modify its "usefullness" value 
             beliefs.put(b) // put back another belief
             // apply rules
             let results = Rules.allCases
                 .flatMap { r in
-                    r.apply((b.judgement, judgement))
-                    + r.apply((judgement, b.judgement)) // switch order of premises
+                    r.apply((b.judgement, j))
+                    + r.apply((j, b.judgement)) // switch order of premises
                 }
                 .compactMap { $0 }
             derived.append(contentsOf: results)
@@ -107,9 +152,9 @@ extension Concept {
 //                print("+++", b, "\n", "&&", j)
 //                print("it follows...")
             }
-            return derived
         }
-        lastAccepted = Set(derived) // TODO: filter out symmetric duplicates eg. <->
+//            print("\n\n=========\n\n")
+//            derived.forEach { print($0) }
         return derived
     }
     
@@ -122,8 +167,9 @@ extension Concept {
         case .general(let term, let copula):
             result = answer { s in
                 switch s {
-                case .term(let t):
-                    return term == t
+                case .word: fallthrough // TODO: is this accurate?
+                case .compound:
+                    return term == s
                 case .statement(let s, let c, _):
                     return term == s && copula == c
                 }
@@ -131,8 +177,9 @@ extension Concept {
         case .special(let copula, let term):
             result = answer { s in
                 switch s {
-                case .term(let t):
-                    return term == t
+                case .word: fallthrough // TODO: is this accurate?
+                case .compound:
+                    return term == s
                 case .statement(_, let c, let p):
                     return copula == c && term == p
                 }
@@ -155,16 +202,13 @@ extension Concept {
             return [b.judgement]
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
-            // all other rules // backwards inference // filter out identity
+            // all other rules // backwards inference
             return Rules.allCases
                 .flatMap { r in
                     r.apply((s-*, b.judgement))
                     + r.apply((b.judgement, s-*)) // switch order of premises
                 }
                 .compactMap { $0 }
-//                .filter { j in
-//                    j != b.judgement
-//                }
         }
         return [] // no results found
     }

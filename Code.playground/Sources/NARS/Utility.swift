@@ -44,7 +44,9 @@ extension Question {
     public init(_ f: @autoclosure () -> Statement) {
         let s = f()
         switch s {
-        case .term:
+        case .word:
+            self = .statement(s) // TODO: is this accurate?
+        case .compound:
             self = .statement(s)
         case .statement(let subject, let copula, let predicate):
             if case .word(let term) = predicate, term.description == "?" {
@@ -101,8 +103,8 @@ infix operator -* : Copula
 public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
     Sentence(s -* tv)
 }
-public func -*(_ s: Statement, _ fc: Double) -> Sentence {
-    Sentence(s -* (fc, fc))
+public func -*(_ s: Statement, _ f: Double) -> Sentence {
+    Sentence(s -* (f, 0.9))
 }
 public func -*(_ j: inout Judgement, _ tv: (Double, Double)) {
     j = j.statement -* tv

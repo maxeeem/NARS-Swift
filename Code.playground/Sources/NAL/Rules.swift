@@ -7,6 +7,8 @@ typealias Quad   = (Bool?, Bool?, Bool?, Bool?)
 public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
 
+public typealias Infer = (Judgement) -> Judgement?
+
 public enum Rules: String, CaseIterable {
     // NAL-1
     case deduction
@@ -21,19 +23,36 @@ public enum Rules: String, CaseIterable {
     case intersection
     case union
     case difference
+    // Local
+    case similarityFromReversedInheritance
+    case inheritanceFromSimilarityAndReversedInheritance
 }
+
+
+public typealias Teorema = (Term) -> Statement?
+
+public enum Teoremas: CaseIterable {
+    case inheritance
+    case implication
+    case equivalence
+}
+
 
 extension Rules {
     var tf: TruthFunction {
-        TruthValue.truthFunction(self)
+        TruthValue.truthFunction(self, false)
+    }
+    var tfi: TruthFunction { // inverse
+        TruthValue.truthFunction(self, true)
     }
     public var apply: (_ judgements: (Judgement, Judgement)) -> [Judgement?] {
         { j in
-            self.rule.map { r in
+            self.allRules.map { r in
                 rule_generator(r)(j)
             }
         }
     }
+    static let strong: [Rules] = [.deduction, .analogy, .resemblance, .intersection, .union, .difference] // TODO: add .negation
 }
 
 // MARK: Rule application
@@ -42,27 +61,108 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
     // premise (p1) premise (p2) conclusion (c) truth-function (tf)
     var (p1, p2, c, tf) = arg
     
+    var p1I = false
+    var p2I = false
+
     // add implicit terms
-    if case .term(let t) = p1 {
-        p1 = .statement(.word("E"), .implication, t)
-    } else if case .term(let t) = p2 {
-        p2 = .statement(.word("E"), .implication, t)
+    switch p1 {
+    case .word: fallthrough
+    case .compound:
+        p1 = .statement(.word("E"), .implication, p1)
+        p1I = true
+    case .statement:
+        break
     }
-    
+    switch p2 {
+    case .word: fallthrough
+    case .compound:
+        p2 = .statement(.word("E"), .implication, p2)
+        p2I = true
+    case .statement:
+        break
+    }
+    switch c {
+    case .word: fallthrough
+    case .compound:
+        c = .statement(.word("E"), .implication, c)
+    case .statement:
+        break
+    }
+
     let commonTerms = identifyCommonTerms((p1, p2))
     let total = countTruths(in: commonTerms)
-    if //total == 4 || // .identity
-        total < 2 { // no conclusion
+    
+    if total < 2 { // no conclusion
         return { _ in nil }
+    }
+    
+    if total == 4 { // conversion
+//        let S = Term.word("S")
+//        let P = Term.word("P")
+        let terms = Set(p1.terms + p2.terms + c.terms)
+        guard terms.count == 2,
+            case .statement(let sub1, let cop1, let pre1) = p1,
+            case .statement(let sub2, let cop2, let pre2) = p2,
+            case .statement(let cs, let cc, let cp) = c else {
+            return { _ in nil }
+        }
+
+//        ("swan" --> "bird")-*,
+//        ("bird" --> "swan")-*(0.1),
+
+        return { (arg) in
+            let (j1, j2) = arg
+            let t1 = j1.statement // test
+            let t2 = j2.statement // test
+
+            let si1 = 0
+            let pi1 = 1
+            let si2 = (sub1 == sub2) ? 3 : 2
+            let pi2 = (pre1 == pre2) ? 2 : 3
+            
+            let ct1 = term(at: si1, in: (t1.terms + t2.terms)) // swan
+            let ct2 = term(at: pi1, in: (t1.terms + t2.terms)) // bird
+            let ct3 = term(at: si2, in: (t1.terms + t2.terms)) // bird
+            let ct4 = term(at: pi2, in: (t1.terms + t2.terms)) // swan
+            
+            let s1: Statement = .statement(ct1!, cop1, ct2!)
+            let s2: Statement = .statement(ct3!, cop2, ct4!)
+            
+            if s1 == t1, s2 == t2 {
+                // conclusion
+                var statement: Statement!
+                var terms = p1.terms + p2.terms
+                                
+                let subject = firstIndex(of: cs, in: terms)!
+                let predicate = firstIndex(of: cp, in: terms)!
+                terms = t1.terms + t2.terms
+                statement = .statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
+
+                if statement.isTautology {
+                    return nil
+                }
+                
+                let truthValue = tf(j1.truthValue, j2.truthValue)
+                return Judgement(statement, truthValue)
+            }
+            
+            return nil
+        }
     }
     
     return { (arg) in
         let (j1, j2) = arg
-        let t1 = j1.statement // test
-        let t2 = j2.statement // test
+        var t1 = j1.statement // test
+        var t2 = j2.statement // test
 //        print(p1, p2, j1, j2)
 //        print("=", commonTerms)
 //        return nil
+        if p1I {
+            t1 = .statement(.word("E"), .implication, t1)
+        }
+        if p2I {
+            t2 = .statement(.word("E"), .implication, t2)
+        }
         
         let first = firstIndex(of: false, in: commonTerms)! // 1
         let common = firstIndex(of: true, in: commonTerms)! // 0
@@ -89,27 +189,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             return nil // should never happen
         }
         
-        let s1 = Statement(ct1!, c1, ct2!)
-        let s2 = Statement(ct3!, c2, ct4!)
+        let s1: Statement = .statement(ct1!, c1, ct2!)
+        let s2: Statement = .statement(ct3!, c2, ct4!)
         
-//        print(s1, s2)
-//        print("))))", c.predicate)
-        
-        //        
-//        case .deduction:
-//        ///    true, false,      nil, true
-//        return (M --> P,         S --> M, S --> P, tf)
-//                bird-->animal     robin-->bird
-        
-//        let s1 = Statement(t1.subject, p1.copula, t1.predicate)
-//        let s2 = Statement(
-//            commonTerms.2 == true ? commonTerms.0 == true ?
-//            t1.subject : t1.predicate : commonTerms.1 == true ? "null"• : t2.subject
-//        , p2.copula, // validate copula
-//            commonTerms.3 == true ? commonTerms.0 == true ?
-//            t1.subject : t1.predicate : commonTerms.1 == true ? "null"• : t2.predicate
-//        )
-
         if s1 == t1, s2 == t2 {
             // conclusion
             var statement: Statement!
@@ -136,7 +218,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 guard let compound = ç.connect(pTerm1, ct, pTerm2) else {
                     return nil // invalid compound
                 }
-                statement = Statement(sTerm, cc, compound)
+                statement = .statement(sTerm, cc, compound)
                 
             } else if case .compound(let ct, let ts) = cs, ts.count == 2 { // compound term
                     
@@ -153,13 +235,13 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
                         return nil // invalid compound
                     }
-                    statement = Statement(compound, cc, pTerm)
+                statement = .statement(compound, cc, pTerm)
                 
             } else {
                 let subject = firstIndex(of: cs, in: terms)!
                 let predicate = firstIndex(of: cp, in: terms)!
                 terms = t1.terms + t2.terms
-                statement = Statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
+                statement = .statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
             }
             
             if statement.isTautology {
@@ -168,7 +250,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             
             // remove implicit terms
             if case .statement(let s, let c, let p) = statement, s == .word("E"), c == .implication {
-                statement = .term(p)
+                statement = p
             }
             
             let truthValue = tf(j1.truthValue, j2.truthValue)
@@ -177,6 +259,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         return nil
     }
 }
+
+// MARK: Helpers
 
 private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
     let t1 = arg.0.terms

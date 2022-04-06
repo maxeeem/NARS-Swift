@@ -98,7 +98,7 @@ extension NARS {
                 }
                 return true
             })
-            derivedJudgements = Array(Set(derivedJudgements))
+            derivedJudgements = Array(Set(derivedJudgements)) //TODO: use choice to additionally resolve duplicates
 //        print(derivedJudgements)
             return derivedJudgements
         }()
@@ -137,7 +137,9 @@ extension NARS {
             
             if userInitiated {
                 derivedJudgements.forEach { j in
-                    process(.judgement(j), recurse: false, userInitiated: true)
+                    process(.judgement(j),
+                            recurse: false, // determines if derived judgements are inserted
+                            userInitiated: true) // will cause insertion into main memory
                 }
             } else {
                 imagine(recurse: false)

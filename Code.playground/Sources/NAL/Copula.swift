@@ -37,13 +37,15 @@ infix operator >>|<=> : Copula //  "/<=>"
 infix operator   |<=> : Copula //  "|<=>"
 
 // NAL-1
-public func -->  (_ s: Term, p: Term) -> Statement { Statement( s    , .inheritance ,    p ) }
+public func -->  (_ s: Term, p: Term) -> Statement { .statement( s    , .inheritance ,    p ) }
 // NAL-2
-public func <->  (_ s: Term, p: Term) -> Statement { Statement( s    , .similarity  ,    p ) } 
-public func •->  (_ s: Term, p: Term) -> Statement { Statement( s•-> , .inheritance ,    p ) }
-public func ->•  (_ s: Term, p: Term) -> Statement { Statement( s    , .inheritance , ->•p ) }
-public func •->• (_ s: Term, p: Term) -> Statement { Statement( s•-> , .inheritance , ->•p ) }
+public func <->  (_ s: Term, p: Term) -> Statement { .statement( s    , .similarity  ,    p ) }
+public func •->  (_ s: Term, p: Term) -> Statement { .statement( s•-> , .inheritance ,    p ) }
+public func ->•  (_ s: Term, p: Term) -> Statement { .statement( s    , .inheritance , ->•p ) }
+public func •->• (_ s: Term, p: Term) -> Statement { .statement( s•-> , .inheritance , ->•p ) }
 
+public func =>   (_ s: Term, p: Term) -> Statement { .statement( s    , .implication ,    p ) }
+public func <=>  (_ s: Term, p: Term) -> Statement { .statement( s    , .equivalence ,    p ) }
 
 // Convenience overrides
 public func -->  (_ s: String, p: Term  ) -> Statement { s• -->  p }

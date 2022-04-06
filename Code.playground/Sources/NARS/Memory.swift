@@ -10,8 +10,9 @@ extension Bag where I == Concept {
     func consider(_ j: Judgement, derive: Bool) -> [Judgement] {
         consider(j.statement, derive: derive) { c in
             switch j.statement {
-            case .term(let term):
-                return c.accept(j, isSubject: c.term == term, derive: derive)
+            case .word: fallthrough // TODO: is this accurate?
+            case .compound:
+                return c.accept(j, isSubject: c.term == j.statement, derive: derive)
             case .statement(let subject, _, _):
                 return c.accept(j, isSubject: c.term == subject, derive: derive)
             }
@@ -21,7 +22,7 @@ extension Bag where I == Concept {
         if case .statement(let statement) = q {
             return consider(statement, derive: derive) { c in c.answer(q) }
         } else {
-            return consider(q.variableTerm, derive: derive) { c in c.answer(q) }
+            return considerT(q.variableTerm, derive: derive) { c in c.answer(q) }
         }
     }
 }
@@ -34,8 +35,9 @@ extension Bag where I == Concept {
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
         switch s {
-        case .term(let term):
-            var concept = get(term.description) ?? Concept(term: term)
+        case .word: fallthrough // TODO: is this accurate?
+        case .compound:
+            var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
             put(concept)
             return derivedJudgements
@@ -49,7 +51,8 @@ extension Bag where I == Concept {
             return derivedJudgements
         }
     }
-    private func consider(_ t: Term, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
+    // TODO: rename
+    private func considerT(_ t: Term, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         guard var concept = get(t.description) else { return [] }
         defer { put(concept) } // put back
         return f(&concept)

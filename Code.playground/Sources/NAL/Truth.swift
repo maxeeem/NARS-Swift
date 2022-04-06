@@ -22,30 +22,38 @@ extension TruthValue {
     var expectation: Double { (l + u) / 2 }
 }
 
+extension TruthValue {
+    static var tautology: TruthValue { TruthValue(1, 1) }
+}
+
 public typealias TruthFunction = (TruthValue, TruthValue) -> TruthValue
 
 infix operator ~ // rule to truth function mapping
-private func ~(_ r: Rules, _ tf: @escaping TruthFunction) -> TruthFunction {
+private func ~(_ r: (Rules, Bool), _ tf: @escaping TruthFunction) -> TruthFunction {
     { (tv1, tv2) in
-        let tv = tf(tv1, tv2)
-        return TruthValue(tv.f, tv.c, r)
+        let (rule, inverse) = r
+        let tv = inverse ? tf(tv2, tv1) : tf(tv1, tv2)
+        return TruthValue(tv.f, tv.c, rule)
     }
 }
 
 extension TruthValue {
-    static func truthFunction(_ r: Rules) -> TruthFunction {
+    static func truthFunction(_ r: Rules, _ i: Bool) -> TruthFunction {
         switch r {
-        case .deduction:       return r~deduction
-        case .induction:       return r~induction
-        case .abduction:       return r~abduction
-        case .exemplification: return r~exemplification
-        case .comparison:      return r~comparison
-        case .analogy:         return r~analogy
-        case .resemblance:     return r~resemblance
+        case .deduction:       return (r,i)~deduction
+        case .induction:       return (r,i)~induction
+        case .abduction:       return (r,i)~abduction
+        case .exemplification: return (r,i)~exemplification
+        case .comparison:      return (r,i)~comparison
+        case .analogy:         return (r,i)~analogy
+        case .resemblance:     return (r,i)~resemblance
             
-        case .intersection:    return r~intersection
-        case .union:           return r~union
-        case .difference:      return r~difference
+        case .intersection:    return (r,i)~intersection
+        case .union:           return (r,i)~union
+        case .difference:      return (r,i)~difference
+            
+        case .similarityFromReversedInheritance: return (r,i)~intersection
+        case .inheritanceFromSimilarityAndReversedInheritance: return (r,i)~reduceConjunction
         }
     }
     
@@ -56,7 +64,7 @@ extension TruthValue {
         let c = and(f1, f2, c1, c2)
         return TruthValue(f, c)
     }
-    public static var induction: TruthFunction = { (tv1, tv2) in
+    static var induction: TruthFunction = { (tv1, tv2) in
         let (f1, f2) = (tv1.frequency, tv2.frequency)
         let (c1, c2) = (tv1.confidence, tv2.confidence)
         let positive = and(f2, c2, f1, c1) // w+
@@ -131,6 +139,19 @@ extension TruthValue {
     }
 }
 
+extension TruthValue {
+    static var reduceConjunction: TruthFunction = { (tv1, tv2) in
+        let tv = intersection(negation(tv1), tv2)
+        return negation(deduction(tv, TruthValue(1, 1)))
+    }
+    
+    static func negation(_ tv: TruthValue) -> TruthValue {
+        let f = 1 - tv.f
+        let c = tv.c
+        return TruthValue(f, c)
+    }
+}
+
 /// Extended Boolean operators
 /// bounded by the range from 0 to 1
 public func not(_ x: Double) -> Double {
@@ -142,3 +163,29 @@ public func and(_ xs: Double...) -> Double {
 public func or(_ xs: Double...) -> Double {
     1 - xs.reduce(1, { $0 * (1 - $1)})
 }
+
+///// single premise
+//extension TruthValue {
+//    static func truthFunction(_ t: Theorems) -> TruthFunction {
+//        return { tv1, _ in
+//            switch t {
+//            case .negation:
+//                return tv1 // TODO: fix this
+//            case .conversion:
+//                let (f, c) = (tv1.f, tv1.c)
+//                let c1 = f * c / (f * c + k)
+//                return TruthValue(1, c1)
+//            case .contraposition:
+//                return tv1 // TODO: fix this
+//            case .inheritance:
+//                return tv1
+//            case .similarity:
+//                return tv1
+//            case .implication:
+//                return deduction(tv1, .tautology)
+//            case .equavalence:
+//                return tv1
+//            }
+//        }
+//    }
+//}

@@ -13,15 +13,24 @@ public enum Question: Equatable {
     case special(Copula, Term)
 }
 
-public enum Statement: Hashable {
-    case term(Term)
-    case statement(Term, Copula, Term)
-}
+//public enum Statement: Hashable {
+//    case term(Term)
+//    case statement(Term, Copula, Term)
+//}
+
+public typealias Statement = Term
 
 public indirect enum Term: Hashable {
     case word(String)
     case compound(Connector, [Term])
-    case statement(Statement)
+    case statement(Term, Copula, Term)
+//    case variable(Variable)
+}
+
+public enum Variable: Hashable {
+    case independent(String)
+    case dependent(String?, [Variable])
+    case query(String?)
 }
 
 public typealias ç = Connector
@@ -40,6 +49,9 @@ public enum Connector: String {
     case e = "/" /// extensional image
     case i = "\\" /// intensional image -- two slashes are because swift
     
+    case n = "¬" // negation
+    case c = "∧" // conjunction
+    case d = "∨" // disjunction
     //    case a = "ø"
     // ¡™¡!`¡``````````¡™£¢∞§¶•ªº–≠«‘“πøˆ¨¥†®´∑œåß∂ƒ©˙˙∆˚¬…æ÷≥≤µ˜∫√ç≈Ω!@#$%^&*()_+|}{":>?<
 }
@@ -93,6 +105,10 @@ extension Connector {
         /// first term is a relation // TODO: need to validate
         case .e: return .compound(.e, t1.terms + t2.terms)
         case .i: return .compound(.i, t1.terms + t2.terms)
+            
+        case .n: break // handled separately
+        case .c: res = t1t.union(t2t)
+        case .d: res = t1t.intersection(t2t)
         }
         
         // MARK: Validation
@@ -102,7 +118,7 @@ extension Connector {
             return .compound(con, Array(res))
         }
         
-        return validate(res) ? .compound(con, Array(res)) : nil
+        return validate(res) ? .compound(con, Array(res).sorted()) : nil
     }
     
     /// MARK: helpers
@@ -144,8 +160,20 @@ extension Connector {
 //}
 
 extension Term {
-    static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t])}
-    static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
+    static func instance(_ t: Term) -> Term {
+        var t = t
+        if case .word(let w) = t, w.first != "{" {
+            t = .word("{\(t)}")
+        }
+        return .compound(ç.extSet, [t])
+    }
+    static func property(_ t: Term) -> Term {
+        var t = t
+        if case .word(let w) = t, w.first != "[" {
+            t = .word("[\(t)]")
+        }
+        return .compound(ç.intSet, [t])
+    }
     
     var terms: [Term] {
         switch self {
@@ -153,8 +181,8 @@ extension Term {
             return [self]
         case .compound(_, let terms):
             return terms
-        case .statement(let statement):
-            return statement.terms
+        case .statement(let subject, _, let predicate):
+            return [subject, predicate]
         }
     }
     
@@ -166,8 +194,8 @@ extension Term {
             return 1 + terms
                 .map { $0.complexity }
                 .reduce(0, +)
-        case .statement(let statement):
-            return 1 + statement.terms
+        case .statement(let subject, _, let predicate):
+            return 1 + (subject.terms + predicate.terms)
                 .map { $0.complexity }
                 .reduce(0, +)
         }
@@ -176,7 +204,10 @@ extension Term {
     public var simplicity: Double {
         rounded(1 / pow(complexity, occamsRazor))
     }
-
+    
+    public static let º = Term.word("º")//image placeholder
+    public static let NULL = Term.word("NULL")
+    
 //    static func instance(_ t: Term) -> Term { Term.instance("\(t)") }
 //    static func property(_ t: Term) -> Term { Term.property("\(t)") }
 }
@@ -238,4 +269,3 @@ extension Term: ExpressibleByStringLiteral {
 //        Term.compound(t, ts)
 //    }
 //}
-

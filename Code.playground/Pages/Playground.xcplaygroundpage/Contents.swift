@@ -1,10 +1,4 @@
 
-///
-/// "Each rock has a functionality"
-///
-/// - Nick Names
-///
-
 import Foundation 
 import PlaygroundSupport
 
@@ -49,7 +43,7 @@ let defaultScript = [
     .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
-    .pause,//(5000),
+    .pause(5000),
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
     .pause,
@@ -63,29 +57,29 @@ let defaultScript = [
 // to update the user interface
 DispatchQueue.global().async { 
     
-    var timestamp = Date().timeIntervalSinceReferenceDate
+//    var timestamp = Date().timeIntervalSinceReferenceDate
         
     nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
-      
-    output.reset()
- 
+        
+//    output.reset()
+        /*
     nars.perform(
         (robin-->bird)-*,
         (robin-->animal)-?,
         .pause//(15000)
     )
-    
-    timestamp = Date().timeIntervalSinceReferenceDate - timestamp
-    print(timestamp)
+ */
+//    timestamp = Date().timeIntervalSinceReferenceDate - timestamp
+//    print(timestamp)
 //    sleep(5)
     //debugPrint(nars.memory)
     //print(nars.pendingTasks)
 
         
     output.reset()
-    
+ 
     nars.perform(
         (bird-->animal)-*,
         ("{Tweety}"-->bird)-*,
@@ -93,8 +87,8 @@ DispatchQueue.global().async {
         .pause
     )
     
-    //debugPrint(nars.memory)
-    
+//    debugPrint(nars.memory)
+        
     output.reset()
         
     nars.perform(
@@ -104,7 +98,7 @@ DispatchQueue.global().async {
     )
     
     output.text += "\ndone\n..."
-    
+ 
     let t1 = Term.compound(.U, ["{Mars}", "{Pluto}", "{Venus}"])
     
     let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
@@ -154,7 +148,7 @@ DispatchQueue.global().async {
         knowledge-*,
         .pause
     )
-    
+    /*
     output.reset()
     
     nars.perform(
@@ -195,7 +189,24 @@ DispatchQueue.global().async {
 //        ("chess"• --> "sport"•)-*(1.0, 0.4475),
         .pause
     )
-        
+ 
+    output.reset()
+    
+    let u = Teoremas.allCases.flatMap {
+        $0.rules.compactMap { $0("robin" <-> "swan") }
+    }
+    print("\n\n\n\n", u)
+    
+    let k = Rules.deduction.apply((u[0]-*(1,1), ("robin" <-> "swan")-*))
+    print("\n\n", k)
+    
+    /// structure transformation
+    nars.perform(
+        ("Birdie" <-> "Tweety")-*(0.9),
+        ("{Birdie}" <-> "{Tweety}")-?,
+        .pause
+    )
+*/
 }
 
 

@@ -41,19 +41,19 @@ final class NARS_Tests: XCTestCase {
         print(
             "//----------- Inference Tests\n"
         )
-        print("deduction", Rules.deduction.rule, Rules.deduction.apply((
+        print("deduction", Rules.deduction.firstOrder, Rules.deduction.apply((
             ("A" --> "B")-*,
             ("C" --> "A")-*
         )).first ==
             ("C" --> "B")-*(1, 0.81) ? "pass" : XCTFail("fail"))
 
-        print("induction", Rules.induction.rule, Rules.induction.apply((
+        print("induction", Rules.induction.firstOrder, Rules.induction.apply((
             ("A" --> "B")-*,
             ("A" --> "Z")-*
         )).first ==
             ("Z" --> "B")-*(1, 0.4475) ? "pass" : XCTFail("fail"))
         
-        print("abduction", Rules.abduction.rule, Rules.abduction.apply((
+        print("abduction", Rules.abduction.firstOrder, Rules.abduction.apply((
             ("A" --> "B")-*,
             ("C" --> "B")-*
         )).first ==
@@ -61,9 +61,9 @@ final class NARS_Tests: XCTestCase {
 
         let exemplificationRule = Rules.exemplification.apply
         let applied = exemplificationRule((("A" --> "B")-*, ("B" --> "C")-*))
-        print("exemplification", Rules.exemplification.rule, (applied.first == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
+        print("exemplification", Rules.exemplification.firstOrder, (applied.first == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
 
-        print("comparison", Rules.comparison.rule, Rules.comparison.apply((
+        print("comparison", Rules.comparison.firstOrder, Rules.comparison.apply((
             ("A" --> "B")-*,
             ("A" --> "C")-*
         )).first ==

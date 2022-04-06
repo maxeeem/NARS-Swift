@@ -36,8 +36,10 @@ postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Judgement {
         switch s {
-        case .term:
+        case .word:
             return s -* (1, 0.9)
+        case .compound:
+            return s -* (1, 0.9) // TODO: is this accurate?
         case .statement(let subject, _, let predicate):
             return subject == predicate ?
                 s -* (1, 1) // tautology
@@ -50,8 +52,10 @@ extension Statement {
 extension Statement {
     var isTautology: Bool {
         switch self {
-        case .term:
+        case .word:
             return false
+        case .compound:
+            return false // TODO: is this accurate?
         case .statement(let subject, let copula, let predicate):
             return copula == .inheritance && subject == predicate
 //                Set(subject.terms).intersection(Set(predicate.terms)).isEmpty == false
@@ -96,27 +100,27 @@ extension Term {
 }
 */
 
-extension Statement {
-    public init(_ subject: Term, _ copula: Copula, _ predicate: Term) {
-        self = .statement(subject, copula, predicate)
-    }
-    public var terms: [Term] { // TODO: can this be an array?
-        switch self {
-        case .term(let term):
-            return [term]
-        case .statement(let subject, _, let predicate):
-            return [subject, predicate]
-        }
-    }
-    public var simplicity: Double {
-        switch self {
-        case .term(let term):
-            return term.simplicity
-        case .statement(let subject, _, let predicate):
-            return subject.simplicity + predicate.simplicity
-        }
-    }
-}
+//extension Statement {
+//    public init(_ subject: Term, _ copula: Copula, _ predicate: Term) {
+//        self = .statement(subject, copula, predicate)
+//    }
+//    public var terms: [Term] { // TODO: can this be an array?
+//        switch self {
+//        case .term(let term):
+//            return [term]
+//        case .statement(let subject, _, let predicate):
+//            return [subject, predicate]
+//        }
+//    }
+//    public var simplicity: Double {
+//        switch self {
+//        case .term(let term):
+//            return term.simplicity
+//        case .statement(let subject, _, let predicate):
+//            return subject.simplicity + predicate.simplicity
+//        }
+//    }
+//}
 
 // TODO: do we now get Equatable conformance for free with Statement being an enum?
 
@@ -191,8 +195,16 @@ extension Term: CustomStringConvertible {
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }
-        case .statement(let statement):
-            return "\(statement)"
+        case .statement(let subject, let copula, let predicate):
+            var s = "\(subject)"
+            if case .statement = subject {
+                s = "(\(subject))"
+            }
+            var p = "\(predicate)"
+            if case .statement = predicate {
+                p = "(\(predicate))"
+            }
+            return s + " " + copula.rawValue + " " + p
         }
     }
 }
@@ -237,14 +249,21 @@ extension Judgement: CustomStringConvertible {
     }
 }
 
-extension Statement: CustomStringConvertible {
-    public var description: String {
-        switch self {
-        case .term(let term):
-            return "\(term)"
-        case .statement(let subject, let copula, let predicate):
-            return "\(subject) " + copula.rawValue + " \(predicate)"
-        }
+//extension Statement: CustomStringConvertible {
+//    public var description: String {
+//        switch self {
+//        case .term(let term):
+//            return "\(term)"
+//        case .statement(let subject, let copula, let predicate):
+//            return "\(subject) " + copula.rawValue + " \(predicate)"
+//        }
+//    }
+//}
+
+
+extension Term: Comparable {
+    public static func < (lhs: Term, rhs: Term) -> Bool {
+        lhs.description < rhs.description
     }
 }
 
