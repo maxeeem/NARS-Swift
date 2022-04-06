@@ -65,6 +65,8 @@ extension Concept {
                     let term = isSubject ? predicate : subject
                     termLinks.put(TermLink(term, 0.9))
                 }
+            case .variable:
+                break // TODO: is this accurate?
             }
             beliefs.put(j + 0.9) // store new belief
         }
@@ -161,29 +163,43 @@ extension Concept {
     // returns relevant belief or derived judgements if any
     mutating func answer(_ q: Question) -> [Judgement] {
         var result: [Judgement] = []
-        switch q {
-        case .statement(let statement):
-            result = answer(statement)
-        case .general(let term, let copula):
-            result = answer { s in
-                switch s {
-                case .word: fallthrough // TODO: is this accurate?
-                case .compound:
-                    return term == s
-                case .statement(let s, let c, _):
-                    return term == s && copula == c
+        switch q.statement {
+        case .statement(let subject, let copula, let predicate):
+            if case .variable(let v) = subject {
+                if case .query = v {
+                    // special
+                    result = answer { s in
+                        switch s {
+                        case .word: fallthrough // TODO: is this accurate?
+                        case .compound:
+                            return predicate == s
+                        case .statement(_, let c, let p):
+                            return copula == c && predicate == p
+                        case .variable:
+                            return false // TODO: is this accurate?
+                        }
+                    }
+                } // TODO: handle other cases
+            } else if case .variable(let v) = predicate {
+                if case .query = v {
+                    // general
+                    result = answer { s in
+                        switch s {
+                        case .word: fallthrough // TODO: is this accurate?
+                        case .compound:
+                            return subject == s
+                        case .statement(let s, let c, _):
+                            return subject == s && copula == c
+                        case .variable:
+                            return false // TODO: is this accurate?
+                        }
+                    }
                 }
+            } else { // TODO: handle other cases 
+                result = answer(q.statement)
             }
-        case .special(let copula, let term):
-            result = answer { s in
-                switch s {
-                case .word: fallthrough // TODO: is this accurate?
-                case .compound:
-                    return term == s
-                case .statement(_, let c, let p):
-                    return copula == c && term == p
-                }
-            }
+        default:
+            return [] // TODO: handle other cases
         }
         if q == lastQuestion &&
             Set(result) == lastAnswered {

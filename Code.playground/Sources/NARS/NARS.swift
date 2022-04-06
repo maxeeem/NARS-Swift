@@ -65,8 +65,14 @@ extension NARS {
         var userInitiated = userInitiated
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
         
-        if userInitiated, case .question(let q) = input, case .statement(let s) = q {
-            lastQuestion = s
+        if userInitiated, case .question(let q) = input, case .statement(let s, _, let p) = q.statement {
+            if case .variable = s {
+                // nothing
+            } else if case .variable = p {
+                // nothing
+            } else {
+                lastQuestion = q.statement
+            }
         }
         /*
         if case .judgement(let j) = input, lastQuestion == j.statement {
@@ -147,9 +153,21 @@ extension NARS {
             
         case .question(let question):
             /// consider a question 
-            if case .statement(let statement) = question {
-
-                if let winner = derivedJudgements.first, winner.statement == statement {
+            if case .statement(let s, _, let p) = question.statement {
+                if case .variable = s {
+                    if let winner = derivedJudgements.first {
+                        output(".  💡 \(winner)")
+                    } else {
+                        output("\t(2)I don't know 🤷‍♂️")
+                    }
+                } else if case .variable = p {
+                    if let winner = derivedJudgements.first {
+                        output(".  💡 \(winner)")
+                    } else {
+                        output("\t(2)I don't know 🤷‍♂️")
+                    }
+                } else {
+                if let winner = derivedJudgements.first, winner.statement == question.statement {
                     
 //                    if !userInitiated {
                         // cancel all in-flight activities
@@ -181,14 +199,11 @@ extension NARS {
                         // re-process question
                         self.process(.question(question))
                     }
+                } else {
+                    output("\t(2)I don't know 🤷‍♂️")
                 }
-                
-            } else if let winner = derivedJudgements.first {
-                output(".  💡 \(winner)")
-            } else {
-                output("\t(2)I don't know 🤷‍♂️")
+                }
             }
-            
         case .pause: 
             break // do nothing
         }

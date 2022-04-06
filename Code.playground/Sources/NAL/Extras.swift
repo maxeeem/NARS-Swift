@@ -45,6 +45,8 @@ extension Statement {
                 s -* (1, 1) // tautology
                 :
                 s -* (1, 0.9) // fact
+        case .variable:
+            return s -* (1, 0.9) // TODO: is this accurate?
         }
     }
 }
@@ -59,6 +61,8 @@ extension Statement {
         case .statement(let subject, let copula, let predicate):
             return copula == .inheritance && subject == predicate
 //                Set(subject.terms).intersection(Set(predicate.terms)).isEmpty == false
+        case .variable:
+            return false
         }
     }
 }
@@ -205,6 +209,20 @@ extension Term: CustomStringConvertible {
                 p = "(\(predicate))"
             }
             return s + " " + copula.rawValue + " " + p
+        case .variable(let variable):
+            switch variable {
+            case .independent(let word):
+                return "#\(word)"
+            case .dependent(let word, let variables):
+                if let w = word {
+                    let independents = variables.map { "#\($0)" }
+                    let list = independents.joined(separator: ", ")
+                    return "#\(w)(\(list))"
+                }
+                return "#"
+            case .query(let word):
+                return (word == nil) ? "?" : "?\(word!)"
+            }
         }
     }
 }
@@ -232,14 +250,7 @@ extension Rules: CustomStringConvertible {
 
 extension Question: CustomStringConvertible {
     public var description: String {
-        switch self {
-        case .statement(let statement):
-            return "\(statement)"
-        case .general(let term, let copula):
-            return "\(term) \(copula.rawValue) ?"
-        case .special(let copula, let term):
-            return "? \(copula.rawValue) \(term)"
-        }
+        return "<\(statement)>?"
     }
 }
 

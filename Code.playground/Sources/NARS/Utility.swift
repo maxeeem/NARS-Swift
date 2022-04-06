@@ -42,31 +42,19 @@ extension Task: Copying {
 
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
-        let s = f()
-        switch s {
-        case .word:
-            self = .statement(s) // TODO: is this accurate?
-        case .compound:
-            self = .statement(s)
-        case .statement(let subject, let copula, let predicate):
-            if case .word(let term) = predicate, term.description == "?" {
-                self = .general(subject, copula)
-            } else if case .word(let term) = subject, term.description == "?" {
-                self = .special(copula, predicate)
-            } else {
-                self = .statement(s)
-            }
-        }
+        statement = f()
     }
     public var variableTerm: Term! {
-        switch self {
-        case .statement:
-            return nil
-        case .special(_, let term):
-            fallthrough
-        case .general(let term, _):
-            return term
+        if case .statement(let s, _ , let p) = statement {
+            if case .variable = s {
+                return s
+            } else if case .variable = p {
+                return p
+            } else {
+                return nil
+            }
         }
+        return nil
     }
 }
 
@@ -157,12 +145,7 @@ extension Sentence: CustomStringConvertible {
         case .judgement(let judgement):
             return "\(judgement)"
         case .question(let question):
-            switch question {
-            case .statement(_):
-                return "\(question)?"
-            default:
-                return "\(question)"
-            }
+            return "\(question)"
         case .pause(let t):
             return "💤 \(Double(t)/1000) seconds"
         }

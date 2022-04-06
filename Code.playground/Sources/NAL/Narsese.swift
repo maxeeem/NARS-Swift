@@ -7,11 +7,15 @@ public struct Judgement: Hashable {
     public let truthValue: TruthValue
 }
 
-public enum Question: Equatable {
-    case statement(Statement)
-    case general(Term, Copula)
-    case special(Copula, Term)
+public struct Question: Hashable {
+    public let statement: Statement
 }
+
+//public enum Question: Equatable {
+//    case statement(Statement)
+//    case general(Term, Copula)
+//    case special(Copula, Term)
+//}
 
 //public enum Statement: Hashable {
 //    case term(Term)
@@ -24,12 +28,12 @@ public indirect enum Term: Hashable {
     case word(String)
     case compound(Connector, [Term])
     case statement(Term, Copula, Term)
-//    case variable(Variable)
+    case variable(Variable)
 }
 
 public enum Variable: Hashable {
     case independent(String)
-    case dependent(String?, [Variable])
+    case dependent(String?, [String])
     case query(String?)
 }
 
@@ -183,6 +187,8 @@ extension Term {
             return terms
         case .statement(let subject, _, let predicate):
             return [subject, predicate]
+        case .variable:
+            return []
         }
     }
     
@@ -198,6 +204,8 @@ extension Term {
             return 1 + (subject.terms + predicate.terms)
                 .map { $0.complexity }
                 .reduce(0, +)
+        case .variable:
+            return 0
         }
     }
     
@@ -237,6 +245,14 @@ extension Term: ExpressibleByStringLiteral {
             self = .property(.word(value))
             return
         }
+        
+        if value.first == "?" {
+            let word = value.dropFirst()
+            let name = (word.count == 0) ? nil : String(word)
+            self = .variable(.query(name))
+            return
+        }
+        
         // TODO: handle sentences as terms
         let words = value.components(separatedBy: " ")
         

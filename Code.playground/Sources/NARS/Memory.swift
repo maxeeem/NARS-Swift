@@ -15,12 +15,14 @@ extension Bag where I == Concept {
                 return c.accept(j, isSubject: c.term == j.statement, derive: derive)
             case .statement(let subject, _, _):
                 return c.accept(j, isSubject: c.term == subject, derive: derive)
+            case .variable:
+                return [] // TODO: is this accurate?
             }
         }
     }
     func consider(_ q: Question, derive: Bool) -> [Judgement] {
-        if case .statement(let statement) = q {
-            return consider(statement, derive: derive) { c in c.answer(q) }
+        if case .statement = q.statement {
+            return consider(q.statement, derive: derive) { c in c.answer(q) }
         } else {
             return considerT(q.variableTerm, derive: derive) { c in c.answer(q) }
         }
@@ -49,6 +51,8 @@ extension Bag where I == Concept {
             put(subjectConcept)
             put(predicateConcept)
             return derivedJudgements
+        case .variable:
+            return [] // TODO: is this accurate?
         }
     }
     // TODO: rename
