@@ -4,7 +4,7 @@ extension Bag where I == Concept {
         switch s {
         case .judgement(let j): return consider(j, derive: derive)
         case .question(let q): return consider(q, derive: derive)
-        case .pause: return []
+        case .pause, .cycle: return []
         }
     }
     func consider(_ j: Judgement, derive: Bool) -> [Judgement] {
@@ -37,8 +37,22 @@ extension Bag where I == Concept {
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
         switch s {
-        case .word: fallthrough // TODO: is this accurate?
-        case .compound:
+        case .word: // TODO: is this accurate?
+            var concept = get(s.description) ?? Concept(term: s)
+            derivedJudgements.append(contentsOf: f(&concept))
+            put(concept)
+            return derivedJudgements
+        case .compound(let c, let ts):
+            if [.c, .d, .n].contains(c) {
+                let terms = Set(ts.flatMap{$0.terms})
+                for t in terms {
+                    if var concept = get(t.description) {
+                        derivedJudgements.append(contentsOf: f(&concept))
+                        put(concept)
+                    }
+                }
+                return derivedJudgements
+            }
             var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
             put(concept)

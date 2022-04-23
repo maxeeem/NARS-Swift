@@ -57,9 +57,12 @@ extension Concept {
         lastInput = j
         defer {
             switch j.statement {
-            case .word: fallthrough // TODO: is this accurate?
-            case .compound:
+            case .word: // TODO: is this accurate?
                 termLinks.put(TermLink(j.statement, 0.9))
+            case .compound(let c, _):
+                if ![.c, .d, .n].contains(c) {
+                    termLinks.put(TermLink(j.statement, 0.9))
+                }
             case .statement(let subject, _, let predicate):
                 if !j.statement.isTautology {
                     let term = isSubject ? predicate : subject
@@ -127,13 +130,64 @@ extension Concept {
             $0.rules.compactMap { $0(j.statement) }
         }.flatMap { t in
             Rules.strong.flatMap {
-                $0.apply((j, t-*(1,1)))
+                $0.apply((j, t-*(1,reliance)))
             }.compactMap { $0 }
         }
             
+//        let dict = Dictionary(grouping: results) { el in
+//            el.statement.description
+//        }
+////        print("---", dict)
+//        let r = dict.values.flatMap { judgements in
+//            judgements.max { j1, j2 in
+//                let c = choice(j1: j1, j2: j2)
+//                return c.statement == j2.statement
+//            }
+//        }
+        
 //        print("\n\n\(j)\n\n-098765434567890-\n\n", results)
         
         derived.append(contentsOf: results)
+        
+        if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
+            let j = Judgement(.statement(p, c, s), j.truthValue)
+            let results = Teoremas.allCases.flatMap {
+                $0.rules.compactMap { $0(j.statement) }
+            }.flatMap { t in
+                Rules.strong.flatMap {
+                    $0.apply((j, t-*(1,reliance)))
+                }.compactMap { $0 }
+            }
+            derived.append(contentsOf: results)
+        }
+        /*
+         let res: [[Statement]] = Teoremas.allCases.map {
+             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
+                 return $0.rules.compactMap { $0(j.statement) }
+                 + $0.rules.compactMap { $0(.statement(p, c, s)) }
+             } else {
+                 return $0.rules.compactMap { $0(j.statement) }
+             }
+         }
+
+         let results: [[Judgement]] = res.flatMap{$0}.map { t in
+             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
+                 return Rules.strong.flatMap {
+                     $0.apply((j, t-*(1,reliance)))
+                 }.compactMap { $0 }
+                 +
+                 Rules.strong.flatMap {
+                     $0.apply((Judgement(.statement(p, c, s), j.truthValue), t-*(1,reliance)))
+                 }.compactMap { $0 }
+             } else {
+                 return Rules.strong.flatMap {
+                     $0.apply((j, t-*(1,reliance)))
+                 }.compactMap { $0 }
+             }
+         }
+         */
+        
+        
         
         /// apply two-premise rules
         if let b = beliefs.get() {
@@ -144,7 +198,7 @@ extension Concept {
             let results = Rules.allCases
                 .flatMap { r in
                     r.apply((b.judgement, j))
-                    + r.apply((j, b.judgement)) // switch order of premises
+//                    + r.apply((j, b.judgement)) // switch order of premises
                 }
                 .compactMap { $0 }
             derived.append(contentsOf: results)
@@ -157,7 +211,20 @@ extension Concept {
         }
 //            print("\n\n=========\n\n")
 //            derived.forEach { print($0) }
-        return derived
+//        derived = derived.filter { $0.truthValue.rule != nil }
+        let dict = Dictionary(grouping: derived) { el in
+            el.statement.description
+        }
+//        print("---", dict)
+        let r = dict.values.flatMap { judgements in
+            judgements.max { j1, j2 in
+                let c = choice(j1: j1, j2: j2)
+                return c.statement == j2.statement
+            }
+        }
+            .filter { beliefs.items[$0.description] == nil }
+//        print(r)
+        return r
     }
     
     // returns relevant belief or derived judgements if any
@@ -197,6 +264,18 @@ extension Concept {
                 }
             } else { // TODO: handle other cases 
                 result = answer(q.statement)
+//                print("+++", result)
+                let dict = Dictionary(grouping: result) { el in
+                    el.statement.description
+                }
+//                print("---", dict)
+                let r = dict.values.flatMap { judgements in
+                    judgements.max { j1, j2 in
+                        let c = choice(j1: j1, j2: j2)
+                        return c.statement == j2.statement
+                    }
+                }
+                result = r
             }
         default:
             return [] // TODO: handle other cases
@@ -219,10 +298,53 @@ extension Concept {
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
-            return Rules.allCases
+//            print("---picked out", b)
+            let res = Teoremas.allCases.flatMap {
+                $0.rules.compactMap { $0(b.judgement.statement) }
+//                $0.rules.compactMap { $0(s) }
+            }
+//                print(">//", res)
+            let results = res.flatMap { t in
+                Rules.strong.flatMap {
+                    $0.apply((b.judgement, t-*(1,reliance)))
+//                    $0.apply((s-*, t-*(1,reliance)))
+                }.compactMap { $0 }
+            }
+                .filter { beliefs.items[$0.description] == nil }
+            
+            
+//            let res2 = Teoremas.allCases.flatMap {
+//                $0.rules.compactMap { $0(s) }
+//            }
+//            let results2 = res2.flatMap { t in
+//                Rules.strong.flatMap {
+//                    $0.apply((s-*, t-*(1,reliance)))
+//                }.compactMap { $0 }
+//            }
+//                .filter { beliefs.items[$0.description] == nil }
+
+            let dict = Dictionary(grouping: results) { el in
+                el.statement.description
+            }
+//            print("---", dict)
+            let r = dict.values.flatMap { judgements in
+                judgements.max { j1, j2 in
+                    let c = choice(j1: j1, j2: j2)
+                    return c.statement == j2.statement
+                }
+            }
+            .filter { beliefs.items[$0.description] == nil }
+//            print("+++", r)
+//            print(">>>", b, results)
+            if let answer = r.first(where: { $0.statement == s }) {
+                return [answer]
+            }
+            
+            return r +
+            Rules.allCases
                 .flatMap { r in
                     r.apply((s-*, b.judgement))
-                    + r.apply((b.judgement, s-*)) // switch order of premises
+//                    + r.apply((b.judgement, s-*)) // switch order of premises
                 }
                 .compactMap { $0 }
         }

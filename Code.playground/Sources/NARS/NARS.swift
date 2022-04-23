@@ -6,29 +6,49 @@ public enum Sentence {
     case judgement(Judgement)
     case question(Question)
     
+    case cycle(Int)
+    
     /// default wait time in milliseconds (0.001s)
     /// neurons spike between 5ms and 1000ms
     public static var pause: Sentence { .pause(defaultPause) }
     public static var defaultPause = 1000
+    
+    public static var cycle: Sentence { .cycle(1) }
 }
 
 public final class NARS {
-    public let name: String
     public internal(set) var memory = Bag<Concept>()
     public internal(set) var imagination = Bag<Concept>()
     public let output: (String) -> Void
     private var queue = DispatchQueue(label: "input", qos: .userInitiated)
     private var iqueue = OperationQueue()//(label: "imagination", qos: .background)
+    private var cycleQueue = OperationQueue()
 //    private var dreaming = false // TODO: workaround to avoid using OperationQueue
     
 //    public var pendingTasks = Bag<Task>()
     private var lastQuestion: Statement?
     
-    public init(_ name: String = "𝝥𝝠𝗟", _ output: @escaping (String) -> Void = { print($0) }) {
-        self.name = name
+    public var cycle = false {
+        didSet {
+            if cycle {
+                cycleQueue.addOperation(Cycle(self))
+            } else {
+                cycleQueue.cancelAllOperations()
+            }
+        }
+    }
+    
+    fileprivate var cycleLength = 1000000 // 0.001 second
+    
+    fileprivate var lastPerformance = DispatchWallTime.now()
+    
+    public init(_ cycle: Bool = true, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
         self.iqueue.maxConcurrentOperationCount = 1
+        self.cycleQueue.maxConcurrentOperationCount = 1
+        self.cycle = cycle
     }
+    
     public func reset() {
 //        dreaming = false
         iqueue.isSuspended = true
@@ -47,12 +67,21 @@ public final class NARS {
                 self.process(s, userInitiated: true)
             }
             if case .pause(let t) = s {
-                let ms = 1000 // millisecond
-                usleep(useconds_t(t * ms))
+                snooze(t)
+            }
+            if case .cycle(let n) = s {
+                cycle = true
+                snooze(n * Sentence.defaultPause)
+                cycle = false
             }
 //            iqueue.isSuspended = true
 //            iqueue.cancelAllOperations()
 //            iqueue.isSuspended = false
+        }
+            
+        func snooze(_ t: Int) {
+            let ms = 1000 // millisecond
+            usleep(useconds_t(t * ms))
         }
     }
 }
@@ -60,7 +89,9 @@ public final class NARS {
 // MARK: Private
 
 extension NARS {
-    private func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
+    fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
+        lastPerformance = DispatchWallTime.now()
+
         var recurse = recurse
         var userInitiated = userInitiated
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
@@ -204,7 +235,7 @@ extension NARS {
                 }
                 }
             }
-        case .pause: 
+        case .pause, .cycle: 
             break // do nothing
         }
     }
@@ -217,5 +248,24 @@ class MemCopy: Operation {
     }
     override func main() {
         nars!.imagination = nars!.memory.copy()
+    }
+}
+
+class Cycle: Operation {
+    weak var nars: NARS!
+    init(_ nars: NARS) {
+        self.nars = nars
+    }
+    override func main() {
+        while true {
+            if nars.cycle {
+                let quietTime = nars.lastPerformance.rawValue - DispatchWallTime.now().rawValue
+                if quietTime > nars.cycleLength, let c = nars.memory.get(), let b = c.beliefs.get() {
+                    c.beliefs.put(b)
+                    nars.memory.put(c)
+                    nars.process(.judgement(b.judgement), userInitiated: true)
+                }
+            }
+        }
     }
 }

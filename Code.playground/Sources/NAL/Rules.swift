@@ -47,12 +47,27 @@ extension Rules {
     }
     public var apply: (_ judgements: (Judgement, Judgement)) -> [Judgement?] {
         { j in
-            self.allRules.map { r in
-                rule_generator(r)(j)
+            let (j1, j2) = j
+//            print("\n>>>", j)
+            let x = self.allRules.flatMap { r in
+                [rule_generator(r)((j1, j2)),
+                 rule_generator(r)((j2, j1))] // switch order of premises
             }
+//            print("+++", x)
+            return x
         }
     }
-    static let strong: [Rules] = [.deduction, .analogy, .resemblance, .intersection, .union, .difference] // TODO: add .negation
+//    public var apply2: (_ judgements: (Judgement, Judgement)) -> [Judgement?] {
+//        { j in
+//            let (j1, j2) = j
+//            let rules = firstOrder + higherOrder + conditional
+//            return rules.flatMap { r in
+//                [rule_generator(r)((j1, j2)),
+//                 rule_generator(r)((j2, j1))] // switch order of premises
+//            }
+//        }
+//    }
+    static let strong: [Rules] = [.deduction, .analogy, .resemblance]
 }
 
 // MARK: Rule application
@@ -60,7 +75,7 @@ extension Rules {
 let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
     // premise (p1) premise (p2) conclusion (c) truth-function (tf)
     var (p1, p2, c, tf) = arg
-    
+
     var p1I = false
     var p2I = false
 
@@ -194,8 +209,15 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         
         let s1: Statement = .statement(ct1!, c1, ct2!)
         let s2: Statement = .statement(ct3!, c2, ct4!)
-        
+//        print("\n---", s1, s2)
+//        print("===", t1, t2)
+//        print(s1 == t1, s2 == t2)
+//        if "\(s1) \(s2)" == "E => ({Birdie} -> {Tweety} ∧ {Tweety} -> {Birdie}) ({Birdie} -> {Tweety} ∧ {Tweety} -> {Birdie}) <=> ({Birdie} <–> {Tweety})" {
+//            print("yo")
+//        }
+
         if s1 == t1, s2 == t2 {
+//            print("here")
             // conclusion
             var statement: Statement!
             var terms = p1.terms + p2.terms
@@ -238,7 +260,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
                         return nil // invalid compound
                     }
-                statement = .statement(compound, cc, pTerm)
+                    statement = .statement(compound, cc, pTerm)
                 
             } else {
                 let subject = firstIndex(of: cs, in: terms)!

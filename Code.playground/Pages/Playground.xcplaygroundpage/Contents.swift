@@ -43,7 +43,7 @@ let defaultScript = [
     .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
-    .pause(10000),
+    .pause(3000),
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
     .pause,
@@ -58,7 +58,7 @@ let defaultScript = [
 DispatchQueue.global().async { 
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
-        
+    /*
     nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
@@ -148,9 +148,9 @@ DispatchQueue.global().async {
         knowledge-*,
         .pause
     )
-    /*
-    output.reset()
     
+    output.reset()
+        /*
     nars.perform(
         ("bird"• ->• "[has_wings]"•)-*,
         ("bird"• ->• "[can_fly]"•)-*,
@@ -199,16 +199,38 @@ DispatchQueue.global().async {
     
     let k = Rules.deduction.apply((u[0]-*(1,1), ("robin" <-> "swan")-*))
     print("\n\n", k)
-    
+     */
     /// structure transformation
     nars.perform(
         ("Birdie" <-> "Tweety")-*(0.9),
         ("{Birdie}" <-> "{Tweety}")-?,
         .pause
     )
-*/
-}
 
+//    nars.perform(
+//        ("swan" --> "bird")-*(0.9),
+//        ("bird" <-> "swan")-?,
+//        .pause
+//    )
+    */
+    output.reset()
+    print("\n\n\n\n\n")
+    nars.cycle = true
+    nars.perform(
+        ("swan" --> "bird")-*,
+        ("bird" --> "swan")-*(0.1)
+//           ("bird" <-> "swan")-?
+        //.pause(5000)
+    )
+    print(nars.memory)
+    //nars.cycle = false
+    
+//    nars.perform(
+//        (.compound(.x, ["A1", "B1"]) --> "opposite")-*,
+//        (.compound(.x, ["B1", "A1"]) --> "opposite")-*,
+//        ((.compound(.x, [.variable(.independent("1")), .variable(.independent("2"))]) --> "opposite") <=> (.compound(.x, [.variable(.independent("2")), .variable(.independent("1"))]) --> "opposite"))-?
+//    )
+}
 
 // MARK: Tests
 // print(history)

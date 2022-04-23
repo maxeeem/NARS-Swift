@@ -148,6 +148,8 @@ extension Sentence: CustomStringConvertible {
             return "\(question)"
         case .pause(let t):
             return "💤 \(Double(t)/1000) seconds"
+        case .cycle(let n):
+            return "💤 \(Double(n)/1000*1000) seconds"
         }
     }
 }

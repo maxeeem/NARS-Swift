@@ -35,16 +35,42 @@ public func w2c(_ w: Double) -> Double {
 
 extension Rules {
     public var allRules: [Rule] {
-        local + firstOrder + higherOrder + conditional
+        let rules = local + firstOrder + higherOrder + conditional
+        var permutations: [Rule] = []
+        for r in rules {
+            let (p1, p2, c, tf) = r
+            var sp1: Statement!
+            var sp2: Statement!
+            if case .statement(let s, let copula, let p) = p1 {
+                if copula == .similarity || copula == .equivalence {
+                    sp1 = .statement(p, copula, s)
+                }
+            }
+            if case .statement(let s, let copula, let p) = p2 {
+                if copula == .similarity || copula == .equivalence {
+                    sp2 = .statement(p, copula, s)
+                }
+            }
+            if sp1 != nil {
+                permutations.append((sp1, p2, c, tf))
+            }
+            if sp2 != nil {
+                permutations.append((p1, sp2, c, tf))
+            }
+            if sp1 != nil && sp2 != nil {
+                permutations.append((sp1, sp2, c, tf))
+            }
+        }
+        return rules + permutations
     }
     var local: [Rule] {
         let S = Term.word("S")
         let P = Term.word("P")
         switch self {
         case .similarityFromReversedInheritance:
-            return [(S --> P,     P --> S, S <-> P, tf)]
+            return []//(S --> P,     P --> S, S <-> P, tf)]
         case .inheritanceFromSimilarityAndReversedInheritance:
-            return [(S <-> P,     P --> S, S --> P, tf)]
+            return []//(S <-> P,     P --> S, S --> P, tf)]
         default:
             return []
         }
@@ -90,10 +116,10 @@ extension Rules {
                     (M <-> P,     S --> M, S --> P, tfi),
                     (M <-> P,     M --> S, P --> S, tfi)]
         case .resemblance:
-            return [(M <-> P,     S <-> M, S <-> P, tf),
-                    (M <-> P,     M <-> S, S <-> P, tf),
-                    (P <-> M,     S <-> M, S <-> P, tf),
-                    (P <-> M,     M <-> S, S <-> P, tf)]
+            return [(M <-> P,     S <-> M, S <-> P, tf)]
+//                    (M <-> P,     M <-> S, S <-> P, tf),
+//                    (P <-> M,     S <-> M, S <-> P, tf),
+//                    (P <-> M,     M <-> S, S <-> P, tf)]
             
         // Compositional rules
         
@@ -115,6 +141,8 @@ extension Rules {
     var conditional: [Rule] {
         let S = Term.word("S")
         let P = Term.word("P")
+        let T1 = Term.word("T1")
+        let T2 = Term.word("T2")
         switch self {
         case .deduction:
             return [(S  => P,           S,       P, tf)]
@@ -126,6 +154,8 @@ extension Rules {
             return []//(      S,           P, S <=> P, tf)]
         case .analogy:
             return [(      S,     S <=> P,       P, tf)]
+        case .intersection:
+            return [(     T1,          T2,       .compound(.c, [T1, T2]), tf)]
         default: 
             return []
         }
@@ -172,35 +202,75 @@ extension Teoremas {
                     match("S" <=> "P", $0, statement: { S, P in
                         t = (S <=> P) => (S => P)
                     }); return t
+                },
+                { var t: Statement?
+                    match(.compound(.c, ["S1", "S2"]), $0, compound: { S1, S2 in
+                        t = .compound(.c, [S1, S2]) => (S1)
+                    }); return t
                 }
             ]
         case .equivalence:
             return [
-                { var t: Statement? // TODO: rewrite using conjunction
+                { var t: Statement?
                     match("S" <-> "P", $0, statement: { S, P in
-                        t = (S <-> P) <=> (S --> P)
+                        t = (S <-> P) <=> .compound(.c, [(S --> P), (P --> S)])
                     }); return t
                 },
-                { var t: Statement? // TODO: rewrite using conjunction
-                    match("S" <-> "P", $0, statement: { S, P in
-                        t = (S <-> P) <=> (P --> S)
+                
+                
+                
+                { var t: Statement?
+                    //if $0.description.contains("{Birdie} -> {Tweety} ∧ {Tweety} -> {Birdie}") {
+                        
+                    //}
+                    match(.compound(.c, [("S" --> "P"), ("P" --> "S")]), $0, compound: { S, P in
+                        t = (S <-> P) <=> .compound(.c, [(S --> P), (P --> S)])
+//                        t = .compound(.c, [(S --> P), (P --> S)]) <=> (S <-> P)
                     }); return t
                 },
-                { var t: Statement? // TODO: rewrite using conjunction
+                
+                
+                
+//                { var t: Statement? // TODO: rewrite using conjunction
+//                    match("S" <-> "P", $0, statement: { S, P in
+//                        t = (S <-> P) <=> (P --> S)
+//                    }); return t
+//                },
+                { var t: Statement?
                     match("S" <=> "P", $0, statement: { S, P in
-                        t = (S <=> P) <=> (S => P)
+                        t = (S <=> P) <=> .compound(.c, [(S => P), (P => S)])
                     }); return t
                 },
-                { var t: Statement? // TODO: rewrite using conjunction
-                    match("S" <=> "P", $0, statement: { S, P in
-                        t = (S <=> P) <=> (P => S)
-                    }); return t
-                },
+//                { var t: Statement? // TODO: rewrite using conjunction
+//                    match("S" <=> "P", $0, statement: { S, P in
+//                        t = (S <=> P) <=> (P => S)
+//                    }); return t
+//                },
                 { var t: Statement?
                     match("S" <-> "P", $0, statement: { S, P in
                         t = (S <-> P) <=> (.instance(S) <-> .instance(P))
                     }); return t
                 },
+                
+                
+                
+                
+                { var t: Statement?
+                    match("{S}" <-> "{P}", $0, statement: { S, P in
+//                        print("here", S, P)
+                        t = (S <-> P) <=> (.instance(S) <-> .instance(P))
+                    }); return t
+                },
+                
+                
+                
+                
+//                { var t: Statement?
+//                    match("{S}" <-> "{P}", $0, statement: { S, P in
+//                        t = (.instance(S) <-> .instance(P)) <=> (S <-> P)
+//                    }); return t
+//                },
+                
                 { var t: Statement?
                     match("S" <-> "P", $0, statement: { S, P in
                         t = (S <-> P) <=> (.property(S) <-> .property(P))
@@ -224,6 +294,7 @@ extension Teoremas {
 // MARK: Helpers
 @discardableResult
 private func match(_ lhs: Statement, _ rhs: Statement,
+           extractCompound: Bool = true, // TODO: come up with a better way
            statement: (Term, Term) -> Void = {_,_ in },
            compound: (Term, Term) -> Void = {_,_ in })
 -> Bool {
@@ -236,7 +307,13 @@ private func match(_ lhs: Statement, _ rhs: Statement,
             if tr.count == 1 { // instance/property
                 compound(tr[0], .NULL)
             } else { // TODO: expand to more than two terms
-                compound(tr[0], tr[1])
+                if case .statement = tr[0], case .statement = tr[1] {
+                    match(tr[1], tr[0], extractCompound: false, statement: { s, p in
+                        compound(s, p)
+                    })
+                } else {
+                    compound(tr[0], tr[1])
+                }
             }
             return true
         }
@@ -245,8 +322,19 @@ private func match(_ lhs: Statement, _ rhs: Statement,
     if case .statement(let sl, let cl, let pl) = lhs,
         case .statement(let sr, let cr, let pr) = rhs {
         if match(sl, sr) && cl == cr && match(pl, pr) {
-            statement(extract(sr), extract(pr))
+//            print("one")
+            if extractCompound { // TODO: come up with a better way
+//                print("a", sr, pr)
+                //print(extract(sr), extract(pr))
+                statement(extract(sr), extract(pr))
+            } else {
+//                print("b")
+                statement(sr, pr)
+            }
             return true
+        } else if match(sl, pl) && cl == cr && match(sr, pr) {
+//            print("two")
+            statement(sr, pr) // TODO: come up with better implementation
         }
         return false
     }
@@ -257,6 +345,13 @@ private func extract(_ term: Term) -> Term {
     // extract instance/property
     if case .compound(let c, let ts) = term,
        ts.count == 1 && (c == .intSet || c == .extSet) {
+        if case .word(var w) = ts[0] {
+            w = w.replacingOccurrences(of: "[", with: "")
+            w = w.replacingOccurrences(of: "]", with: "")
+            w = w.replacingOccurrences(of: "{", with: "")
+            w = w.replacingOccurrences(of: "}", with: "")
+            return .word(w)
+        }
         return ts[0]
     }
     return term

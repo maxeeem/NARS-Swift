@@ -40,22 +40,35 @@ public enum Variable: Hashable {
 public typealias ç = Connector
 
 public enum Connector: String {
+    /// intensional set
     case intSet = "[]"  /// Ω 
+    /// extensional set
     case extSet = "{}"  /// U
-
+    
+    /// extensional intersection
     case Ω = "⋂" /// intensional set
+    /// intensional intersection
     case U = "⋃" /// extensional set
+    /// extensional difference
     case l = "–"
+    /// intensional difference
     case ø = "ø"
     
+    /// product
     case x = "⨯"
     
-    case e = "/" /// extensional image
-    case i = "\\" /// intensional image -- two slashes are because swift
+    /// extensional image
+    case e = "/"
+    /// intensional image
+    case i = "\\" /// -- two slashes are because swift
     
-    case n = "¬" // negation
-    case c = "∧" // conjunction
-    case d = "∨" // disjunction
+    /// negation
+    case n = "¬"
+    /// conjunction
+    case c = "∧"
+    /// disjunction
+    case d = "∨"
+    
     //    case a = "ø"
     // ¡™¡!`¡``````````¡™£¢∞§¶•ªº–≠«‘“πøˆ¨¥†®´∑œåß∂ƒ©˙˙∆˚¬…æ÷≥≤µ˜∫√ç≈Ω!@#$%^&*()_+|}{":>?<
 }
@@ -74,11 +87,20 @@ extension Connector {
 
     internal static func connect(_ t1: Term, _ c: Connector, _ t2: Term) -> Term! {
         var con = c
-        let t1t = Set(t1.terms)
-        let t2t = Set(t2.terms)
+        let t1t = (c == .c || c == .d) ? Set([Term.word(t1.description)]) : Set(t1.terms)
+        let t2t = (c == .c || c == .d) ? Set([Term.word(t2.description)]) : Set(t2.terms)
         var res = t1t.union(t2t)
         
-        guard case .compound = t1, case .compound = t2 else {
+        if c == .c || c == .d {
+            if case .compound(let c1, _) = t1, (c1 == .c || c1 == .d) {
+                return nil
+            }
+            if case .compound(let c2, _) = t2, (c2 == .c || c2 == .d) {
+                return nil
+            }
+        }
+        
+        guard case .compound = t1, case .compound = t2, (c != .c || c != .d) else {
             // at least one term is a simple term
             guard t1t.intersection(t2t).isEmpty else {
                 return nil // terms should not contain each other
@@ -86,8 +108,7 @@ extension Connector {
             return validate(res) ? .compound(c, [t1, t2]) : nil
         }
         
-        // TODO: should we be filtering terms by intensional/extensional?
-        
+        // TODO: should we be filtering terms by intensional/extension
         switch c {
         /// definition 7.1 -- intensional/extensional sets
         case .intSet: res = t1t.union(t2t)
@@ -110,9 +131,9 @@ extension Connector {
         case .e: return .compound(.e, t1.terms + t2.terms)
         case .i: return .compound(.i, t1.terms + t2.terms)
             
-        case .n: break // handled separately
-        case .c: res = t1t.union(t2t)
-        case .d: res = t1t.intersection(t2t)
+        case .n: return nil // handled separately
+        case .c: res = t1t.intersection(t2t) // -- extensional difference
+        case .d: res = t1t.union(t2t) // -- intensional intersection
         }
         
         // MARK: Validation
@@ -269,7 +290,7 @@ extension Term: ExpressibleByStringLiteral {
             return
         }
         
-        self = .word("NULL")
+        self = .NULL
     }
 }
 

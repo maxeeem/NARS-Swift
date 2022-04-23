@@ -58,8 +58,8 @@ extension Statement {
             return false
         case .compound:
             return false // TODO: is this accurate?
-        case .statement(let subject, let copula, let predicate):
-            return copula == .inheritance && subject == predicate
+        case .statement(let subject, _, let predicate):
+            return /*copula == .inheritance &&*/ subject == predicate
 //                Set(subject.terms).intersection(Set(predicate.terms)).isEmpty == false
         case .variable:
             return false
