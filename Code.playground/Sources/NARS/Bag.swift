@@ -18,36 +18,42 @@ public final class Bag<I: Item> {
     
     @discardableResult
     public func put(_ item: I) -> I? {
-        var item = item
-        let oldItem = items[item.identifier]
-        if let oldItem = oldItem {
-            item.priority = max(oldItem.priority, item.priority)
-            removeFromBucket(oldItem)
+        queue.sync {
+            var item = item
+            let oldItem = items[item.identifier]
+            if let oldItem = oldItem {
+                item.priority = max(oldItem.priority, item.priority)
+                removeFromBucket(oldItem)
+            }
+            items[item.identifier] = item
+            return addToBucket(item)
         }
-        items[item.identifier] = item
-        return addToBucket(item)
     }
     
     public func get() -> I? {
-        if items.isEmpty {
-            return nil
-        }
-        currentLevel = selectNonEmptyLevel()
-        if buckets[currentLevel].isEmpty {
-            return nil
-        }
-        let item = buckets[currentLevel].removeFirst()
-        items.removeValue(forKey: item.identifier)
-        return item
-    }
-    
-    public func get(_ identifier: String) -> I? {
-        if let item = items[identifier] {
-            removeFromBucket(item)
+        queue.sync {
+            if items.isEmpty {
+                return nil
+            }
+            currentLevel = selectNonEmptyLevel()
+            if buckets[currentLevel].isEmpty {
+                return nil
+            }
+            let item = buckets[currentLevel].removeFirst()
             items.removeValue(forKey: item.identifier)
             return item
         }
-        return nil
+    }
+    
+    public func get(_ identifier: String) -> I? {
+        queue.sync {
+            if let item = items[identifier] {
+                removeFromBucket(item)
+                items.removeValue(forKey: item.identifier)
+                return item
+            }
+            return nil
+        }
     }
     
     
@@ -72,27 +78,26 @@ public final class Bag<I: Item> {
     }
     
     private func addToBucket(_ item: I) -> I? {
-        queue.sync {
-            var oldItem: I?
-            if items.count > capacity {
-                var level = 0
-                while buckets[level].isEmpty, level < levels {
-                    level += 1
-                }
-                oldItem = buckets[level].removeFirst()
+        var oldItem: I?
+        if items.count > capacity {
+            var level = 0
+            while buckets[level].isEmpty, level < levels {
+                level += 1
             }
-            let level = getLevel(item)
-            buckets[level].append(item)
-            return oldItem
+            oldItem = buckets[level].removeFirst()
+            if let removed = oldItem {
+                items.removeValue(forKey: removed.identifier)
+            }
         }
+        let level = getLevel(item)
+        buckets[level].append(item)
+        return oldItem
     }
     
     private func removeFromBucket(_ item: I) {
         let level = getLevel(item)
         var items = buckets[level]
-        queue.sync {
-            items.removeAll(where: { $0.identifier == item.identifier })
-            buckets[level] = items
-        }
+        items.removeAll(where: { $0.identifier == item.identifier })
+        buckets[level] = items
     }
 }

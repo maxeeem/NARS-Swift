@@ -1,5 +1,4 @@
-
-import Foundation 
+import Dispatch
 import PlaygroundSupport
 
 var verbose = true
@@ -19,7 +18,7 @@ let mammal = Term.word("mammal")
 
 var history = [String]()
 
-let nars = NARS { s in
+let nars = NARS(cycle: false) { s in
     if !verbose && (s.contains("⏱") || s.contains("💤")) { return }
     history.append(s); print(s)
     //usleep(100000) // 1/100th second

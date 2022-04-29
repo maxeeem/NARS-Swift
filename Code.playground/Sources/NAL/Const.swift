@@ -4,8 +4,8 @@ let evidentialHorizon: Double = 1 // "personality parameter"
 
 var k: Double {evidentialHorizon}
 
-let occamsRazor: Double = 1
+let occamsRazor: Int = 1
 
-var r: Double {occamsRazor}
+var r: Int {occamsRazor}
 
 let reliance: Double = 0.9

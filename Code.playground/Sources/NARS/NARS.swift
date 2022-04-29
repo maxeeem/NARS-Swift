@@ -21,39 +21,41 @@ public final class NARS {
     public internal(set) var imagination = Bag<Concept>()
     public let output: (String) -> Void
     private var queue = DispatchQueue(label: "input", qos: .userInitiated)
-    private var iqueue = OperationQueue()//(label: "imagination", qos: .background)
-    private var cycleQueue = OperationQueue()
-//    private var dreaming = false // TODO: workaround to avoid using OperationQueue
+    private var iqueue = DispatchQueue(label: "imagination", qos: .userInitiated)
+    private var cycleQueue = DispatchQueue(label: "cycle", qos: .utility)
+    private var dreaming = false
     
 //    public var pendingTasks = Bag<Task>()
     private var lastQuestion: Statement?
-    
-    public var cycle = false {
-        didSet {
-            if cycle {
-                cycleQueue.addOperation(Cycle(self))
-            } else {
-                cycleQueue.cancelAllOperations()
+
+    lazy var item = DispatchWorkItem { [weak self] in
+        while true {
+            if let s = self, s.cycle {
+                let quietTime = s.lastPerformance.rawValue - DispatchWallTime.now().rawValue
+                if quietTime > s.cycleLength, let c = s.memory.get(), let b = c.beliefs.get() {
+                    c.beliefs.put(b)
+                    s.memory.put(c)
+                    s.process(.judgement(b.judgement), userInitiated: true)
+                }
             }
         }
     }
+    
+    public var cycle = false
     
     fileprivate var cycleLength = 1000000 // 0.001 second
     
     fileprivate var lastPerformance = DispatchWallTime.now()
     
-    public init(_ cycle: Bool = true, _ output: @escaping (String) -> Void = { print($0) }) {
+    public init(cycle: Bool = true, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
-        self.iqueue.maxConcurrentOperationCount = 1
-        self.cycleQueue.maxConcurrentOperationCount = 1
         self.cycle = cycle
+
+        cycleQueue.async(execute: item)
     }
     
     public func reset() {
-//        dreaming = false
-        iqueue.isSuspended = true
-        iqueue.cancelAllOperations()
-        iqueue.isSuspended = false
+        dreaming = false
         memory = Bag<Concept>()
         imagination = Bag<Concept>()
     }
@@ -74,9 +76,6 @@ public final class NARS {
                 snooze(n * Sentence.defaultPause)
                 cycle = false
             }
-//            iqueue.isSuspended = true
-//            iqueue.cancelAllOperations()
-//            iqueue.isSuspended = false
         }
             
         func snooze(_ t: Int) {
@@ -92,8 +91,6 @@ extension NARS {
     fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
         lastPerformance = DispatchWallTime.now()
 
-        var recurse = recurse
-        var userInitiated = userInitiated
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
         
         if userInitiated, case .question(let q) = input, case .statement(let s, _, let p) = q.statement {
@@ -143,14 +140,16 @@ extension NARS {
         if derivedJudgements.isEmpty { 
             if case .question = input {
 //                output("\t(1)I don't know 🤷‍♂️")
+//                if dreaming {
                 output("thinking... \(input)")
                 // iqueue.addOperations([MemCopy(self)], waitUntilFinished: true)
-                iqueue.addOperation {
+                iqueue.async {
                     self.imagination = self.memory.copy()
                     //imagine()
                     // re-process question
                     self.process(input)
                 }
+//                }
             } else {
                 return
             }
@@ -160,9 +159,9 @@ extension NARS {
         func imagine(recurse r: Bool = true) {
             //print("dj \(derivedJudgements)")
             derivedJudgements.forEach { j in
-//                if dreaming {
+                if dreaming {
                     process(.judgement(j), recurse: r)
-//                }
+                }
             }
         }
         
@@ -200,18 +199,15 @@ extension NARS {
                 } else {
                 if let winner = derivedJudgements.first, winner.statement == question.statement {
                     
-//                    if !userInitiated {
+                    if !userInitiated {
                         // cancel all in-flight activities
-//                        dreaming = false
-                        iqueue.isSuspended = true
-                        iqueue.cancelAllOperations()
-                        iqueue.isSuspended = false
+                        dreaming = false
                         
                         // process winning judgement
                         process(.judgement(winner),
                                      recurse: false, // determines if derived judgements are inserted
                                      userInitiated: true) // will cause insertion into main memory
-//                    }
+                    }
                     
                     output(".  💡 \(winner)")
                     
@@ -219,13 +215,13 @@ extension NARS {
                     
                     if userInitiated {
                         // very inefficient but just a poc
-                        iqueue.addOperations([MemCopy(self)], waitUntilFinished: true)
-//                            self.imagination = self.memory.copy()
-//                            self.dreaming = true
-//                        }
+                        iqueue.sync {
+                            self.imagination = self.memory.copy()
+                            self.dreaming = true
+                        }
                     }
                     
-                    iqueue.addOperation {
+                    iqueue.async {
                         imagine()
                         // re-process question
                         self.process(.question(question))
@@ -237,35 +233,6 @@ extension NARS {
             }
         case .pause, .cycle: 
             break // do nothing
-        }
-    }
-}
-
-class MemCopy: Operation {
-    weak var nars: NARS!
-    init(_ nars: NARS) {
-        self.nars = nars
-    }
-    override func main() {
-        nars!.imagination = nars!.memory.copy()
-    }
-}
-
-class Cycle: Operation {
-    weak var nars: NARS!
-    init(_ nars: NARS) {
-        self.nars = nars
-    }
-    override func main() {
-        while true {
-            if nars.cycle {
-                let quietTime = nars.lastPerformance.rawValue - DispatchWallTime.now().rawValue
-                if quietTime > nars.cycleLength, let c = nars.memory.get(), let b = c.beliefs.get() {
-                    c.beliefs.put(b)
-                    nars.memory.put(c)
-                    nars.process(.judgement(b.judgement), userInitiated: true)
-                }
-            }
         }
     }
 }

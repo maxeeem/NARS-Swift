@@ -2,11 +2,20 @@ import XCTest
 @testable import NARS
 
 // Experimental
-import Foundation
 
 // MARK: Tests
 
 final class NARS_Tests: XCTestCase {
+//    func testBag() throws {
+//        let bag = Bag<Belief>()
+//        for _ in 0...1000000 {
+//            let term = Term.word("\(Int.random(in: 0...1000000))")
+//            bag.put(term-* + 0.9)
+//            usleep(100)
+//        }
+//    }
+
+    
     func testExample() throws {
         print(
             "//----------- Test Storage\n"

@@ -1,4 +1,3 @@
-import Foundation
 
 // Grammar
 
@@ -185,20 +184,8 @@ extension Connector {
 //}
 
 extension Term {
-    static func instance(_ t: Term) -> Term {
-        var t = t
-        if case .word(let w) = t, w.first != "{" {
-            t = .word("{\(t)}")
-        }
-        return .compound(ç.extSet, [t])
-    }
-    static func property(_ t: Term) -> Term {
-        var t = t
-        if case .word(let w) = t, w.first != "[" {
-            t = .word("[\(t)]")
-        }
-        return .compound(ç.intSet, [t])
-    }
+    static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
+    static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
     
     var terms: [Term] {
         switch self {
@@ -241,6 +228,15 @@ extension Term {
 //    static func property(_ t: Term) -> Term { Term.property("\(t)") }
 }
 
+func pow(_ x: Double, _ y: Int) -> Double {
+    let isNegative = y < 0
+    var res = 1.0
+    for _ in 1...abs(y) {
+        res *= x
+    }
+    return isNegative ? 1 / res : res
+}
+
 postfix operator •->
 prefix  operator ->•
 public extension Term {
@@ -251,46 +247,76 @@ public extension Term {
 postfix operator •
 prefix  operator •
 public extension String { // turn string into a .word
-    static postfix func •(_ s: String) -> Term { Term(stringLiteral: "\(s)") }
-    static prefix  func •(_ s: String) -> Term { Term(stringLiteral: "\(s)") }
+    static postfix func •(_ s: String) -> Term { Term(stringLiteral: s) }
+    static prefix  func •(_ s: String) -> Term { Term(stringLiteral: s) }
 }
 
 extension Term: ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
-        if value.first == "{" {
-            self = .instance(.word(value))
-            return
+        self = {
+            if value.first == "{" {
+                return .instance(.word(value.word))
+            }
+
+            if value.first == "[" {
+                return .property(.word(value.word))
+            }
+
+            if value.first == "?" {
+                let word = value.dropFirst()
+                let name = (word.count == 0) ? nil : String(word)
+                return .variable(.query(name))
+            }
+
+            // TODO: handle sentences as terms
+            let words = value.words
+
+            if words.count == 3,
+               let c = ç(rawValue: words[0]) {
+                let t1 = Term(stringLiteral: words[1])
+                let t2 = Term(stringLiteral: words[2])
+                return ç.connect(t1, c, t2)
+            }
+
+            if words.count == 1 {
+                return .word(words[0])
+            }
+
+            return .NULL
+        }()
+    }
+}
+
+// Replacements for Foundation methods
+
+extension String {
+    var word: String {
+        var word: String = ""
+        for c in self {
+            if !["{", "}", "[", "]"].contains(c) {
+                word.append(c)
+            }
         }
-        
-        if value.first == "[" {
-            self = .property(.word(value))
-            return
+        return word
+    }
+    
+    var words: [String] {
+        var words: [String] = []
+        var word: String = ""
+        for c in self {
+            if c == " " {
+                if !word.isEmpty {
+                    words.append(word)
+                    word = ""
+                }
+            } else {
+                word.append(c)
+            }
         }
-        
-        if value.first == "?" {
-            let word = value.dropFirst()
-            let name = (word.count == 0) ? nil : String(word)
-            self = .variable(.query(name))
-            return
+        if !word.isEmpty {
+            words.append(word)
         }
-        
-        // TODO: handle sentences as terms
-        let words = value.components(separatedBy: " ")
-        
-        if words.count == 3,
-           let c = ç(rawValue: words[0]) {
-            let t1 = Term(stringLiteral: words[1])
-            let t2 = Term(stringLiteral: words[2])
-            self = ç.connect(t1, c, t2)
-            return
-        }
-        
-        if words.count == 1 {
-            self = .word(words[0])
-            return
-        }
-        
-        self = .NULL
+        return words
     }
 }
 

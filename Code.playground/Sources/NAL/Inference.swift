@@ -248,6 +248,7 @@ extension Teoremas {
 //                },
                 { var t: Statement?
                     match("S" <-> "P", $0, statement: { S, P in
+//                        print("here1", S, P)
                         t = (S <-> P) <=> (.instance(S) <-> .instance(P))
                     }); return t
                 },
@@ -257,7 +258,7 @@ extension Teoremas {
                 
                 { var t: Statement?
                     match("{S}" <-> "{P}", $0, statement: { S, P in
-//                        print("here", S, P)
+//                        print("here2", S, P)
                         t = (S <-> P) <=> (.instance(S) <-> .instance(P))
                     }); return t
                 },
@@ -276,6 +277,18 @@ extension Teoremas {
                         t = (S <-> P) <=> (.property(S) <-> .property(P))
                     }); return t
                 },
+                
+                { var t: Statement?
+                    match("[S]" <-> "[P]", $0, statement: { S, P in
+                        t = (S <-> P) <=> (.property(S) <-> .property(P))
+                    }); return t
+                },
+                
+                
+                
+                
+                
+                
                 { var t: Statement?
                     match("S" --> "{P}", $0, statement: { S, P in
                         t = (S --> .instance(P)) <=> (S <-> .instance(P))
@@ -307,13 +320,13 @@ private func match(_ lhs: Statement, _ rhs: Statement,
             if tr.count == 1 { // instance/property
                 compound(tr[0], .NULL)
             } else { // TODO: expand to more than two terms
-                if case .statement = tr[0], case .statement = tr[1] {
-                    match(tr[1], tr[0], extractCompound: false, statement: { s, p in
-                        compound(s, p)
-                    })
-                } else {
+//                if case .statement = tr[0], case .statement = tr[1] {
+//                    match(tr[1], tr[0], extractCompound: false, statement: { s, p in
+//                        compound(s, p)
+//                    })
+//                } else {
                     compound(tr[0], tr[1])
-                }
+//                }
             }
             return true
         }
@@ -328,13 +341,12 @@ private func match(_ lhs: Statement, _ rhs: Statement,
                 //print(extract(sr), extract(pr))
                 statement(extract(sr), extract(pr))
             } else {
-//                print("b")
                 statement(sr, pr)
             }
             return true
-        } else if match(sl, pl) && cl == cr && match(sr, pr) {
-//            print("two")
-            statement(sr, pr) // TODO: come up with better implementation
+//        } else if match(sl, pl) && cl == cr && match(sr, pr) {
+//            statement(sr, pr) // TODO: come up with better implementation
+//            return true
         }
         return false
     }
@@ -345,13 +357,6 @@ private func extract(_ term: Term) -> Term {
     // extract instance/property
     if case .compound(let c, let ts) = term,
        ts.count == 1 && (c == .intSet || c == .extSet) {
-        if case .word(var w) = ts[0] {
-            w = w.replacingOccurrences(of: "[", with: "")
-            w = w.replacingOccurrences(of: "]", with: "")
-            w = w.replacingOccurrences(of: "{", with: "")
-            w = w.replacingOccurrences(of: "}", with: "")
-            return .word(w)
-        }
         return ts[0]
     }
     return term

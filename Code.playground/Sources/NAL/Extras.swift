@@ -195,7 +195,11 @@ extension Term: CustomStringConvertible {
             if terms.count == 2 {
                 return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
             } else if connector == .intSet || connector == .extSet {
-                return "\(terms.map{$0.description}.joined(separator: " "))"
+                if connector == .intSet {
+                    return "[\(terms.map{$0.description}.joined(separator: " "))]"
+                } else {
+                    return "{\(terms.map{$0.description}.joined(separator: " "))}"
+                }
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }
@@ -250,7 +254,7 @@ extension Rules: CustomStringConvertible {
 
 extension Question: CustomStringConvertible {
     public var description: String {
-        return "<\(statement)>?"
+        "<\(statement)>?"
     }
 }
 

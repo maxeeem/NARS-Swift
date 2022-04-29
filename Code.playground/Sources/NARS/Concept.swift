@@ -71,6 +71,7 @@ extension Concept {
             case .variable:
                 break // TODO: is this accurate?
             }
+            
             beliefs.put(j + 0.9) // store new belief
         }
         
