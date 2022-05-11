@@ -46,43 +46,12 @@ public struct Concept: Item {
 //    internal var lastAnswered: Set<Judgement> = []
 }
 
-private var reg: [String: [String]] = [:]
-
-import Dispatch
-private let rqueue = DispatchQueue(label: "registry", qos: .userInitiated)
-    
-public func registry(get key: String) -> [String]? {
-    rqueue.sync {
-        return reg[key]
-    }
-}
-
-public func registry(init key: String) {
-    rqueue.sync {
-        reg[key] = []
-    }
-}
-
-public func registry(set value: String, for key: String) {
-    rqueue.sync {
-        reg[key]?.append(value)
-    }
-}
-
-public func registryReset() {
-    rqueue.sync {
-        reg.removeAll()
-    }
-}
 
 extension Concept {
     // returns derived judgements if any
     func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
 //        lastInput = j
-//        if j.description2.contains("<a -> d>.") {
-//            print(">>>", j.description2)
-//        }
 
         var originalPriority: Double?
         
@@ -93,25 +62,11 @@ extension Concept {
         // revision goes first
         if let b = beliefs.get(j.statement.description) {
             originalPriority = b.priority
-            let judgement: Judgement
-//            if j.description2.contains("<a -> d>.") {
-//                print(">>>", j.description2, b.judgement.description2)
-//            }
-            if let path1 = registry(get: b.judgement.description2) {
-                if let path2 = registry(get: j.description2) {
-                    if Set(path1).intersection(Set(path2)).isEmpty {
-                        // no overlap in evidential bases so apply revision
-                        judgement = revision(j1: j, j2: b.judgement)
-                    } else {
-                        // evidential bases overlap
-                        judgement = choice(j1: j, j2: b.judgement)
-                    }
-                } else {
-                    judgement = revision(j1: j, j2: b.judgement)
-                }
-            } else {
-                // evidential bases overlap
+            var judgement: Judgement
+            if j.evidenceOverlap(b.judgement) {
                 judgement = choice(j1: j, j2: b.judgement)
+            } else {
+                judgement = revision(j1: j, j2: b.judgement)
             }
             // wait to put back original belief to process another one
             if j != judgement {
@@ -119,7 +74,7 @@ extension Concept {
                 derived.append(judgement)
             }
         }
-//        
+        
 //        // conversion is special
 //        if let c = conversion(j1: j), beliefs.items[c.statement.description] == nil {
 //            if registry(get: c.description2) == nil {
@@ -156,9 +111,6 @@ extension Concept {
                 newPriority = originalPriority ?? 0.9
             }
 //            print(">>>", newPriority)
-            if registry(get: j.description2) == nil {
-                registry(init: j.description2)
-            }
             beliefs.put(j + min(newPriority, 0.9)) // store new belief
         }
         
@@ -175,14 +127,6 @@ extension Concept {
                 }
                 .compactMap { $0 }
             
-            for r in results {
-                if registry(get: r.description2) == nil {
-                    registry(init: r.description2)
-                } else {
-                    registry(set: j.description2, for: r.description2)
-                    registry(set: b.judgement.description2, for: r.description2)
-                }
-            }
             derived.append(contentsOf: results)
             
             // TODO: wait to put back

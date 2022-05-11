@@ -4,6 +4,8 @@
 public struct Judgement: Hashable {
     public let statement: Statement
     public let truthValue: TruthValue
+    
+    public let derivationPath: [String]
 }
 
 public struct Question: Hashable {

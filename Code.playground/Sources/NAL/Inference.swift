@@ -5,7 +5,7 @@ public func revision(j1: Judgement, j2: Judgement) -> Judgement {
     let (f2, c2) = (j2.truthValue.f, j2.truthValue.c)
     let f = ((f1 * c1) * (1 - c2) + (f2 * c2) * (1 - c1)) / (c1 * (1 - c2) + c2 * (1 - c1))
     let c = (c1 * (1 - c2) + c2 * (1 - c1)) / (c1 * (1 - c2) + c2 * (1 - c1) + (1 - c1) * (1 - c2))
-    return Judgement(j1.statement, TruthValue(f, c))
+    return Judgement(j1.statement, TruthValue(f, c), Judgement.mergeEvidence(j1, j2))
 }
 
 public func choice(j1: Judgement, j2: Judgement) -> Judgement {
@@ -26,7 +26,7 @@ public func conversion(j1: Judgement) -> Judgement? {
     let c1 = f * c / (f * c + k)
 //    let w = and(f, c)
 //    let c1 = w2c(w)
-    return .statement(p, copula, s)-*(1, c1)
+    return Judgement(.statement(p, copula, s), TruthValue(1, c1), j1.derivationPath)
 }
 
 public func w2c(_ w: Double) -> Double {

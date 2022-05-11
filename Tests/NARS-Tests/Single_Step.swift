@@ -18,7 +18,6 @@ class Single_Step: XCTestCase {
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
         Sentence.defaultPause = 300 // in milliseconds
-        registryReset()
     }
 
     override func tearDownWithError() throws {
@@ -54,7 +53,6 @@ class Single_Step: XCTestCase {
             ("a" --> "d")-?,
             .pause
         )
-        print(nars.recent)
         outputMustContain("💡 <a -> d>. %1.00;0.73%")
     }
     
@@ -255,7 +253,7 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-           .cycle,
+           .cycle(10),
            ("[smart]" --> "[bright]")-?,
            .pause
        )
@@ -338,6 +336,7 @@ class Single_Step: XCTestCase {
            ("{Tweety}" --> "{Birdie}")-*,
            .cycle
        )
+        print(nars.memory)
        outputMustContain("<{Birdie} <–> {Tweety}>.")// %1.00;0.90%")
     }
 

@@ -166,10 +166,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 let sTerm = term(at: subject, in: terms)!
                 let pTerm1 = term(at: pT1, in: terms)!
                 let pTerm2 = term(at: pT2, in: terms)!
-                if let path1 = registry(get: j1.description2), let path2 = registry(get: j2.description2) {
-                    if Set(path1).intersection(Set(path2)).isEmpty == false {
-                        return nil
-                    }
+                if j1.evidenceOverlap(j2) {
+                    return nil
                 }
                 guard let compound = ç.connect(pTerm1, ct, pTerm2) else {
                     return nil // invalid compound
@@ -188,10 +186,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     let pTerm = term(at: predicate, in: terms)!
                     let sTerm1 = term(at: sT1, in: terms)!
                     let sTerm2 = term(at: sT2, in: terms)!
-                    if let path1 = registry(get: j1.description2), let path2 = registry(get: j2.description2) {
-                        if Set(path1).intersection(Set(path2)).isEmpty == false {
-                            return nil
-                        }
+                    if j1.evidenceOverlap(j2) {
+                        return nil
                     }
                     guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
                         return nil // invalid compound
@@ -215,7 +211,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             }
             
             let truthValue = tf(j1.truthValue, j2.truthValue)
-            return Judgement(statement, truthValue)
+            let derivationPath = Judgement.mergeEvidence(j1, j2)
+            return Judgement(statement, truthValue, derivationPath)
         }
         return nil
     }

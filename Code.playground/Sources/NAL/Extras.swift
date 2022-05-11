@@ -24,7 +24,7 @@ extension TruthValue: Equatable {
 
 // convenience initializer for Judgement
 public func +(_ s: Statement, fc: (Double, Double)) -> Judgement {
-    Judgement(s, TruthValue(fc.0, fc.1))
+    Judgement(s, TruthValue(fc.0, fc.1), [])
 }
 
 infix operator -* : Copula
@@ -104,41 +104,11 @@ extension Term {
 }
 */
 
-//extension Statement {
-//    public init(_ subject: Term, _ copula: Copula, _ predicate: Term) {
-//        self = .statement(subject, copula, predicate)
-//    }
-//    public var terms: [Term] { // TODO: can this be an array?
-//        switch self {
-//        case .term(let term):
-//            return [term]
-//        case .statement(let subject, _, let predicate):
-//            return [subject, predicate]
-//        }
-//    }
-//    public var simplicity: Double {
-//        switch self {
-//        case .term(let term):
-//            return term.simplicity
-//        case .statement(let subject, _, let predicate):
-//            return subject.simplicity + predicate.simplicity
-//        }
-//    }
-//}
-
-// TODO: do we now get Equatable conformance for free with Statement being an enum?
-
-//public func ==(_ s1: Statement, s2: Statement) -> Bool {
-//    if case .term(let t1) = s1, case .term(let t2) = s2 {
-//        return t1 == t2
-//    }
-//    s1.copula == s2.copula && s1.terms == s2.terms
-//}
-
 extension Judgement {
-    public init(_ statement: Statement, _ truthValue: TruthValue) {
+    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String]) {
         self.statement = statement
         self.truthValue = truthValue
+        self.derivationPath = derivationPath
     }
 }
 
@@ -244,12 +214,6 @@ extension TruthValue: CustomStringConvertible {
         let c = String(format: "%.2f", confidence)
         return "%\(f);\(c)%\(r)"
     }
-    public var description2: String {
-//        let r = rule == nil ? "." : "\(rule!)"
-        let f = String(format: "%.2f", frequency)
-        let c = String(format: "%.2f", confidence)
-        return "%\(f);\(c)%"//\(r)"
-    }
 }
 
 extension Rules: CustomStringConvertible {
@@ -268,21 +232,7 @@ extension Judgement: CustomStringConvertible {
     public var description: String {
         "<\(statement)>. " + "\(truthValue)"
     }
-    public var description2: String {
-        "<\(statement)>. " + truthValue.description2
-    }
 }
-
-//extension Statement: CustomStringConvertible {
-//    public var description: String {
-//        switch self {
-//        case .term(let term):
-//            return "\(term)"
-//        case .statement(let subject, let copula, let predicate):
-//            return "\(subject) " + copula.rawValue + " \(predicate)"
-//        }
-//    }
-//}
 
 
 extension Term: Comparable {
@@ -302,4 +252,24 @@ extension Array where Element == Bool {
 public func rounded(_ d: Double, _ x: Int = 100) -> Double {
     let result = (d * Double(x)).rounded() / Double(x)
     return result.isNaN ? 0 : result
+}
+
+
+
+extension Judgement {
+    static func mergeEvidence(_ j1: Judgement, _ j2: Judgement) -> [String] {
+        if j1.derivationPath.isEmpty {
+            return j2.derivationPath
+        } else if j2.derivationPath.isEmpty {
+            return j1.derivationPath
+        } else {
+            return zip(j1.derivationPath, j2.derivationPath).reduce([], { partialResult, next in
+                partialResult + [next.0, next.1]
+            }).suffix(100)
+        }
+    }
+    
+    func evidenceOverlap(_ j2: Judgement) -> Bool {
+        !Set(derivationPath).intersection(Set(j2.derivationPath)).isEmpty
+    }
 }

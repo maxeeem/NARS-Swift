@@ -305,7 +305,7 @@ extension NARS {
                     
                 } else if recurse { // switch to imagination flow
 //                    print("there", dreaming)
-                    if userInitiated {
+                    if userInitiated && !dreaming {
 //                        iqueue.sync {
 //                            self.imagination.reset() //= self.memory.copy()
 //                        }
