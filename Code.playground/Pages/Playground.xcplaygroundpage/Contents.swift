@@ -42,7 +42,8 @@ let defaultScript = [
     .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
-    .pause(3000),
+//    .pause(3000),
+    .cycle,
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
     .pause,
@@ -57,7 +58,7 @@ let defaultScript = [
 DispatchQueue.global().async { 
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
-    /*
+    
     nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
@@ -203,7 +204,7 @@ DispatchQueue.global().async {
     nars.perform(
         ("Birdie" <-> "Tweety")-*(0.9),
         ("{Birdie}" <-> "{Tweety}")-?,
-        .pause
+        .cycle
     )
 
 //    nars.perform(
@@ -211,24 +212,69 @@ DispatchQueue.global().async {
 //        ("bird" <-> "swan")-?,
 //        .pause
 //    )
-    */
-    output.reset()
+    
+    
+    /*
+     
+     output.reset()
     print("\n\n\n\n\n")
-    nars.cycle = true
+//    nars.cycle = true
+    
     nars.perform(
         ("swan" --> "bird")-*,
-        ("bird" --> "swan")-*(0.1)
+        ("bird" --> "swan")-*(0.1),
+        .cycle,
+        .pause
 //           ("bird" <-> "swan")-?
         //.pause(5000)
     )
     print(nars.memory)
-    //nars.cycle = false
+//    nars.cycle = false
+    output.reset()
+    /// set definition
+    nars.perform(
+        ("{Tweety}" --> "{Birdie}")-*,
+        .cycle(5)
+    )
+    output.reset()
+    print("\n\n\n\n\n")
     
+    /// set definition
+    nars.perform(
+        ("[smart]" --> "[bright]")-*,
+        .cycle(5)
+    )
+    
+    sleep(2)
+    
+    output.reset()
+    print("\n\n\n\n\n")
+    
+    /// set definition
+    nars.perform(
+        ("{Birdie}" <-> "{Tweety}")-*,
+        .cycle(5)
+    )
 //    nars.perform(
 //        (.compound(.x, ["A1", "B1"]) --> "opposite")-*,
 //        (.compound(.x, ["B1", "A1"]) --> "opposite")-*,
 //        ((.compound(.x, [.variable(.independent("1")), .variable(.independent("2"))]) --> "opposite") <=> (.compound(.x, [.variable(.independent("2")), .variable(.independent("1"))]) --> "opposite"))-?
 //    )
+    sleep(2)
+ */
+/*
+    output.reset()
+    print("\n\n\n\n\n")
+    
+    nars.perform(
+        ("a" --> "b")-*,
+        ("b" --> "c")-*,
+        ("c" --> "d")-*,
+        .cycle(1),
+        ("a" --> "d")-?,
+        .pause
+    )
+     */
 }
 
 // MARK: Tests

@@ -1,5 +1,5 @@
 
-extension Bag where I == Concept {
+extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
         case .judgement(let j): return consider(j, derive: derive)
@@ -31,7 +31,7 @@ extension Bag where I == Concept {
 
 // MARK: Private
 
-extension Bag where I == Concept {
+extension AbstractBag where I == Concept {
     private func consider(_ s: Statement, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
@@ -40,6 +40,10 @@ extension Bag where I == Concept {
         case .word: // TODO: is this accurate?
             var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
+            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
+                let newPriority = (concept.priority + maxPriority) / 2
+                concept.priority = min(newPriority, 0.9)
+            }
             put(concept)
             return derivedJudgements
         case .compound(let c, let ts):
@@ -48,6 +52,10 @@ extension Bag where I == Concept {
                 for t in terms {
                     if var concept = get(t.description) {
                         derivedJudgements.append(contentsOf: f(&concept))
+                        if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
+                            let newPriority = (concept.priority + maxPriority) / 2
+                            concept.priority = min(newPriority, 0.9)
+                        }
                         put(concept)
                     }
                 }
@@ -55,13 +63,25 @@ extension Bag where I == Concept {
             }
             var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
+            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
+                let newPriority = (concept.priority + maxPriority) / 2
+                concept.priority = min(newPriority, 0.9)
+            }
             put(concept)
             return derivedJudgements
         case .statement(let subject, _, let predicate):
             var subjectConcept = get(subject.description) ?? Concept(term: subject)
             var predicateConcept = get(predicate.description) ?? Concept(term: predicate)
             derivedJudgements.append(contentsOf: f(&subjectConcept))
+            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
+                let newPriority = (subjectConcept.priority + maxPriority) / 2
+                subjectConcept.priority = min(newPriority, 0.9)
+            }
             derivedJudgements.append(contentsOf: f(&predicateConcept))
+            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
+                let newPriority = (predicateConcept.priority + maxPriority) / 2
+                predicateConcept.priority = min(newPriority, 0.9)
+            }
             put(subjectConcept)
             put(predicateConcept)
             return derivedJudgements

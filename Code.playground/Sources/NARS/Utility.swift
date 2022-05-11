@@ -4,42 +4,6 @@ public func debugPrint(_ item: Any, _ separator: String = "-------") {
     print("\(item)"+separator+"\n")
 }
 
-// TODO: remove all Copying conformances
-// replace with a wrapper that is able to create
-// a shallow clone of memory and pull in new things
-// on demand via some sort of a wrapper interface
-
-extension Bag: Copying where I: Copying {
-    public func copy() -> Bag<I> {
-        queue.sync { // TODO: create a wrapper instead
-            let bag = Bag<I>(levels, capacity)
-            bag.items = items.mapValues { $0.copy() }
-            bag.buckets = buckets.compactMap { $0.map { $0.copy() } }
-            bag.currentLevel = currentLevel // not needed?
-            return bag
-        }
-    }
-}
-
-extension Concept: Copying {
-    public func copy() -> Concept {
-        var concept = Concept(priority: priority, term: term)
-        concept.termLinks = termLinks.copy()
-        concept.beliefs = beliefs.copy()
-        return concept
-    }
-}
-
-extension TermLink: Copying {
-    public func copy() -> TermLink { self } // value type 
-}
-extension Belief: Copying {
-    public func copy() -> Belief { self } // value type
-}
-extension Task: Copying {
-    public func copy() -> Task { self } // value type
-}
-
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
         statement = f()
@@ -156,11 +120,11 @@ extension Sentence: CustomStringConvertible {
 
 extension Bag: CustomStringConvertible {
     public var description: String {
-        queue.sync {
+//        queue.sync {
             let x = I.self == Concept.self ? "" : ".  "
             let o = items.values.reduce("", { $0 + "\($1)\n" + x })
             return String(o.dropLast(x.count))
-        }
+//        }
     }
 }
 

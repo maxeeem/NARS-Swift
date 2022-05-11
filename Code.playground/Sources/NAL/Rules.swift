@@ -1,7 +1,7 @@
 
 /// Swift Tuple is a basic primitive
-typealias Triple = (Bool?, Bool?, Bool?)
-typealias Quad   = (Bool?, Bool?, Bool?, Bool?)
+//typealias Triple = (Bool?, Bool?, Bool?)
+typealias Quad<T: Equatable> = (T, T, T, T)
 
 /// Statement is a fundamental type
 public typealias Rule = (Statement, Statement, Statement, TruthFunction)
@@ -28,16 +28,6 @@ public enum Rules: String, CaseIterable {
     case inheritanceFromSimilarityAndReversedInheritance
 }
 
-
-public typealias Teorema = (Term) -> Statement?
-
-public enum Teoremas: CaseIterable {
-    case inheritance
-    case implication
-    case equivalence
-}
-
-
 extension Rules {
     var tf: TruthFunction {
         TruthValue.truthFunction(self, false)
@@ -57,16 +47,6 @@ extension Rules {
             return x
         }
     }
-//    public var apply2: (_ judgements: (Judgement, Judgement)) -> [Judgement?] {
-//        { j in
-//            let (j1, j2) = j
-//            let rules = firstOrder + higherOrder + conditional
-//            return rules.flatMap { r in
-//                [rule_generator(r)((j1, j2)),
-//                 rule_generator(r)((j2, j1))] // switch order of premises
-//            }
-//        }
-//    }
     static let strong: [Rules] = [.deduction, .analogy, .resemblance]
 }
 
@@ -112,60 +92,6 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
     
     if total < 2 { // no conclusion
         return { _ in nil }
-    }
-    
-    if total == 4 { // conversion
-//        let S = Term.word("S")
-//        let P = Term.word("P")
-        let terms = Set(p1.terms + p2.terms + c.terms)
-        guard terms.count == 2,
-            case .statement(let sub1, let cop1, let pre1) = p1,
-            case .statement(let sub2, let cop2, let pre2) = p2,
-            case .statement(let cs, let cc, let cp) = c else {
-            return { _ in nil }
-        }
-
-//        ("swan" --> "bird")-*,
-//        ("bird" --> "swan")-*(0.1),
-
-        return { (arg) in
-            let (j1, j2) = arg
-            let t1 = j1.statement // test
-            let t2 = j2.statement // test
-
-            let si1 = 0
-            let pi1 = 1
-            let si2 = (sub1 == sub2) ? 3 : 2
-            let pi2 = (pre1 == pre2) ? 2 : 3
-            
-            let ct1 = term(at: si1, in: (t1.terms + t2.terms)) // swan
-            let ct2 = term(at: pi1, in: (t1.terms + t2.terms)) // bird
-            let ct3 = term(at: si2, in: (t1.terms + t2.terms)) // bird
-            let ct4 = term(at: pi2, in: (t1.terms + t2.terms)) // swan
-            
-            let s1: Statement = .statement(ct1!, cop1, ct2!)
-            let s2: Statement = .statement(ct3!, cop2, ct4!)
-            
-            if s1 == t1, s2 == t2 {
-                // conclusion
-                var statement: Statement!
-                var terms = p1.terms + p2.terms
-                                
-                let subject = firstIndex(of: cs, in: terms)!
-                let predicate = firstIndex(of: cp, in: terms)!
-                terms = t1.terms + t2.terms
-                statement = .statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
-
-                if statement.isTautology {
-                    return nil
-                }
-                
-                let truthValue = tf(j1.truthValue, j2.truthValue)
-                return Judgement(statement, truthValue)
-            }
-            
-            return nil
-        }
     }
     
     return { (arg) in
@@ -240,6 +166,11 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 let sTerm = term(at: subject, in: terms)!
                 let pTerm1 = term(at: pT1, in: terms)!
                 let pTerm2 = term(at: pT2, in: terms)!
+                if let path1 = registry(get: j1.description2), let path2 = registry(get: j2.description2) {
+                    if Set(path1).intersection(Set(path2)).isEmpty == false {
+                        return nil
+                    }
+                }
                 guard let compound = ç.connect(pTerm1, ct, pTerm2) else {
                     return nil // invalid compound
                 }
@@ -257,6 +188,11 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     let pTerm = term(at: predicate, in: terms)!
                     let sTerm1 = term(at: sT1, in: terms)!
                     let sTerm2 = term(at: sT2, in: terms)!
+                    if let path1 = registry(get: j1.description2), let path2 = registry(get: j2.description2) {
+                        if Set(path1).intersection(Set(path2)).isEmpty == false {
+                            return nil
+                        }
+                    }
                     guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
                         return nil // invalid compound
                     }
@@ -285,13 +221,15 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
     }
 }
 
+
+
 // MARK: Helpers
 
-private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
+private var identifyCommonTerms: ((Statement, Statement)) -> Quad<Bool?> = { (arg) in
     let t1 = arg.0.terms
     let t2 = arg.1.terms
     let res = t1 + t2
-    var out = Quad(nil, nil, nil, nil)
+    var out = Quad<Bool?>(nil, nil, nil, nil)
     var tmp = Array<Term>()
     Array(0..<3+1)
         .compactMap { i in
@@ -353,37 +291,33 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad = { (arg) in
 
 // MARK: Utility
 
-internal typealias Terms  = Quadra<Term>
-
-public typealias Quadra<T: Equatable> = (T, T, T, T)
-
-private func +(_ a: [Term], b: [Term]) -> Terms {
+private func +(_ a: [Term], b: [Term]) -> Quad<Term> {
     assert(a.count == 2 && b.count == 2)
     return (a[0], a[1], b[0], b[1])
 }
 
-private func firstIndex<T>(of t: T, in q: Quadra<T>) -> Int? {
+private func firstIndex<T>(of t: T, in q: Quad<T>) -> Int? {
     (q.0 == t ? 0 :
     (q.1 == t ? 1 :
     (q.2 == t ? 2 :
     (q.3 == t ? 3 : nil))))
 }
 
-private func term(at i: Int, in q: Terms) -> Term? {
+private func term(at i: Int, in q: Quad<Term>) -> Term? {
     (i == 0 ? q.0 :
     (i == 1 ? q.1 :
     (i == 2 ? q.2 :
     (i == 3 ? q.3 : nil))))
 }
 
-private func set(_ q: inout Quad, _ i: Int, _ value: Bool?) {
+private func set(_ q: inout Quad<Bool?>, _ i: Int, _ value: Bool?) {
     (i == 0 ? q.0 = value :
     (i == 1 ? q.1 = value :
     (i == 2 ? q.2 = value :
     (i == 3 ? q.3 = value : () ))))
 }
 
-private func countTruths(in q: Quad) -> Int {
+private func countTruths(in q: Quad<Bool?>) -> Int {
     var i = 0
     let x = true
     if q.0 == x { i += 1 }
@@ -392,4 +326,3 @@ private func countTruths(in q: Quad) -> Int {
     if q.3 == x { i += 1 }
     return i
 }
-

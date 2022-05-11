@@ -35,7 +35,7 @@ public func w2c(_ w: Double) -> Double {
 
 extension Rules {
     public var allRules: [Rule] {
-        let rules = local + firstOrder + higherOrder + conditional
+        let rules = /*local +*/ firstOrder + higherOrder + conditional
         var permutations: [Rule] = []
         for r in rules {
             let (p1, p2, c, tf) = r
@@ -63,18 +63,18 @@ extension Rules {
         }
         return rules + permutations
     }
-    var local: [Rule] {
-        let S = Term.word("S")
-        let P = Term.word("P")
-        switch self {
-        case .similarityFromReversedInheritance:
-            return []//(S --> P,     P --> S, S <-> P, tf)]
-        case .inheritanceFromSimilarityAndReversedInheritance:
-            return []//(S <-> P,     P --> S, S --> P, tf)]
-        default:
-            return []
-        }
-    }
+//    var local: [Rule] {
+//        let S = Term.word("S")
+//        let P = Term.word("P")
+//        switch self {
+//        case .similarityFromReversedInheritance:
+//            return []//(S --> P,     P --> S, S <-> P, tf)]
+//        case .inheritanceFromSimilarityAndReversedInheritance:
+//            return []//(S <-> P,     P --> S, S --> P, tf)]
+//        default:
+//            return []
+//        }
+//    }
     var higherOrder: [Rule] {
         return firstOrder.map { (arg) in
             var (p1, p2, c, tf) = arg
@@ -175,8 +175,8 @@ extension Rules {
     }
 }
 
-extension Teoremas {
-    public var rules: [Teorema] {
+extension Theorems {
+    public var rules: [Theorem] {
         switch self {
         case .inheritance:
             return [
@@ -194,7 +194,7 @@ extension Teoremas {
         case .implication:
             return [
                 { var t: Statement?
-                    match("S" <-> "P", $0, statement: { S, P in
+                    match("S" <-> "P", $0, extractCompound: false, statement: { S, P in
                         t = (S <-> P) => (S --> P)
                     }); return t
                 },
@@ -320,13 +320,13 @@ private func match(_ lhs: Statement, _ rhs: Statement,
             if tr.count == 1 { // instance/property
                 compound(tr[0], .NULL)
             } else { // TODO: expand to more than two terms
-//                if case .statement = tr[0], case .statement = tr[1] {
-//                    match(tr[1], tr[0], extractCompound: false, statement: { s, p in
-//                        compound(s, p)
-//                    })
-//                } else {
+                if case .statement = tr[0], case .statement = tr[1] {
+                    match(tr[1], tr[0], extractCompound: false, statement: { s, p in
+                        compound(s, p)
+                    })
+                } else {
                     compound(tr[0], tr[1])
-//                }
+                }
             }
             return true
         }
@@ -344,9 +344,16 @@ private func match(_ lhs: Statement, _ rhs: Statement,
                 statement(sr, pr)
             }
             return true
-//        } else if match(sl, pl) && cl == cr && match(sr, pr) {
+        } else if match(sl, pl) && cl == cr && match(sr, pr) {
 //            statement(sr, pr) // TODO: come up with better implementation
-//            return true
+            if extractCompound { // TODO: come up with a better way
+                //                print("a", sr, pr)
+                //print(extract(sr), extract(pr))
+                statement(extract(sr), extract(pr))
+            } else {
+                statement(sr, pr)
+            }
+            return true
         }
         return false
     }
@@ -361,39 +368,3 @@ private func extract(_ term: Term) -> Term {
     }
     return term
 }
-
-/*
-extension Theorems {
-    public var theorem: [Theorem] {
-        let S = Term.word("S")
-        let P = Term.word("P")
-
-        switch self {
-        case .negation:
-            return []
-        case .conversion:
-            return [(S --> P,   P --> S, tf)]
-        case .contraposition:
-            return []
-            
-            
-        case .inheritance:
-            return []
-        case .similarity:
-            return []
-        case .implication:
-            return [(S --> P,   S <-> P, tf),
-                    (S --> P,   P <-> S, tf),
-//                    (S <-> P,   S --> P, tf), // similiarity is symmetrical
-                    (S <-> P,   P --> S, tf)]//, // similiarity is symmetrical
-//                    (S <-> P,   P <-> S, tf)]
-        case .equavalence:
-//            return []
-            return []//(S <-> P,   S•-> <-> P•->, tf),
-                    //(S <-> P,   ->•S <-> ->•P, tf),
-//                    (S --> P•->,   S <-> P•->, tf),
-//                    (->•S --> P,   ->•S <-> P, tf)]
-        }
-    }
-}
-*/

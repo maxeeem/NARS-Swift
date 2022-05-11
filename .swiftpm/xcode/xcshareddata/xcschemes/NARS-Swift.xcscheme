@@ -52,6 +52,20 @@
                BlueprintName = "NARS-Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "Single_Step/testNal2_07()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testNal2_08()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testNal2_10()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testSample()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

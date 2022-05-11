@@ -1,9 +1,5 @@
 
-public protocol Copying { // TODO: remove
-    func copy() -> Self
-}
-
-public protocol Item: Copying {
+public protocol Item {
     var identifier: String { get }
     var priority: Double { get set }
 }
@@ -44,17 +40,98 @@ public struct Concept: Item {
     // after n seconds or instances of the same input
     // should we still permit the signal to go through?
     // implementing a debounce of sorts
-    internal var lastInput: Judgement!
-    internal var lastAccepted: Set<Judgement> = []
-    internal var lastQuestion: Question!
-    internal var lastAnswered: Set<Judgement> = []
+//    internal var lastInput: Judgement!
+//    internal var lastAccepted: Set<Judgement> = []
+//    internal var lastQuestion: Question!
+//    internal var lastAnswered: Set<Judgement> = []
+}
+
+private var reg: [String: [String]] = [:]
+
+import Dispatch
+private let rqueue = DispatchQueue(label: "registry", qos: .userInitiated)
+    
+public func registry(get key: String) -> [String]? {
+    rqueue.sync {
+        return reg[key]
+    }
+}
+
+public func registry(init key: String) {
+    rqueue.sync {
+        reg[key] = []
+    }
+}
+
+public func registry(set value: String, for key: String) {
+    rqueue.sync {
+        reg[key]?.append(value)
+    }
+}
+
+public func registryReset() {
+    rqueue.sync {
+        reg.removeAll()
+    }
 }
 
 extension Concept {
     // returns derived judgements if any
-    mutating func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
-        if j == lastInput { return Array(lastAccepted) }
-        lastInput = j
+    func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
+//        if j == lastInput { return Array(lastAccepted) }
+//        lastInput = j
+//        if j.description2.contains("<a -> d>.") {
+//            print(">>>", j.description2)
+//        }
+
+        var originalPriority: Double?
+        
+        var derived: [Judgement] = []
+
+        var j = j
+        
+        // revision goes first
+        if let b = beliefs.get(j.statement.description) {
+            originalPriority = b.priority
+            let judgement: Judgement
+//            if j.description2.contains("<a -> d>.") {
+//                print(">>>", j.description2, b.judgement.description2)
+//            }
+            if let path1 = registry(get: b.judgement.description2) {
+                if let path2 = registry(get: j.description2) {
+                    if Set(path1).intersection(Set(path2)).isEmpty {
+                        // no overlap in evidential bases so apply revision
+                        judgement = revision(j1: j, j2: b.judgement)
+                    } else {
+                        // evidential bases overlap
+                        judgement = choice(j1: j, j2: b.judgement)
+                    }
+                } else {
+                    judgement = revision(j1: j, j2: b.judgement)
+                }
+            } else {
+                // evidential bases overlap
+                judgement = choice(j1: j, j2: b.judgement)
+            }
+            // wait to put back original belief to process another one
+            if j != judgement {
+                j = judgement
+                derived.append(judgement)
+            }
+        }
+//        
+//        // conversion is special
+//        if let c = conversion(j1: j), beliefs.items[c.statement.description] == nil {
+//            if registry(get: c.description2) == nil {
+//                registry(init: c.description2)
+//            } else {
+//                registry(set: j.description2, for: c.description2)
+//            }
+//            derived.append(c)
+//        }
+
+        
+        
         defer {
             switch j.statement {
             case .word: // TODO: is this accurate?
@@ -71,142 +148,58 @@ extension Concept {
             case .variable:
                 break // TODO: is this accurate?
             }
-            
-            beliefs.put(j + 0.9) // store new belief
+
+            let newPriority: Double
+            if let maxPriority = derived.map({$0.truthValue.confidence}).max() {
+                newPriority = ((originalPriority ?? 0.9) + maxPriority) / 2
+            } else {
+                newPriority = originalPriority ?? 0.9
+            }
+//            print(">>>", newPriority)
+            if registry(get: j.description2) == nil {
+                registry(init: j.description2)
+            }
+            beliefs.put(j + min(newPriority, 0.9)) // store new belief
         }
         
         // return if no recursion
-        guard derive else { return [] }
-
-        
-        var derived: [Judgement] = []
-        
-        // revision goes first
-        if let b = beliefs.get(j.statement.description) {
-            let judgement = revision(j1: j, j2: b.judgement)
-            // wait to put back original belief to process another one
-            if j != judgement {
-                derived.append(judgement)
-            }
-        }
-
-        //TODO: these rules should not produce new statements
-        // only to be used for inference and answering questions
-        //
-        // could this be taking place in imagination first?
-        
-        // conversion is special
-        if let c = conversion(j1: j), beliefs.items[c.statement.description] == nil {
-            derived.append(c)
-        }
-        /*
-        
-        // TODO: add handling of S <-> P |- S -> P |- P -> S
-        if case .statement(let s, let c, let p) = j.statement, c == .similarity {
-            let c1 = s --> p
-            if beliefs.items[c1.description] == nil {
-                var tv1 = TruthValue.deduction(j.truthValue, .tautology)
-                tv1 = TruthValue(tv1.f, tv1.c, .deduction)
-                let j1 = Judgement(c1, tv1)
-                derived.append(j1)
-            }
-            let c2 = p <-> s
-            if beliefs.items[c2.description] == nil {
-                var tv2 = TruthValue.deduction(j.truthValue, .tautology)
-                tv2 = TruthValue(tv2.f, tv2.c, .deduction)
-                let j2 = Judgement(c2, tv2)
-                derived.append(j2)
-            }
-            let c3 = p --> s
-            if beliefs.items[c3.description] == nil {
-                var tv3 = TruthValue.deduction(j.truthValue, .tautology)
-                tv3 = TruthValue(tv3.f, tv3.c, .deduction)
-                let j3 = Judgement(c3, tv3)
-                derived.append(j3)
-            }
-        }
-        */
-        
-        let results = Teoremas.allCases.flatMap {
-            $0.rules.compactMap { $0(j.statement) }
-        }.flatMap { t in
-            Rules.strong.flatMap {
-                $0.apply((j, t-*(1,reliance)))
-            }.compactMap { $0 }
-        }
-            
-//        let dict = Dictionary(grouping: results) { el in
-//            el.statement.description
-//        }
-////        print("---", dict)
-//        let r = dict.values.flatMap { judgements in
-//            judgements.max { j1, j2 in
-//                let c = choice(j1: j1, j2: j2)
-//                return c.statement == j2.statement
-//            }
-//        }
-        
-//        print("\n\n\(j)\n\n-098765434567890-\n\n", results)
-        
-        derived.append(contentsOf: results)
-        
-        if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-            let j = Judgement(.statement(p, c, s), j.truthValue)
-            let results = Teoremas.allCases.flatMap {
-                $0.rules.compactMap { $0(j.statement) }
-            }.flatMap { t in
-                Rules.strong.flatMap {
-                    $0.apply((j, t-*(1,reliance)))
-                }.compactMap { $0 }
-            }
-            derived.append(contentsOf: results)
-        }
-        /*
-         let res: [[Statement]] = Teoremas.allCases.map {
-             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-                 return $0.rules.compactMap { $0(j.statement) }
-                 + $0.rules.compactMap { $0(.statement(p, c, s)) }
-             } else {
-                 return $0.rules.compactMap { $0(j.statement) }
-             }
-         }
-
-         let results: [[Judgement]] = res.flatMap{$0}.map { t in
-             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-                 return Rules.strong.flatMap {
-                     $0.apply((j, t-*(1,reliance)))
-                 }.compactMap { $0 }
-                 +
-                 Rules.strong.flatMap {
-                     $0.apply((Judgement(.statement(p, c, s), j.truthValue), t-*(1,reliance)))
-                 }.compactMap { $0 }
-             } else {
-                 return Rules.strong.flatMap {
-                     $0.apply((j, t-*(1,reliance)))
-                 }.compactMap { $0 }
-             }
-         }
-         */
-        
-        
+        guard derive else { return derived }
         
         /// apply two-premise rules
-        if let b = beliefs.get() {
-            // TODO: wait to put back
-            // modify its "usefullness" value 
-            beliefs.put(b) // put back another belief
+        if var b = beliefs.get() {
+//            print("--", b, j)
             // apply rules
             let results = Rules.allCases
                 .flatMap { r in
                     r.apply((b.judgement, j))
-//                    + r.apply((j, b.judgement)) // switch order of premises
                 }
                 .compactMap { $0 }
+            
+            for r in results {
+                if registry(get: r.description2) == nil {
+                    registry(init: r.description2)
+                } else {
+                    registry(set: j.description2, for: r.description2)
+                    registry(set: b.judgement.description2, for: r.description2)
+                }
+            }
             derived.append(contentsOf: results)
-            lastAccepted = Set(derived)
+            
+            // TODO: wait to put back
+            // modify its "usefullness" value
+            if let maxPriority = results.map({$0.truthValue.confidence}).max() {
+                let newPriority = (b.priority + maxPriority) / 2
+                b.priority = min(newPriority, 0.9)
+            }
+            beliefs.put(b) // put back another belief
+            
+//            derived = derived
+//                .filter { beliefs.items[$0.statement.description] == nil && $0.statement != j.statement }
+
+//            lastAccepted = Set(derived)
             if !derived.isEmpty {
 //                print("because...")
-//                print("+++", b, "\n", "&&", j)
+//                print("+++", j, "\n", "&&", b)
 //                print("it follows...")
             }
         }
@@ -223,13 +216,19 @@ extension Concept {
                 return c.statement == j2.statement
             }
         }
-            .filter { beliefs.items[$0.description] == nil }
+            .filter { beliefs.items[$0.statement.description] == nil }//&& $0.statement != j.statement }
+//        print("\n\n\n", j)
+//        print(beliefs)
 //        print(r)
-        return r
+//        print("\n\n")
+        
+        derived = r
+        
+        return derived
     }
     
     // returns relevant belief or derived judgements if any
-    mutating func answer(_ q: Question) -> [Judgement] {
+    func answer(_ q: Question) -> [Judgement] {
         var result: [Judgement] = []
         switch q.statement {
         case .statement(let subject, let copula, let predicate):
@@ -265,7 +264,6 @@ extension Concept {
                 }
             } else { // TODO: handle other cases 
                 result = answer(q.statement)
-//                print("+++", result)
                 let dict = Dictionary(grouping: result) { el in
                     el.statement.description
                 }
@@ -277,16 +275,18 @@ extension Concept {
                     }
                 }
                 result = r
+//                print("\(self.identifier.uppercased())")
+//                result.forEach { print("+ \($0)") }
             }
         default:
             return [] // TODO: handle other cases
         }
-        if q == lastQuestion &&
-            Set(result) == lastAnswered {
-            return []
-        }
-        lastQuestion = q
-        lastAnswered = Set(result)
+//        if q == lastQuestion &&
+//            Set(result) == lastAnswered {
+//            return []
+//        }
+//        lastQuestion = q
+//        lastAnswered = Set(result)
         return result
     }
     
@@ -296,56 +296,31 @@ extension Concept {
         if let b = beliefs.get(s.description) {
             beliefs.put(b) // put back
             return [b.judgement]
+        } else if let c = conversion(j1: s-*), let b = beliefs.get(c.statement.description) {
+            beliefs.put(b) // put back
+            let conv = conversion(j1: b.judgement)!
+            beliefs.put(conv + 0.9)
+            return [conv]
+            
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
 //            print("---picked out", b)
-            let res = Teoremas.allCases.flatMap {
-                $0.rules.compactMap { $0(b.judgement.statement) }
-//                $0.rules.compactMap { $0(s) }
-            }
-//                print(">//", res)
-            let results = res.flatMap { t in
-                Rules.strong.flatMap {
-                    $0.apply((b.judgement, t-*(1,reliance)))
-//                    $0.apply((s-*, t-*(1,reliance)))
-                }.compactMap { $0 }
-            }
-                .filter { beliefs.items[$0.description] == nil }
             
-            
-//            let res2 = Teoremas.allCases.flatMap {
-//                $0.rules.compactMap { $0(s) }
-//            }
-//            let results2 = res2.flatMap { t in
-//                Rules.strong.flatMap {
-//                    $0.apply((s-*, t-*(1,reliance)))
-//                }.compactMap { $0 }
-//            }
-//                .filter { beliefs.items[$0.description] == nil }
+            let r = Theorems.apply(b.judgement)
+                .filter { beliefs.peek($0.description) == nil }
 
-            let dict = Dictionary(grouping: results) { el in
-                el.statement.description
-            }
-//            print("---", dict)
-            let r = dict.values.flatMap { judgements in
-                judgements.max { j1, j2 in
-                    let c = choice(j1: j1, j2: j2)
-                    return c.statement == j2.statement
-                }
-            }
-            .filter { beliefs.items[$0.description] == nil }
 //            print("+++", r)
 //            print(">>>", b, results)
+
             if let answer = r.first(where: { $0.statement == s }) {
                 return [answer]
             }
             
             return r +
-            Rules.allCases
+             Rules.allCases
                 .flatMap { r in
                     r.apply((s-*, b.judgement))
-//                    + r.apply((b.judgement, s-*)) // switch order of premises
                 }
                 .compactMap { $0 }
         }

@@ -244,6 +244,12 @@ extension TruthValue: CustomStringConvertible {
         let c = String(format: "%.2f", confidence)
         return "%\(f);\(c)%\(r)"
     }
+    public var description2: String {
+//        let r = rule == nil ? "." : "\(rule!)"
+        let f = String(format: "%.2f", frequency)
+        let c = String(format: "%.2f", confidence)
+        return "%\(f);\(c)%"//\(r)"
+    }
 }
 
 extension Rules: CustomStringConvertible {
@@ -261,6 +267,9 @@ extension Question: CustomStringConvertible {
 extension Judgement: CustomStringConvertible {
     public var description: String {
         "<\(statement)>. " + "\(truthValue)"
+    }
+    public var description2: String {
+        "<\(statement)>. " + truthValue.description2
     }
 }
 
@@ -291,5 +300,6 @@ extension Array where Element == Bool {
 
 /// from https://stackoverflow.com/a/38036978
 public func rounded(_ d: Double, _ x: Int = 100) -> Double {
-    (d * Double(x)).rounded() / Double(x)
+    let result = (d * Double(x)).rounded() / Double(x)
+    return result.isNaN ? 0 : result
 }

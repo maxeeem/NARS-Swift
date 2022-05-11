@@ -18,6 +18,7 @@ class Single_Step: XCTestCase {
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
         Sentence.defaultPause = 300 // in milliseconds
+        registryReset()
     }
 
     override func tearDownWithError() throws {
@@ -29,7 +30,33 @@ class Single_Step: XCTestCase {
     private func outputMustContain(_ expectation: String) {
         XCTAssert(output.contains(where: { $0.contains(expectation) }))
     }
-
+    
+    func testSample() {
+        nars.perform(
+            ("{tom}" --> "cat")-*,
+            (Term.compound(.x, ["{tom}", "[sky]"]) --> "likes")-*,
+            ("{sky}" --> "[blue]")-*,
+            .cycle,
+            (Term.compound(.x, ["cat", "[blue]"]) --> "likes")-?,
+            .pause
+        )
+        outputMustContain("💡 <(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
+    }
+    
+    func testMultiStep() {
+        nars.perform(
+            ("a" --> "b")-*,
+            ("b" --> "c")-*,
+            ("x" --> "y")-*,
+            ("y" --> "z")-*,
+            ("c" --> "d")-*,
+            .cycle,
+            ("a" --> "d")-?,
+            .pause
+        )
+        print(nars.recent)
+        outputMustContain("💡 <a -> d>. %1.00;0.73%")
+    }
     
 //    func testCycle() throws {
 //        nars.cycle = true
@@ -112,6 +139,7 @@ class Single_Step: XCTestCase {
             ("bird" --> "swimmer")-?,
             .pause
         )
+        print(nars.recent)
         outputMustContain("💡 <bird -> swimmer>. %1.00;0.90%")
     }
     
@@ -227,27 +255,28 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-//           .cycle,
+           .cycle,
            ("[smart]" --> "[bright]")-?,
-           .pause//(1000)
+           .pause
        )
        outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
     }
     
-    func testNal2_09() throws {
-       /// conversions between inheritance and similarity
-       nars.perform(
-           ("swan" --> "bird")-*,
-           ("bird" <-> "swan")-*(0.1),
-           .pause
-       )
-       outputMustContain("<bird -> swan>.")// %0.10;0.73%")
-    }
+//    func testNal2_09() throws {
+//       /// conversions between inheritance and similarity
+//       nars.perform(
+//           ("swan" --> "bird")-*,
+//           ("bird" <-> "swan")-*(0.1),
+//           .cycle
+//       )
+//       outputMustContain("<bird -> swan>.")// %0.10;0.73%")
+//    }
 
     func testNal2_10() throws {
        /// structure transformation
        nars.perform(
            ("Birdie" <-> "Tweety")-*(0.9),
+           .cycle,
            ("{Birdie}" <-> "{Tweety}")-?,
            .pause
        )
@@ -258,7 +287,7 @@ class Single_Step: XCTestCase {
        /// conversions between inheritance and similarity
         nars.perform(
             ("swan" --> "bird")-*(0.9),
-//            .cycle,
+            .cycle,
             ("bird" <-> "swan")-?,
             .pause
         )
@@ -271,7 +300,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("bird" <-> "swan")-*(0.9),
             ("swan" --> "bird")-?,
-            .pause
+            .cycle
         )
         outputMustContain("💡 <swan -> bird>.")// %0.90;0.81%")
     }

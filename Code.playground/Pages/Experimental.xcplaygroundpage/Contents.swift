@@ -11,7 +11,7 @@ actor SELF {
     let nars: NARS
     init(_ output: @escaping (String) -> () = { print($0) }) async {
         defer { output("\tHi, I'm \(nars.name) 👋") }
-        nars = NARS(name, output)
+        nars = NARS(cycle: true, output)
     }
     nonisolated
     func perform(_ script: Sentence...) {
@@ -29,7 +29,21 @@ print(statement)
 statement     = "Bart Simpson" •->• "yellow"
 print(statement, "\n")
 
-print(TruthValue.induction(TruthValue(1, 0.9), TruthValue(0, 0.9)))
+//print(TruthValue.induction(TruthValue(1, 0.9), TruthValue(0, 0.9)))
+
+
+// Multi-NARS
+
+class Multi {
+    let narses = Bag<NARS>()
+    
+    
+}
+
+
+
+
+
 
 /*
  

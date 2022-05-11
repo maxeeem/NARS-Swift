@@ -1,12 +1,23 @@
 import Dispatch
 
-public final class Bag<I: Item> {
+
+public protocol AbstractBag {
+    associatedtype I: Item
+    func put(_ item: I) -> I?
+    func get() -> I?
+    func get(_ identifier: String) -> I?
+    func peek() -> I?
+    func peek(_ identifier: String) -> I?
+}
+
+
+public final class Bag<I: Item>: AbstractBag {
     var buckets: [[I]]
     var items: [String: I] = [:]
     
     internal let levels: Int
     internal let capacity: Int
-    internal var currentLevel: Int = 0
+    internal var currentLevel: Int
     
     internal var queue = DispatchQueue(label: "ioqueue", qos: .background)
     
@@ -14,6 +25,7 @@ public final class Bag<I: Item> {
         buckets = Array(repeating: [], count: levels)
         self.levels = levels
         self.capacity = capacity
+        self.currentLevel = levels - 1
     }
     
     @discardableResult
@@ -56,7 +68,22 @@ public final class Bag<I: Item> {
         }
     }
     
+    public func peek() -> I? {
+        queue.sync {
+            if items.isEmpty {
+                return nil
+            }
+            currentLevel = selectNonEmptyLevel()
+            return buckets[currentLevel].first
+        }
+    }
     
+    public func peek(_ identifier: String) -> I? {
+        queue.sync {
+            return items[identifier]
+        }
+    }
+
     private func getLevel(_ item: I) -> Int {
         let fl = item.priority * Double(buckets.count)
         let level = Int(fl.rounded(.down) - 1)
@@ -99,5 +126,57 @@ public final class Bag<I: Item> {
         var items = buckets[level]
         items.removeAll(where: { $0.identifier == item.identifier })
         buckets[level] = items
+    }
+}
+
+
+// MARK: - WrappedBag
+
+/// Read access to wrapped Bag with writes to internal bag
+public final class WrappedBag<I: Item>: AbstractBag {
+    weak var wrapped: Bag<I>?
+    var bag = Bag<I>()
+    
+    internal var queue = DispatchQueue(label: "wrappedqueue", qos: .background)
+
+    init(_ bag: Bag<I>) {
+        wrapped = bag
+    }
+    
+    public func reset() {
+        queue.sync {
+            bag = Bag<I>()
+        }
+    }
+    
+    @discardableResult
+    public func put(_ item: I) -> I? {
+        queue.sync {
+            bag.put(item)
+        }
+    }
+    
+    public func get() -> I? {
+        queue.sync {
+            bag.get() ?? wrapped?.peek()
+        }
+    }
+    
+    public func get(_ identifier: String) -> I? {
+        queue.sync {
+            bag.get(identifier) ?? wrapped?.peek(identifier)
+        }
+    }
+    
+    public func peek() -> I? {
+        queue.sync {
+            bag.peek() ?? wrapped?.peek()
+        }
+    }
+    
+    public func peek(_ identifier: String) -> I? {
+        queue.sync {
+            bag.peek(identifier) ?? wrapped?.peek(identifier)
+        }
     }
 }

@@ -14,6 +14,30 @@ final class NARS_Tests: XCTestCase {
 //            usleep(100)
 //        }
 //    }
+    
+    func testWrappedBag() throws {
+        let bag = Bag<TermLink>()
+        let bird = Term.word("bird")
+        let robin = Term.word("robin")
+        bag.put(TermLink(bird, 0.9))
+        bag.put(TermLink(robin, 0.9))
+        print(">>\n", bag, "<<\n")
+        
+        let wrapped = WrappedBag(bag)
+        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+
+        let item = wrapped.get()
+        print("==", item)
+        print(">>\n", bag, "<<\n")
+
+        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+        wrapped.put(TermLink(.word("dog"), 0.9))
+        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+
+        let wrappedItem = wrapped.get("robin")
+        print("==", wrappedItem)
+        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+    }
 
     
     func testExample() throws {
