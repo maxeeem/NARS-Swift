@@ -50,11 +50,13 @@ public final class NARS: Item {
                 
                 /// conversion is special
                 if let conv = conversion(j1: b.judgement) {
-                    if s.imagination.peek(conv.statement.description) == nil {
-                        results.append(conv)
-                    } else if case .statement(let sub, let cop, let pre) = conv.statement {
+                    if case .statement(let sub, let cop, let pre) = conv.statement {
                         if s.imagination.peek(sub.description)?.beliefs.peek(conv.statement.description) == nil
                         && s.imagination.peek(pre.description)?.beliefs.peek(conv.statement.description) == nil {
+                            results.append(conv)
+                        }
+                    } else {
+                        if s.imagination.peek(conv.statement.description) == nil {
                             results.append(conv)
                         }
                     }

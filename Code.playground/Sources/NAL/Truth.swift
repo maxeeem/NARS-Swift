@@ -51,9 +51,11 @@ extension TruthValue {
         case .intersection:    return (r,i)~intersection
         case .union:           return (r,i)~union
         case .difference:      return (r,i)~difference
-            
-        case .similarityFromReversedInheritance: return (r,i)~intersection
-        case .inheritanceFromSimilarityAndReversedInheritance: return (r,i)~reduceConjunction
+        
+        default:               return (r,i)~{_,_ in .tautology }
+
+//        case .similarityFromReversedInheritance: return (r,i)~intersection
+//        case .inheritanceFromSimilarityAndReversedInheritance: return (r,i)~reduceConjunction
         }
     }
     

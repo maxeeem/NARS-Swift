@@ -22,13 +22,13 @@ extension Theorems {
 
         let results: [[Judgement]] = res.flatMap{$0}.map { t in
             var results = Rules.strong.flatMap {
-                $0.apply((j, t-*(1,reliance)))
+                $0.apply((j, t-*(1,reliance, ETERNAL)))
             }.compactMap { $0 }
             
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
                 results.append(contentsOf:
                     Rules.strong.flatMap {
-                        $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath), t-*(1,reliance)))
+                        $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath), t-*(1,reliance, ETERNAL)))
                     }.compactMap { $0 }
                )
             }

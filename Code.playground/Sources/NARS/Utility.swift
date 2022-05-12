@@ -58,9 +58,6 @@ public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
 public func -*(_ s: Statement, _ f: Double) -> Sentence {
     Sentence(s -* (f, 0.9))
 }
-public func -*(_ j: inout Judgement, _ tv: (Double, Double)) {
-    j = j.statement -* tv
-}
 
 postfix operator -*
 extension Statement {

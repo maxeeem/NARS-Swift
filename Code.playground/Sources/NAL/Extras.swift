@@ -22,13 +22,26 @@ extension TruthValue: Equatable {
     }
 }
 
+extension Judgement: Equatable {
+    public static func == (lhs: Judgement, rhs: Judgement) -> Bool {
+        lhs.statement == rhs.statement && lhs.truthValue == rhs.truthValue
+    }
+}
+
+import Dispatch
+
+var ETERNAL: dispatch_time_t { DispatchTime.distantFuture.rawValue }
+
 // convenience initializer for Judgement
-public func +(_ s: Statement, fc: (Double, Double)) -> Judgement {
-    Judgement(s, TruthValue(fc.0, fc.1), [])
+public func +(_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
+    Judgement(s, TruthValue(fc.0, fc.1), ["\(s)+\(fc.2)"])
 }
 
 infix operator -* : Copula
 public func -* (_ s: Statement, _ fc: (Double, Double)) -> Judgement {
+    s -* (fc.0, fc.1, DispatchWallTime.now().rawValue)
+}
+public func -* (_ s: Statement, _ fc: (Double, Double, UInt64)) -> Judgement {
     s + fc
 }
 
@@ -37,16 +50,16 @@ extension Statement {
     public static postfix func -*(_ s: Statement) -> Judgement {
         switch s {
         case .word:
-            return s -* (1, 0.9)
+            return s -* (1.0, 0.9, ETERNAL)
         case .compound:
-            return s -* (1, 0.9) // TODO: is this accurate?
+            return s -* (1.0, 0.9, ETERNAL) // TODO: is this accurate?
         case .statement(let subject, _, let predicate):
             return subject == predicate ?
-                s -* (1, 1) // tautology
+            s -* (1.0, 1.0, ETERNAL) // tautology
                 :
-                s -* (1, 0.9) // fact
+            s -* (1.0, 0.9, ETERNAL) // fact
         case .variable:
-            return s -* (1, 0.9) // TODO: is this accurate?
+            return s -* (1.0, 0.9, ETERNAL) // TODO: is this accurate?
         }
     }
 }
@@ -264,12 +277,24 @@ extension Judgement {
             return j1.derivationPath
         } else {
             return zip(j1.derivationPath, j2.derivationPath).reduce([], { partialResult, next in
-                partialResult + [next.0, next.1]
+                partialResult + (next.0 == next.1 ? [next.0] : [next.0, next.1])
             }).suffix(100)
         }
     }
     
     func evidenceOverlap(_ j2: Judgement) -> Bool {
-        !Set(derivationPath).intersection(Set(j2.derivationPath)).isEmpty
+        let sameRoot = derivationPath.first == j2.derivationPath.first
+        let p1 = sameRoot ? Array(derivationPath.dropFirst()) : derivationPath
+        let p2 = sameRoot ? Array(j2.derivationPath.dropFirst()) : j2.derivationPath
+
+        if p1.isEmpty && p2.isEmpty {
+            return true // judgements have the same root
+        } else if p1.count == 1 && p2.count == 1 {
+            if p1[0].hasSuffix("\(ETERNAL)") && p2[0].hasSuffix("\(ETERNAL)") {
+                return true // judgements are both eternal
+            }
+        }
+        
+        return !Set(p1).intersection(Set(p2)).isEmpty
     }
 }

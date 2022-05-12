@@ -253,11 +253,11 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-           .cycle(10),
+           .cycle,
            ("[smart]" --> "[bright]")-?,
            .pause
        )
-       outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
+       outputMustContain("💡 <[smart] -> [bright]>. %0.90;0.66%")
     }
     
 //    func testNal2_09() throws {
@@ -336,7 +336,6 @@ class Single_Step: XCTestCase {
            ("{Tweety}" --> "{Birdie}")-*,
            .cycle
        )
-        print(nars.memory)
        outputMustContain("<{Birdie} <–> {Tweety}>.")// %1.00;0.90%")
     }
 

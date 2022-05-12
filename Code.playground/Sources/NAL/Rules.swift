@@ -24,6 +24,9 @@ public enum Rules: String, CaseIterable {
     case union
     case difference
     // Local
+    case conversion
+    case revision
+    
     case similarityFromReversedInheritance
     case inheritanceFromSimilarityAndReversedInheritance
 }
