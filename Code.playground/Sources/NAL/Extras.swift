@@ -30,7 +30,7 @@ extension Judgement: Equatable {
 
 import Dispatch
 
-var ETERNAL: dispatch_time_t { DispatchTime.distantFuture.rawValue }
+let ETERNAL = DispatchTime.distantFuture.rawValue
 
 // convenience initializer for Judgement
 public func +(_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
