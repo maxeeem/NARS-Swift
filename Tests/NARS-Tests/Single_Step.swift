@@ -240,13 +240,13 @@ class Single_Step: XCTestCase {
            ("bird" --> "swan")-*(0.1),
            .cycle
        )
-        outputMustContain("<bird <–> swan>.")// %0.10;0.81%")
+        outputMustContain("<bird <–> swan>. %0.10;0.81%")
 
         nars.perform(
            ("bird" <-> "swan")-?,
           .pause
        )
-        outputMustContain("💡 <bird <–> swan>.")// %0.10;0.81%")
+        outputMustContain("💡 <bird <–> swan>. %0.10;0.81%")
     }
     
     func testNal2_08() throws {
@@ -334,7 +334,7 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("{Tweety}" --> "{Birdie}")-*,
-           .cycle
+           .cycle(2)
        )
        outputMustContain("<{Birdie} <–> {Tweety}>.")// %1.00;0.90%")
     }

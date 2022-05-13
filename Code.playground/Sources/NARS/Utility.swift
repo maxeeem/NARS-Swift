@@ -125,5 +125,11 @@ extension Bag: CustomStringConvertible {
     }
 }
 
-
+extension WrappedBag: CustomStringConvertible {
+    public var description: String {
+        let b = "\(bag)"
+        let w = "\(wrapped!)"
+        return b + "\n---\n" + w
+    }
+}
 

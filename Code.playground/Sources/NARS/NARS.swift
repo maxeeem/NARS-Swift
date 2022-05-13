@@ -46,7 +46,7 @@ public final class NARS: Item {
                 c.beliefs.put(b)
                 s.imagination.put(c)
                 
-                var results = [b.judgement] + Theorems.apply(b.judgement)
+                var results = /*[b.judgement] +*/ Theorems.apply(b.judgement)
                 
                 /// conversion is special
                 if let conv = conversion(j1: b.judgement) {
@@ -79,7 +79,7 @@ public final class NARS: Item {
         }
     }
     
-    fileprivate var cycleLength = 1000000 // 0.001 second
+    fileprivate var cycleLength = 1000000 * 50 // 0.001 second
     
     fileprivate var lastPerformance = DispatchWallTime.now()
     
@@ -119,12 +119,19 @@ public final class NARS: Item {
                 } else if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
                     // check recent memory, then imagination
                     if let answer = self.recent.peek(q.statement.description)?.judgement // OR
-                        ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }),
+                        ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
                         // check main memory if the answer is already present
-                        let c = self.memory.items[sub.description], c.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
-                        
-                        /// ANSWER
-                        self.process(.judgement(answer), recurse: false, userInitiated: true)
+                        if let c = self.memory.items[sub.description] {
+                            if c.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
+                                /// ANSWER
+                                self.process(.judgement(answer), recurse: false, userInitiated: true)
+                            }
+                        } else {
+                            /// ANSWER
+                            self.process(.judgement(answer), recurse: false, userInitiated: true)
+//                       } else {
+//                           print("ANSWER", answer)
+                       }
                     }
                 }
                 
@@ -139,9 +146,11 @@ public final class NARS: Item {
             
             /// CYCLE
             if case .cycle(let n) = s {
-                cycle = true
-                think(n * Sentence.defaultPause)
-                cycle = false
+                if cycle == false {
+                    cycle = true
+                    think(n * Sentence.defaultPause)
+                    cycle = false
+                }
             }
         }
             
@@ -167,6 +176,12 @@ public final class NARS: Item {
 }
 
 // MARK: Private
+
+extension NARS: Equatable {
+    public static func == (lhs: NARS, rhs: NARS) -> Bool {
+        lhs.name == rhs.name
+    }
+}
 
 extension NARS {
     fileprivate func process(recent j: Judgement) {
@@ -233,11 +248,14 @@ extension NARS {
         if derivedJudgements.isEmpty { 
             if case .question = input {
 //                output("\t(1)I don't know 🤷‍♂️")
+                if userInitiated == false {
+                    self.imagination.reset() //= self.memory.copy()
+                }
+
                 if thinking {
                     output("thinking... \(input)")
 
                     iqueue.async {
-//                    self.imagination.reset() //= self.memory.copy()
 //                    self.dreaming = true
                     // re-process question
                         self.process(input)

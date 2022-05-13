@@ -137,7 +137,7 @@ public final class WrappedBag<I: Item>: AbstractBag {
     weak var wrapped: Bag<I>?
     var bag = Bag<I>()
     
-    internal var queue = DispatchQueue(label: "wrappedqueue", qos: .background)
+    internal var queue = DispatchQueue(label: "wrappedqueue-\(I.self)", qos: .background)
 
     init(_ bag: Bag<I>) {
         wrapped = bag
@@ -152,7 +152,10 @@ public final class WrappedBag<I: Item>: AbstractBag {
     @discardableResult
     public func put(_ item: I) -> I? {
         queue.sync {
-            bag.put(item)
+            if item != wrapped?.peek(item.identifier) {
+                bag.put(item) // items have diverged
+            }
+            return nil
         }
     }
     
@@ -178,5 +181,20 @@ public final class WrappedBag<I: Item>: AbstractBag {
         queue.sync {
             bag.peek(identifier) ?? wrapped?.peek(identifier)
         }
+    }
+}
+
+
+/// Convenience
+
+extension WrappedBag where I == Belief {
+    /// convenience for iterating over both dictionaries
+    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
+}
+
+extension Belief: Comparable {
+    public static func < (lhs: Belief, rhs: Belief) -> Bool {
+        let c = choice(j1: lhs.judgement, j2: rhs.judgement)
+        return c.statement == rhs.judgement.statement
     }
 }

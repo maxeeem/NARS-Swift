@@ -1,5 +1,5 @@
 
-public protocol Item {
+public protocol Item: Equatable {
     var identifier: String { get }
     var priority: Double { get set }
 }
@@ -16,11 +16,11 @@ public struct Belief: Item {
     public let judgement: Judgement
 }
 
-public struct Task: Item {
-    public var identifier: String { sentence.description }
-    public var priority: Double = 0.9
-    public let sentence: Sentence
-}
+//public struct Task: Item {
+//    public var identifier: String { sentence.description }
+//    public var priority: Double = 0.9
+//    public let sentence: Sentence
+//}
 
 // MARK: Concept
 
@@ -30,9 +30,17 @@ public struct Concept: Item {
     
     let term: Term
     
-    internal var termLinks = Bag<TermLink>()
+    private var _termLinks = Bag<TermLink>()
+    internal var termLinks: WrappedBag<TermLink>
     //let tasks = Bag<TermLink>() // sentences
-    internal var beliefs = Bag<Belief>() // judgements
+    private var _beliefs = Bag<Belief>() // judgements
+    internal var beliefs: WrappedBag<Belief>// = Bag<Belief>() // judgements
+
+    init(term: Term) {
+        self.term = term
+        self.termLinks = WrappedBag(_termLinks)
+        self.beliefs = WrappedBag(_beliefs)
+    }
     
     // TODO: how much should the input change
     // before it is considered different?
@@ -46,6 +54,25 @@ public struct Concept: Item {
 //    internal var lastAnswered: Set<Judgement> = []
 }
 
+extension Bag: Equatable {
+    public static func == (lhs: Bag<I>, rhs: Bag<I>) -> Bool {
+        Set(lhs.items.keys) == Set(rhs.items.keys)
+    }
+}
+
+extension WrappedBag: Equatable {
+    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
+        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
+    }
+}
+
+extension Concept: Equatable {
+    public static func == (lhs: Concept, rhs: Concept) -> Bool {
+        lhs.term == rhs.term
+        && lhs.termLinks == rhs.termLinks
+        && lhs.beliefs == rhs.beliefs
+    }
+}
 
 extension Concept {
     // returns derived judgements if any
@@ -66,7 +93,13 @@ extension Concept {
             if j.evidenceOverlap(b.judgement) {
                 judgement = choice(j1: j, j2: b.judgement)
             } else {
-                judgement = revision(j1: j, j2: b.judgement)
+                if j.truthValue.rule == .conversion {
+                    judgement = b.judgement
+                } else if b.judgement.truthValue.rule == .conversion {
+                    judgement = j
+                } else {
+                    judgement = revision(j1: j, j2: b.judgement)
+                }
             }
             // wait to put back original belief to process another one
             if j != judgement {
@@ -75,13 +108,16 @@ extension Concept {
             }
         }
         
+        // store symmetrical statement
+        if case .statement(let sub, let cop, let pre) = j.statement, (cop == .equivalence || cop == .similarity) {
+            let flipped: Statement = .statement(pre, cop, sub)
+            if beliefs.peek(flipped.description) == nil {
+                derived.append(Judgement(flipped, j.truthValue, j.derivationPath))
+            }
+        }
+        
 //        // conversion is special
-//        if let c = conversion(j1: j), beliefs.items[c.statement.description] == nil {
-//            if registry(get: c.description2) == nil {
-//                registry(init: c.description2)
-//            } else {
-//                registry(set: j.description2, for: c.description2)
-//            }
+//        if let c = conversion(j1: j), beliefs.peek(c.statement.description) == nil {
 //            derived.append(c)
 //        }
 
@@ -111,7 +147,9 @@ extension Concept {
                 newPriority = originalPriority ?? 0.9
             }
 //            print(">>>", newPriority)
-            beliefs.put(j + min(newPriority, 0.9)) // store new belief
+//            if j.truthValue.rule != .conversion {
+                beliefs.put(j + min(newPriority, 0.9)) // store new belief
+//            }
         }
         
         // return if no recursion
@@ -160,7 +198,7 @@ extension Concept {
                 return c.statement == j2.statement
             }
         }
-            .filter { beliefs.items[$0.statement.description] == nil }//&& $0.statement != j.statement }
+            .filter { beliefs.peek($0.statement.description) == nil }//&& $0.statement != j.statement }
 //        print("\n\n\n", j)
 //        print(beliefs)
 //        print(r)
