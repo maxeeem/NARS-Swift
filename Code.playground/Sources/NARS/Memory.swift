@@ -95,5 +95,24 @@ extension AbstractBag where I == Concept {
         defer { put(concept) } // put back
         return f(&concept)
     }
+    
+    func contains(_ j: Judgement) -> Bool {
+        let identifier = j.statement.description
+        switch j.statement {
+        case .word(let word):
+            if let c = peek(word) {
+                return c.beliefs.peek(identifier) != nil
+            }
+        case .compound(_, _):
+            return false // TODO: finish implementation
+        case .statement(let s, _, let p):
+            if let sc = peek(s.description), let pc = peek(p.description) {
+                return sc.beliefs.peek(identifier) != nil && pc.beliefs.peek(identifier) != nil
+            }
+        case .variable(_):
+            return false // TODO: finish implementation
+        }
+        return false
+    }
 }
 

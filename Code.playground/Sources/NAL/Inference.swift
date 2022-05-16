@@ -17,6 +17,7 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
             and(j2.truthValue.e, j1.statement.simplicity)) ? j1 : j2
 }
 
+/// Immediate
 public func conversion(j1: Judgement) -> Judgement? {
     guard case .statement(let s, let copula, let p) = j1.statement,
           copula == .inheritance || copula == .implication else {
@@ -31,9 +32,9 @@ public func conversion(j1: Judgement) -> Judgement? {
     return Judgement(cs, TruthValue(1, c1, .conversion), Judgement.mergeEvidence(j1, cj))
 }
 
-public func w2c(_ w: Double) -> Double {
-    w / (w + evidentialHorizon)
-}
+//public func w2c(_ w: Double) -> Double {
+//    w / (w + evidentialHorizon)
+//}
 
 extension Rules {
     public var allRules: [Rule] {

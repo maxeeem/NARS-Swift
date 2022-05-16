@@ -51,7 +51,11 @@ public func +(_ j: Judgement, p: Double) -> Belief {
 }
 
 
-infix operator -* : Copula
+import Dispatch
+
+public func -* (_ s: Statement, _ fc: (Double, Double)) -> Judgement {
+    s -* (fc.0, fc.1, DispatchWallTime.now().rawValue)
+}
 public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
     Sentence(s -* tv)
 }
@@ -128,7 +132,7 @@ extension Bag: CustomStringConvertible {
 extension WrappedBag: CustomStringConvertible {
     public var description: String {
         let b = "\(bag)"
-        let w = "\(wrapped!)"
+        let w = wrapped == nil ? "" : "\(wrapped!)"
         return b + "\n---\n" + w
     }
 }

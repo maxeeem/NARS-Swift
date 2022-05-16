@@ -1,4 +1,3 @@
-import Foundation
 import Dispatch
 
 public enum Sentence {
@@ -41,27 +40,17 @@ public final class NARS: Item {
             
             let quietTime = s.lastPerformance.rawValue - DispatchWallTime.now().rawValue
             
+            // TODO: potentially get items from recent memory and process them in imagination  
             if quietTime > s.cycleLength, let c = s.imagination.get(), let b = c.beliefs.get() {
                 
                 c.beliefs.put(b)
                 s.imagination.put(c)
                 
-                var results = /*[b.judgement] +*/ Theorems.apply(b.judgement)
+                let immediate = Rules.immediate(b.judgement)
+                let structural = Theorems.apply(b.judgement)
                 
-                /// conversion is special
-                if let conv = conversion(j1: b.judgement) {
-                    if case .statement(let sub, let cop, let pre) = conv.statement {
-                        if s.imagination.peek(sub.description)?.beliefs.peek(conv.statement.description) == nil
-                        && s.imagination.peek(pre.description)?.beliefs.peek(conv.statement.description) == nil {
-                            results.append(conv)
-                        }
-                    } else {
-                        if s.imagination.peek(conv.statement.description) == nil {
-                            results.append(conv)
-                        }
-                    }
-                }
-                
+                let results = (immediate + structural).filter { !s.imagination.contains($0) }
+
                 results.forEach { j in
                     s.process(.judgement(j))
                 }
@@ -79,7 +68,8 @@ public final class NARS: Item {
         }
     }
     
-    fileprivate var cycleLength = 1000000 * 50 // 0.001 second
+    private var factor = 10 // cycles per pause // TODO: dynamically adjust per system
+    fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
     
     fileprivate var lastPerformance = DispatchWallTime.now()
     

@@ -116,12 +116,6 @@ extension Concept {
             }
         }
         
-//        // conversion is special
-//        if let c = conversion(j1: j), beliefs.peek(c.statement.description) == nil {
-//            derived.append(c)
-//        }
-
-        
         
         defer {
             switch j.statement {

@@ -28,9 +28,7 @@ extension Judgement: Equatable {
     }
 }
 
-import Dispatch
-
-let ETERNAL = DispatchTime.distantFuture.rawValue
+let ETERNAL: UInt64 = 18446744073709551615 // DispatchTime.distantFuture.rawValue
 
 // convenience initializer for Judgement
 public func +(_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
@@ -38,9 +36,6 @@ public func +(_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
 }
 
 infix operator -* : Copula
-public func -* (_ s: Statement, _ fc: (Double, Double)) -> Judgement {
-    s -* (fc.0, fc.1, DispatchWallTime.now().rawValue)
-}
 public func -* (_ s: Statement, _ fc: (Double, Double, UInt64)) -> Judgement {
     s + fc
 }
@@ -223,8 +218,8 @@ extension Evidence: CustomStringConvertible {
 extension TruthValue: CustomStringConvertible {
     public var description: String {
         let r = rule == nil ? "." : "\(rule!)"
-        let f = String(format: "%.2f", frequency)
-        let c = String(format: "%.2f", confidence)
+        let f = "\(f)".count == 3 ? "\(f)0" : "\(f)"
+        let c = "\(c)".count == 3 ? "\(c)0" : "\(c)"
         return "%\(f);\(c)%\(r)"
     }
 }

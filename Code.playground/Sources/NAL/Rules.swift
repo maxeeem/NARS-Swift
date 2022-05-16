@@ -51,6 +51,11 @@ extension Rules {
         }
     }
     static let strong: [Rules] = [.deduction, .analogy, .resemblance]
+    
+    static func immediate(_ j: Judgement) -> [Judgement] {
+        let immediate: [Infer] = [conversion(j1:)]
+        return immediate.compactMap { $0(j) }
+    }
 }
 
 // MARK: Rule application

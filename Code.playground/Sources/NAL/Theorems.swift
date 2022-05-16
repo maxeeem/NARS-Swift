@@ -35,23 +35,8 @@ extension Theorems {
                     }.compactMap { $0 }
                )
             }
-            if let converted = conversion(j1: j) {
-                if case .statement(let sub, let cop, _) = t, cop == .equivalence {
-                    rel = converted.statement == sub ? 0.9 : 1.0
-                }
-
-                results.append(contentsOf:
-                    Rules.strong.flatMap {
-                        $0.apply((converted, t-*(1,rel, ETERNAL)))
-                    }.compactMap { $0 }
-                )
-            }
             return results
         }
-        
-//        if let converted = conversion(j1: j) {
-//            results.append([converted])
-//        }
         
         let unique = Dictionary(grouping: results.flatMap({$0})) {
             $0.statement.description
