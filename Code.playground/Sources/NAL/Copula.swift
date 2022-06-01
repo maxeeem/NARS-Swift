@@ -47,6 +47,10 @@ public func •->• (_ s: Term, p: Term) -> Statement { .statement( s•-> , .i
 public func =>   (_ s: Term, p: Term) -> Statement { .statement( s    , .implication ,    p ) }
 public func <=>  (_ s: Term, p: Term) -> Statement { .statement( s    , .equivalence ,    p ) }
 
+public func >>|=>   (_ s: Term, p: Term) -> Statement { .statement( s    , .predictiveImp    ,    p ) }
+public func <<|=>   (_ s: Term, p: Term) -> Statement { .statement( s    , .retrospectiveImp ,    p ) }
+public func   |=>   (_ s: Term, p: Term) -> Statement { .statement( s    , .concurrentImp    ,    p ) }
+
 // Convenience overrides
 public func -->  (_ s: String, p: Term  ) -> Statement { s• -->  p }
 public func -->  (_ s: Term,   p: String) -> Statement { s  --> •p }
@@ -68,3 +72,10 @@ public func •->• (_ s: String, p: Term  ) -> Statement { s• •->•  p }
 public func •->• (_ s: Term,   p: String) -> Statement { s  •->• •p }
 public func •->• (_ s: String, p: String) -> Statement { s• •->• •p }
 
+prefix operator >>|=> //  "/=>"  future
+prefix operator <<|=> //  "\=>"   past
+prefix operator   |=> //  "|=>"  present
+
+public prefix func >>|=>(_ s: Term) -> Statement { .NULL >>|=> s }
+public prefix func <<|=>(_ s: Term) -> Statement { .NULL <<|=> s }
+public prefix func   |=>(_ s: Term) -> Statement { .NULL   |=> s }

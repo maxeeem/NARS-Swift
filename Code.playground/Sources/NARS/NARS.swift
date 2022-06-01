@@ -68,7 +68,7 @@ public final class NARS: Item {
         }
     }
     
-    private var factor = 10 // cycles per pause // TODO: dynamically adjust per system
+    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
     fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
     
     fileprivate var lastPerformance = DispatchWallTime.now()

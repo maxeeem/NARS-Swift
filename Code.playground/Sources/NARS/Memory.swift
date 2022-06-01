@@ -17,6 +17,8 @@ extension AbstractBag where I == Concept {
                 return c.accept(j, isSubject: c.term == subject, derive: derive)
             case .variable:
                 return [] // TODO: is this accurate?
+            case .operation:
+                return [] // TODO: is this accurate?
             }
         }
     }
@@ -87,6 +89,8 @@ extension AbstractBag where I == Concept {
             return derivedJudgements
         case .variable:
             return [] // TODO: is this accurate?
+        case .operation:
+            return [] // TODO: is this accurate?
         }
     }
     // TODO: rename
@@ -110,6 +114,8 @@ extension AbstractBag where I == Concept {
                 return sc.beliefs.peek(identifier) != nil && pc.beliefs.peek(identifier) != nil
             }
         case .variable(_):
+            return false // TODO: finish implementation
+        case .operation(_, _):
             return false // TODO: finish implementation
         }
         return false

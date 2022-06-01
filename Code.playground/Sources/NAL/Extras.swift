@@ -55,6 +55,8 @@ extension Statement {
             s -* (1.0, 0.9, ETERNAL) // fact
         case .variable:
             return s -* (1.0, 0.9, ETERNAL) // TODO: is this accurate?
+        case .operation:
+            return .NULL -* (1.0, 0.9, ETERNAL)
         }
     }
 }
@@ -70,6 +72,8 @@ extension Statement {
             return /*copula == .inheritance &&*/ subject == predicate
 //                Set(subject.terms).intersection(Set(predicate.terms)).isEmpty == false
         case .variable:
+            return false
+        case .operation:
             return false
         }
     }
@@ -205,6 +209,8 @@ extension Term: CustomStringConvertible {
             case .query(let word):
                 return (word == nil) ? "?" : "?\(word!)"
             }
+        case .operation(let name, let terms):
+            return name + terms.map{$0.description}.joined(separator: " ")
         }
     }
 }

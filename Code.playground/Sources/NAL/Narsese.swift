@@ -1,15 +1,39 @@
 
 // Grammar
 
+public enum Tense: Hashable {
+    case past
+    case present
+    case future
+}
+
+public typealias Statement = Term
+
 public struct Judgement: Hashable {
     public let statement: Statement
     public let truthValue: TruthValue
     
+    public let tense: Tense? = nil
     public let derivationPath: [String]
+}
+
+public typealias DesireValue = TruthValue
+
+public struct Goal: Hashable {
+    public let statement: Statement
+    public let desireValue: DesireValue
+}
+
+public enum Quest: Hashable {
+    case truth
+    case desire
 }
 
 public struct Question: Hashable {
     public let statement: Statement
+    public let type: Quest = .truth
+    
+    public let tense: Tense? = nil
 }
 
 //public enum Question: Equatable {
@@ -23,13 +47,12 @@ public struct Question: Hashable {
 //    case statement(Term, Copula, Term)
 //}
 
-public typealias Statement = Term
-
 public indirect enum Term: Hashable {
     case word(String)
     case compound(Connector, [Term])
     case statement(Term, Copula, Term)
     case variable(Variable)
+    case operation(String, [Term])
 }
 
 public enum Variable: Hashable {
@@ -69,6 +92,11 @@ public enum Connector: String {
     case c = "∧"
     /// disjunction
     case d = "∨"
+    
+    /// sequential conjunction
+    case s = ","
+    /// parallel conjunction
+    case p = ";"
     
     //    case a = "ø"
     // ¡™¡!`¡``````````¡™£¢∞§¶•ªº–≠«‘“πøˆ¨¥†®´∑œåß∂ƒ©˙˙∆˚¬…æ÷≥≤µ˜∫√ç≈Ω!@#$%^&*()_+|}{":>?<
@@ -135,6 +163,9 @@ extension Connector {
         case .n: return nil // handled separately
         case .c: res = t1t.intersection(t2t) // -- extensional difference
         case .d: res = t1t.union(t2t) // -- intensional intersection
+        
+        case .s: return .compound(.s, t1.terms + t2.terms)
+        case .p: return .compound(.p, t1.terms + t2.terms)
         }
         
         // MARK: Validation
@@ -199,6 +230,8 @@ extension Term {
             return [subject, predicate]
         case .variable:
             return []
+        case .operation(_, let terms):
+            return terms
         }
     }
     
@@ -216,6 +249,10 @@ extension Term {
                 .reduce(0, +)
         case .variable:
             return 0
+        case .operation(_, let terms):
+            return 1 + terms
+                .map { $0.complexity }
+                .reduce(0, +)
         }
     }
     
@@ -223,8 +260,9 @@ extension Term {
         rounded(1 / pow(complexity, occamsRazor))
     }
     
-    public static let º = Term.word("º")//image placeholder
+    public static let º = Term.word("º") // image placeholder
     public static let NULL = Term.word("NULL")
+    public static let SELF = Term.word("SELF")
     
 //    static func instance(_ t: Term) -> Term { Term.instance("\(t)") }
 //    static func property(_ t: Term) -> Term { Term.property("\(t)") }

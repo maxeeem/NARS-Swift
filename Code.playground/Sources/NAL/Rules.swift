@@ -74,7 +74,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         p1 = .statement(.word("E"), .implication, p1)
         p1I = true
     case .statement: fallthrough
-    case .variable:
+    case .variable: fallthrough
+    case .operation:
         break
     }
     switch p2 {
@@ -83,7 +84,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         p2 = .statement(.word("E"), .implication, p2)
         p2I = true
     case .statement: fallthrough
-    case .variable:
+    case .variable: fallthrough
+    case .operation:
         break
     }
     switch c {
@@ -91,7 +93,8 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
     case .compound:
         c = .statement(.word("E"), .implication, c)
     case .statement: fallthrough
-    case .variable:
+    case .variable: fallthrough
+    case .operation:
         break
     }
 

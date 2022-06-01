@@ -132,6 +132,8 @@ extension Concept {
                 }
             case .variable:
                 break // TODO: is this accurate?
+            case .operation:
+                break // TODO: is this accurate?
             }
 
             let newPriority: Double
@@ -220,6 +222,8 @@ extension Concept {
                             return copula == c && predicate == p
                         case .variable:
                             return false // TODO: is this accurate?
+                        case .operation:
+                            return false // TODO: is this accurate?
                         }
                     }
                 } // TODO: handle other cases
@@ -234,6 +238,8 @@ extension Concept {
                         case .statement(let s, let c, _):
                             return subject == s && copula == c
                         case .variable:
+                            return false // TODO: is this accurate?
+                        case .operation:
                             return false // TODO: is this accurate?
                         }
                     }

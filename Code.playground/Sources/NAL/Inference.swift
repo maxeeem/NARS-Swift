@@ -223,9 +223,6 @@ extension Theorems {
                 
                 
                 { var t: Statement?
-                    //if $0.description.contains("{Birdie} -> {Tweety} ∧ {Tweety} -> {Birdie}") {
-                        
-                    //}
                     match(.compound(.c, [("S" --> "P"), ("P" --> "S")]), $0, compound: { S, P in
                         t = (S <-> P) <=> .compound(.c, [(S --> P), (P --> S)])
 //                        t = .compound(.c, [(S --> P), (P --> S)]) <=> (S <-> P)
@@ -233,22 +230,12 @@ extension Theorems {
                 },
                 
                 
-                
-//                { var t: Statement? // TODO: rewrite using conjunction
-//                    match("S" <-> "P", $0, statement: { S, P in
-//                        t = (S <-> P) <=> (P --> S)
-//                    }); return t
-//                },
                 { var t: Statement?
                     match("S" <=> "P", $0, statement: { S, P in
                         t = (S <=> P) <=> .compound(.c, [(S => P), (P => S)])
                     }); return t
                 },
-//                { var t: Statement? // TODO: rewrite using conjunction
-//                    match("S" <=> "P", $0, statement: { S, P in
-//                        t = (S <=> P) <=> (P => S)
-//                    }); return t
-//                },
+                
                 { var t: Statement?
                     match("S" <-> "P", $0, statement: { S, P in
 //                        print("here1", S, P)
