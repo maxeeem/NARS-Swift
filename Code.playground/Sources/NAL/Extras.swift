@@ -44,7 +44,7 @@ postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Judgement {
         switch s {
-        case .word:
+        case .symbol:
             return s -* (1.0, 0.9, ETERNAL)
         case .compound:
             return s -* (1.0, 0.9, ETERNAL) // TODO: is this accurate?
@@ -64,7 +64,7 @@ extension Statement {
 extension Statement {
     var isTautology: Bool {
         switch self {
-        case .word:
+        case .symbol:
             return false
         case .compound:
             return false // TODO: is this accurate?
@@ -171,7 +171,7 @@ extension FrequencyInterval {
 extension Term: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .word(let word):
+        case .symbol(let word):
             return word
         case .compound(let connector, let terms):
             if terms.count == 2 {

@@ -119,7 +119,7 @@ extension Concept {
         
         defer {
             switch j.statement {
-            case .word: // TODO: is this accurate?
+            case .symbol: // TODO: is this accurate?
                 termLinks.put(TermLink(j.statement, 0.9))
             case .compound(let c, _):
                 if ![.c, .d, .n].contains(c) {
@@ -215,7 +215,7 @@ extension Concept {
                     // special
                     result = answer { s in
                         switch s {
-                        case .word: fallthrough // TODO: is this accurate?
+                        case .symbol: fallthrough // TODO: is this accurate?
                         case .compound:
                             return predicate == s
                         case .statement(_, let c, let p):
@@ -232,7 +232,7 @@ extension Concept {
                     // general
                     result = answer { s in
                         switch s {
-                        case .word: fallthrough // TODO: is this accurate?
+                        case .symbol: fallthrough // TODO: is this accurate?
                         case .compound:
                             return subject == s
                         case .statement(let s, let c, _):

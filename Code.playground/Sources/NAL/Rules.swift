@@ -69,9 +69,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 
     // add implicit terms
     switch p1 {
-    case .word: fallthrough
+    case .symbol: fallthrough
     case .compound:
-        p1 = .statement(.word("E"), .implication, p1)
+        p1 = .statement(.symbol("E"), .implication, p1)
         p1I = true
     case .statement: fallthrough
     case .variable: fallthrough
@@ -79,9 +79,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         break
     }
     switch p2 {
-    case .word: fallthrough
+    case .symbol: fallthrough
     case .compound:
-        p2 = .statement(.word("E"), .implication, p2)
+        p2 = .statement(.symbol("E"), .implication, p2)
         p2I = true
     case .statement: fallthrough
     case .variable: fallthrough
@@ -89,9 +89,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
         break
     }
     switch c {
-    case .word: fallthrough
+    case .symbol: fallthrough
     case .compound:
-        c = .statement(.word("E"), .implication, c)
+        c = .statement(.symbol("E"), .implication, c)
     case .statement: fallthrough
     case .variable: fallthrough
     case .operation:
@@ -113,10 +113,10 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 //        print("=", commonTerms)
 //        return nil
         if p1I {
-            t1 = .statement(.word("E"), .implication, t1)
+            t1 = .statement(.symbol("E"), .implication, t1)
         }
         if p2I {
-            t2 = .statement(.word("E"), .implication, t2)
+            t2 = .statement(.symbol("E"), .implication, t2)
         }
         
         let first = firstIndex(of: false, in: commonTerms)! // 1
@@ -217,7 +217,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             }
             
             // remove implicit terms
-            if case .statement(let s, let c, let p) = statement, s == .word("E"), c == .implication {
+            if case .statement(let s, let c, let p) = statement, s == .symbol("E"), c == .implication {
                 statement = p
             }
             

@@ -88,11 +88,11 @@ extension Rules {
         }
     }
     var firstOrder: [Rule] {
-        let S = Term.word("S")
-        let P = Term.word("P")
-        let M = Term.word("M")
-        let T1 = Term.word("T1")
-        let T2 = Term.word("T2")
+        let S = Term.symbol("S")
+        let P = Term.symbol("P")
+        let M = Term.symbol("M")
+        let T1 = Term.symbol("T1")
+        let T2 = Term.symbol("T2")
         /// first unique term is `false`, second and third are `nil`
         /// if there is no common term term identified by `true`
         /// then a conclusion could not be derived
@@ -142,10 +142,10 @@ extension Rules {
         }
     }
     var conditional: [Rule] {
-        let S = Term.word("S")
-        let P = Term.word("P")
-        let T1 = Term.word("T1")
-        let T2 = Term.word("T2")
+        let S = Term.symbol("S")
+        let P = Term.symbol("P")
+        let T1 = Term.symbol("T1")
+        let T2 = Term.symbol("T2")
         switch self {
         case .deduction:
             return [(S  => P,           S,       P, tf)]
@@ -301,7 +301,7 @@ private func match(_ lhs: Statement, _ rhs: Statement,
            statement: (Term, Term) -> Void = {_,_ in },
            compound: (Term, Term) -> Void = {_,_ in })
 -> Bool {
-    if case .word = lhs, case .word = rhs {
+    if case .symbol = lhs, case .symbol = rhs {
         return true
     }
     if case .compound(let cl, let tl) = lhs,

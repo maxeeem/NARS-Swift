@@ -10,7 +10,7 @@ extension AbstractBag where I == Concept {
     func consider(_ j: Judgement, derive: Bool) -> [Judgement] {
         consider(j.statement, derive: derive) { c in
             switch j.statement {
-            case .word: fallthrough // TODO: is this accurate?
+            case .symbol: fallthrough // TODO: is this accurate?
             case .compound:
                 return c.accept(j, isSubject: c.term == j.statement, derive: derive)
             case .statement(let subject, _, _):
@@ -39,7 +39,7 @@ extension AbstractBag where I == Concept {
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
         switch s {
-        case .word: // TODO: is this accurate?
+        case .symbol: // TODO: is this accurate?
             var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
             if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
@@ -103,7 +103,7 @@ extension AbstractBag where I == Concept {
     func contains(_ j: Judgement) -> Bool {
         let identifier = j.statement.description
         switch j.statement {
-        case .word(let word):
+        case .symbol(let word):
             if let c = peek(word) {
                 return c.beliefs.peek(identifier) != nil
             }

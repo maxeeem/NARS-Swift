@@ -19,7 +19,7 @@ public final class NARS: Item {
     public var identifier: String { name.description }
     public var priority: Double = 0.9
     
-    public var name = Term.word("SELF") // TODO: inject via init
+    public var name = Term.symbol("SELF") // TODO: inject via init
     
     public internal(set) var recent = Bag<Belief>(4,20)
     public internal(set) var memory = Bag<Concept>()

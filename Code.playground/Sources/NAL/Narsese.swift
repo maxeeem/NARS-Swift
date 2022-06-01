@@ -48,7 +48,7 @@ public struct Question: Hashable {
 //}
 
 public indirect enum Term: Hashable {
-    case word(String)
+    case symbol(String)
     case compound(Connector, [Term])
     case statement(Term, Copula, Term)
     case variable(Variable)
@@ -103,7 +103,7 @@ public enum Connector: String {
 }
 
 extension Connector {
-    var term: Term { Term.word(rawValue) }
+    var term: Term { Term.symbol(rawValue) }
     
     public static func Ω_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .Ω, t2) }
     public static func U_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .U, t2) }
@@ -116,8 +116,8 @@ extension Connector {
 
     internal static func connect(_ t1: Term, _ c: Connector, _ t2: Term) -> Term! {
         var con = c
-        let t1t = (c == .c || c == .d) ? Set([Term.word(t1.description)]) : Set(t1.terms)
-        let t2t = (c == .c || c == .d) ? Set([Term.word(t2.description)]) : Set(t2.terms)
+        let t1t = (c == .c || c == .d) ? Set([Term.symbol(t1.description)]) : Set(t1.terms)
+        let t2t = (c == .c || c == .d) ? Set([Term.symbol(t2.description)]) : Set(t2.terms)
         var res = t1t.union(t2t)
         
         if c == .c || c == .d {
@@ -217,12 +217,13 @@ extension Connector {
 //}
 
 extension Term {
-    static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
-    static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
+    public static func word(_ w: String) -> Term { .symbol(w) }
+    public static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
+    public static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
     
     var terms: [Term] {
         switch self {
-        case .word:
+        case .symbol:
             return [self]
         case .compound(_, let terms):
             return terms
@@ -237,7 +238,7 @@ extension Term {
     
     public var complexity: Double {
         switch self {
-        case .word:
+        case .symbol:
             return 1
         case .compound(_, let terms):
             return 1 + terms
@@ -260,9 +261,9 @@ extension Term {
         rounded(1 / pow(complexity, occamsRazor))
     }
     
-    public static let º = Term.word("º") // image placeholder
-    public static let NULL = Term.word("NULL")
-    public static let SELF = Term.word("SELF")
+    public static let º = Term.symbol("º") // image placeholder
+    public static let NULL = Term.symbol("NULL")
+    public static let SELF = Term.symbol("SELF")
     
 //    static func instance(_ t: Term) -> Term { Term.instance("\(t)") }
 //    static func property(_ t: Term) -> Term { Term.property("\(t)") }
@@ -295,11 +296,11 @@ extension Term: ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
         self = {
             if value.first == "{" {
-                return .instance(.word(value.word))
+                return .instance(.symbol(value.word))
             }
 
             if value.first == "[" {
-                return .property(.word(value.word))
+                return .property(.symbol(value.word))
             }
 
             if value.first == "?" {
@@ -319,7 +320,7 @@ extension Term: ExpressibleByStringLiteral {
             }
 
             if words.count == 1 {
-                return .word(words[0])
+                return .symbol(words[0])
             }
 
             return .NULL
