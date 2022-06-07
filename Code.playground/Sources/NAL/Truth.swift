@@ -141,18 +141,6 @@ extension TruthValue {
     }
 }
 
-extension TruthValue {
-    static var reduceConjunction: TruthFunction = { (tv1, tv2) in
-        let tv = intersection(negation(tv1), tv2)
-        return negation(deduction(tv, TruthValue(1, 1)))
-    }
-    
-    static func negation(_ tv: TruthValue) -> TruthValue {
-        let f = 1 - tv.f
-        let c = tv.c
-        return TruthValue(f, c)
-    }
-}
 
 /// Extended Boolean operators
 /// bounded by the range from 0 to 1

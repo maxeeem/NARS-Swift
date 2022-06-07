@@ -229,6 +229,10 @@ extension Term {
         case .symbol:
             return [self]
         case .compound(_, let terms):
+//            if conn == .n, terms.count == 1, case .statement = terms[0] {
+//                return terms[0].terms
+//            }
+//            return terms.count == 1 ? terms + [.NULL] : terms
             return terms
         case .statement(let subject, _, let predicate):
             return [subject, predicate]

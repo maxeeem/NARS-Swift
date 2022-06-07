@@ -18,6 +18,15 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
 }
 
 /// Immediate
+
+public func negation(j1: Judgement) -> Judgement {
+    let f = 1 - j1.truthValue.f
+    let c = j1.truthValue.c
+    let cs = Term.compound(.n, [j1.statement])
+    let cj = cs + (f, c, ETERNAL)
+    return Judgement(cs, TruthValue(f, c, .negation), Judgement.mergeEvidence(j1, cj))
+}
+
 public func conversion(j1: Judgement) -> Judgement? {
     guard case .statement(let s, let copula, let p) = j1.statement,
           copula == .inheritance || copula == .implication else {
@@ -25,16 +34,23 @@ public func conversion(j1: Judgement) -> Judgement? {
     }
     let (f, c) = (j1.truthValue.f, j1.truthValue.c)
     let c1 = f * c / (f * c + k)
-//    let w = and(f, c)
-//    let c1 = w2c(w)
     let cs = Term.statement(p, copula, s)
     let cj = cs + (1, c1, ETERNAL)
     return Judgement(cs, TruthValue(1, c1, .conversion), Judgement.mergeEvidence(j1, cj))
 }
 
-//public func w2c(_ w: Double) -> Double {
-//    w / (w + evidentialHorizon)
-//}
+public func contraposition(j1: Judgement) -> Judgement? {
+    guard case .statement(let s, let copula, let p) = j1.statement,
+          copula == .implication else {
+        return nil // invalid statement
+    }
+    let (f, c) = (j1.truthValue.f, j1.truthValue.c)
+    let c1 = (1 - f) * c / ((1 - f) * (c + k))
+    let cs = Term.compound(.n, [p]) => Term.compound(.n, [s])
+    let cj = cs + (0, c1, ETERNAL)
+    return Judgement(cs, TruthValue(0, c1, .contraposition), Judgement.mergeEvidence(j1, cj))
+}
+
 
 extension Rules {
     public var allRules: [Rule] {
@@ -207,8 +223,7 @@ extension Rules {
         }
     }
     
-    // TODO: are these rules only applicable to temporal situation or could there be other conditions?
-    var temporal: [Rule] {
+    var variable_and_temporal: [Rule] {
         let S = Term.symbol("S")
         let P = Term.symbol("P")
         switch self {

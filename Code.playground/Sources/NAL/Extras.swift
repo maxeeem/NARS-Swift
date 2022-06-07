@@ -182,6 +182,8 @@ extension Term: CustomStringConvertible {
                 } else {
                     return "{\(terms.map{$0.description}.joined(separator: " "))}"
                 }
+            } else if connector == .n {
+                return connector.rawValue + "(\(terms[0].description))"
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }

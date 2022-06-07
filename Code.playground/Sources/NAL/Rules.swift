@@ -24,7 +24,9 @@ public enum Rules: String, CaseIterable {
     case union
     case difference
     // Local
+    case negation
     case conversion
+    case contraposition
     case revision
     
     case similarityFromReversedInheritance
@@ -53,7 +55,7 @@ extension Rules {
     static let strong: [Rules] = [.deduction, .analogy, .resemblance]
     
     static func immediate(_ j: Judgement) -> [Judgement] {
-        let immediate: [Infer] = [conversion(j1:)]
+        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
         return immediate.compactMap { $0(j) }
     }
 }
@@ -112,6 +114,13 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 //        print(p1, p2, j1, j2)
 //        print("=", commonTerms)
 //        return nil
+        
+        if case .compound(let conn, _) = t1, conn == .n {
+            return nil // negation is handled elsewhere
+        }
+        if case .compound(let conn, _) = t2, conn == .n {
+            return nil // negation is handled elsewhere
+        }
         
         // MARK: Variable elimination
         
@@ -380,6 +389,8 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad<Bool?> = { (ar
 // MARK: Utility
 
 private func +(_ a: [Term], b: [Term]) -> Quad<Term> {
+//    let a = a.count == 1 ? a + [.NULL] : a
+//    let b = b.count == 1 ? b + [.NULL] : b
     assert(a.count == 2 && b.count == 2)
     return (a[0], a[1], b[0], b[1])
 }

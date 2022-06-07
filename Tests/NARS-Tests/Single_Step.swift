@@ -46,8 +46,8 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("a" --> "b")-*,
             ("b" --> "c")-*,
-            ("x" --> "y")-*,
-            ("y" --> "z")-*,
+//            ("x" --> "y")-*,
+//            ("y" --> "z")-*,
             ("c" --> "d")-*,
             .cycle,
             ("a" --> "d")-?,
