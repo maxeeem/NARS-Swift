@@ -38,7 +38,7 @@ public func conversion(j1: Judgement) -> Judgement? {
 
 extension Rules {
     public var allRules: [Rule] {
-        let rules = /*local +*/ firstOrder + higherOrder + conditional
+        let rules = /*local +*/ firstOrder + higherOrder + compositional + conditionalSyllogistic
         var permutations: [Rule] = []
         for r in rules {
             let (p1, p2, c, tf) = r
@@ -91,8 +91,6 @@ extension Rules {
         let S = Term.symbol("S")
         let P = Term.symbol("P")
         let M = Term.symbol("M")
-        let T1 = Term.symbol("T1")
-        let T2 = Term.symbol("T2")
         /// first unique term is `false`, second and third are `nil`
         /// if there is no common term term identified by `true`
         /// then a conclusion could not be derived
@@ -124,46 +122,107 @@ extension Rules {
 //                    (P <-> M,     S <-> M, S <-> P, tf),
 //                    (P <-> M,     M <-> S, S <-> P, tf)]
             
-        // Compositional rules
+        default:
+            return [] // other rules are handled separately
+        }
+    }
+    
+    var compositional: [Rule] {
+        let M = Term.symbol("M")
+        let T1 = Term.symbol("T1")
+        let T2 = Term.symbol("T2")
         
+        switch self {
         case .intersection:
-            return [(M --> T1,    M --> T2,    M --> ç.Ω_(T1, T2), tf),
-                    (T1 --> M,    T2 --> M,    ç.U_(T1, T2) --> M, tf)]
+            return [ /// first order
+                (M --> T1,    M --> T2,    M --> ç.Ω_(T1, T2), tf),
+                (T1 --> M,    T2 --> M,    ç.U_(T1, T2) --> M, tf),
+                /// higher order
+                ( M => T1,    M => T2 ,    M => ç.c_(T1, T2), tf),
+                ( T1 => M,    T2 => M ,    ç.d_(T1, T2) --> M, tf),
+                /// conditional
+                (      T1,          T2,    ç.c_(T1, T2), tf) // TODO: verify nothing else needs to be checked
+            ]
         case .union:
-            return [(M --> T1,    M --> T2,    M --> ç.U_(T1, T2), tf),
-                    (T1 --> M,    T2 --> M,    ç.Ω_(T1, T2) --> M, tf)]
+            return [ /// first order
+                (M --> T1,    M --> T2,    M --> ç.U_(T1, T2), tf),
+                (T1 --> M,    T2 --> M,    ç.Ω_(T1, T2) --> M, tf),
+                /// higher order
+                ( M => T1,    M => T2 ,    M => ç.d_(T1, T2), tf),
+                ( T1 => M,    T2 => M ,    ç.c_(T1, T2) --> M, tf),
+                /// conditional
+                (      T1,          T2,    ç.d_(T1, T2), tf) // TODO: verify nothing else needs to be checked
+            ]
         case .difference:
             return [(M --> T1,    M --> T2,    M --> ç.l_(T1, T2), tf),
                     (M --> T1,    M --> T2,    M --> ç.l_(T2, T1), tfi),
                     (T1 --> M,    T2 --> M,    ç.ø_(T1, T2) --> M, tf),
                     (T1 --> M,    T2 --> M,    ç.ø_(T2, T1) --> M, tfi)]
         default:
-            return [] // other rules are handled separately
-        }
-    }
-    var conditional: [Rule] {
-        let S = Term.symbol("S")
-        let P = Term.symbol("P")
-        let T1 = Term.symbol("T1")
-        let T2 = Term.symbol("T2")
-        switch self {
-        case .deduction:
-            return [(S  => P,           S,       P, tf)]
-        case .induction:
-            return []//(      P,           S, S  => P, tf)]
-        case .abduction:
-            return [(P  => S,           S,       P, tf)]
-        case .comparison:
-            return []//(      S,           P, S <=> P, tf)]
-        case .analogy:
-            return [(      S,     S <=> P,       P, tf)]
-        case .intersection:
-            return [(     T1,          T2,       .compound(.c, [T1, T2]), tf)]
-        default: 
             return []
         }
     }
     
+    var conditionalSyllogistic: [Rule] {
+        let S = Term.symbol("S")
+        let P = Term.symbol("P")
+        switch self {
+        case .deduction:
+            return [(S  => P,           S,       P, tf)]
+        case .abduction:
+            return [(P  => S,           S,       P, tf)]
+        case .analogy:
+            return [(      S,     S <=> P,       P, tf)]
+        default:
+            return []
+        }
+    }
+    
+    /// special set of rules handled separately during inference
+    /// premises must be seen as based on the same implicit condition
+    
+    var conditional: [Rule] {
+        let S = Term.symbol("S")
+        let P = Term.symbol("P")
+        let M = Term.symbol("M")
+        let C = Term.symbol("C")
+        switch self {
+        case .deduction:
+            return [
+                (ç.c_(C, S) => P,                 S,             C  => P, tf),
+                (ç.c_(C, S) => P,            M => S,     ç.c_(C, M) => P, tf)
+            ]
+        case .abduction:
+            return [
+                (ç.c_(C, S) => P,            C => P,                   S, tf),
+                (ç.c_(C, S) => P,   ç.c_(C, M) => P,              M => S, tf)
+            ]
+        case .induction:
+            return [
+                (         C => P,                 S,     ç.c_(C, S) => P, tf),
+                (ç.c_(C, M) => P,            M => S,     ç.c_(C, S) => P, tf)
+            ]
+        default:
+            return []
+        }
+    }
+    
+    // TODO: are these rules only applicable to temporal situation or could there be other conditions?
+    var temporal: [Rule] {
+        let S = Term.symbol("S")
+        let P = Term.symbol("P")
+        switch self {
+        case .induction:
+            return [(P, S,  S  => P, tf)]
+        case .comparison:
+            return [(S, P,  S <=> P, tf)]
+        default:
+            return []
+        }
+    }
+    
+    
+    // utility
     private func replaceCopulas(_ statement: Statement) -> Statement {
         var statement = statement
         if case .statement(let s, let c, let p) = statement {

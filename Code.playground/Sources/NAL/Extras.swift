@@ -299,3 +299,44 @@ extension Judgement {
         return !Set(p1).intersection(Set(p2)).isEmpty
     }
 }
+
+
+extension Variable {
+    var name: String? {
+        switch self {
+        case .independent(let string):
+            return string
+        case .dependent(let optional, _):
+            return optional
+        case .query(let optional):
+            return optional
+        }
+    }
+}
+
+
+extension Term {
+    func replace(_ varName: String, _ termName: String) -> Term {
+        let replaced: Term
+        switch self {
+        case .symbol:
+            return self
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(varName, termName)})
+        case .statement(let sub, let cop, let pre):
+            return .statement(sub.replace(varName, termName), cop, pre.replace(varName, termName))
+        case .variable(let vari):
+            switch vari {
+            case .independent(let str):
+                if str == varName {
+                    return .symbol(termName)
+                }
+                fallthrough
+            default: // TODO: how to handle dependent vars?
+                return self
+            }
+        case .operation(let name, let terms):
+            return .operation(name, terms.map{$0.replace(varName, termName)})
+        }
+    }
+}

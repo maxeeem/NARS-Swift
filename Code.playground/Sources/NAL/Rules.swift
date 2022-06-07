@@ -112,6 +112,86 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 //        print(p1, p2, j1, j2)
 //        print("=", commonTerms)
 //        return nil
+        
+        // MARK: Variable elimination
+        
+        variableElimination:
+        if case .statement(let sub1, let cop1, let pre1) = t1, cop1 == .implication || cop1 == .equivalence {
+            if false == sub1.terms.contains(where: { if case .variable = $0 { return true } ; return false }) {
+                break variableElimination
+            }
+            let vars1: [LogicTerm] = sub1.terms.map {
+                if case .variable(let v) = $0 {
+                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
+                }
+                return LogicValue($0.description)
+            }
+            let vars2: [LogicTerm] = pre1.terms.map {
+                if case .variable(let v) = $0 {
+                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
+                }
+                return LogicValue($0.description)
+            }
+            
+            let vari1: [String] = sub1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
+            let vari2: [String] = pre1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
+            
+            let variInt = Set(vari1).intersection(Set(vari2))
+            if variInt.isEmpty {
+                break variableElimination
+            }
+
+            let vars3: [LogicTerm] = t2.terms.map { LogicValue($0.description) }
+            
+            var ll1: List = .empty
+            for v in vars1.reversed() {
+                ll1 = List.cons(v, ll1)
+            }
+            
+            var ll2: List = .empty
+            for v in vars2.reversed() {
+                ll2 = List.cons(v, ll2)
+            }
+            
+            var ll3: List = .empty
+            for v in vars3.reversed() {
+                ll3 = List.cons(v, ll3)
+            }
+            
+            var sol = Dictionary<String, String>()
+            
+            for varName in variInt {
+                sol[varName] = ""
+            }
+            
+            for s in solve((ll1 === ll3) || (ll2 === ll3)) {
+                for v in variInt.map({LogicVariable(named: $0)}) {
+                    let sub = s[v]
+                    if !sub.equals(v) { // LogicKit will return self by default
+                        sol[v.name] = "\(sub)"
+                    }
+                }
+            }
+            
+            print(">>>+++===", sol)
+            
+            var rep1 = sub1
+            var rep2 = pre1
+            for (k, v) in sol {
+                rep1 = rep1.replace(k, v)
+                rep2 = rep2.replace(k, v)
+//                print("+++\n", sub1, rep1, "\n", pre1, rep2)
+            }
+            
+            t1 = .statement(rep1, cop1, rep2) 
+        }
+        
+        // MARK: Variable introduction
+        // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
+        
+        
+
+        
         if p1I {
             t1 = .statement(.symbol("E"), .implication, t1)
         }

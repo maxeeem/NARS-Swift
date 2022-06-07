@@ -275,6 +275,21 @@ DispatchQueue.global().async {
         .pause
     )
      */
+    let s1: Judgement = (
+        .statement(.variable(.independent("x")),
+            .inheritance,
+            .symbol("M"))
+        =>
+            .statement(.variable(.independent("x")),
+                .inheritance,
+                .symbol("P"))
+    )-*
+    
+    let s2: Judgement = ("S" --> "M")-*
+    
+    let result = Rules.deduction.apply((s1, s2))
+    print("O", s1)
+    print("K", result)
 }
 
 // MARK: Tests

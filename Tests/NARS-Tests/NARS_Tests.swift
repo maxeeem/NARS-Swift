@@ -145,5 +145,10 @@ final class NARS_Tests: XCTestCase {
         print(apply)
 
 */
+        
+        let result = Rules.deduction.apply(((.statement(.variable(.independent("x")), .inheritance, .symbol("M")) => .statement(.variable(.independent("x")), .inheritance, .symbol("P")))-*, ("S" --> "M")-*))
+        
+        print("K", result)
+        
     }
 }
