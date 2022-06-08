@@ -58,7 +58,7 @@ let defaultScript = [
 DispatchQueue.global().async { 
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
-    
+    /*
     nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
@@ -287,9 +287,45 @@ DispatchQueue.global().async {
     
     let s2: Judgement = ("S" --> "M")-*
     
-    let result = Rules.deduction.apply((s1, s2))
-    print("O", s1)
-    print("K", result)
+    let res1 = Rules.deduction.apply((s1, s2))
+    print("O1", s1)
+    print("K1", res1)
+    
+     */
+    
+    let s3: Judgement = ("M" --> "T1")-*
+    
+    let s4: Judgement = (
+        .compound(.c, [
+            .statement(
+                .variable(.dependent("x", [])),
+                .inheritance,
+                .symbol("T1")),
+            .statement(
+                .variable(.dependent("x", [])),
+                .inheritance,
+                .symbol("T2"))
+        ])
+    )-*
+    
+    let res2 = Rules.comparison.apply((s3, s4))
+    
+    print("O2", s4)
+    print("K2", res2)
+
+    
+    output.reset()
+    print("\n\n\n\n\n")
+
+    nars.perform(
+        Sentence(s3),
+        Sentence(s4),
+        .cycle(1)
+    )
+    
+    print(nars.memory)
+    
+    
 }
 
 // MARK: Tests

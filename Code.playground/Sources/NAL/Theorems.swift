@@ -16,6 +16,11 @@ extension Theorems {
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
                 results.append(contentsOf: $0.rules.compactMap { $0(.statement(p, c, s)) })
             }
+            if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
+                if terms.count == 2 { // TODO: handle compounds with multiple terms
+                    results.append(contentsOf: $0.rules.compactMap { $0(.compound(conn, terms.reversed())) })
+                }
+            }
             return results
         }
 
@@ -34,6 +39,15 @@ extension Theorems {
                         $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath), t-*(1,reliance, ETERNAL)))
                     }.compactMap { $0 }
                )
+            }
+            if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
+                if terms.count == 2 { // TODO: handle compounds with multiple terms
+                    results.append(contentsOf:
+                        Rules.strong.flatMap {
+                            $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath), t-*(1,reliance, ETERNAL)))
+                        }.compactMap { $0 }
+                   )
+                }
             }
             return results
         }

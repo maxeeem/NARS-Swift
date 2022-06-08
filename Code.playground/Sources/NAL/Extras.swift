@@ -319,7 +319,6 @@ extension Variable {
 
 extension Term {
     func replace(_ varName: String, _ termName: String) -> Term {
-        let replaced: Term
         switch self {
         case .symbol:
             return self
@@ -333,7 +332,12 @@ extension Term {
                 if str == varName {
                     return .symbol(termName)
                 }
-                fallthrough
+                return self
+            case .dependent(let str, _):
+                if str == varName {
+                    return .symbol(termName)
+                }
+                return self
             default: // TODO: how to handle dependent vars?
                 return self
             }
