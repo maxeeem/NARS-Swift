@@ -57,6 +57,9 @@
                   Identifier = "Single_Step/testMultiStep()">
                </Test>
                <Test
+                  Identifier = "Single_Step/testNal2_07()">
+               </Test>
+               <Test
                   Identifier = "Single_Step/testSample()">
                </Test>
             </SkippedTests>

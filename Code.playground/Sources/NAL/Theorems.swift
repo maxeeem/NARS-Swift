@@ -4,13 +4,14 @@ public typealias Theorem = (Term) -> Statement?
 
 public enum Theorems: CaseIterable {
     case inheritance
+    case similarity
     case implication
     case equivalence
 }
 
 
 extension Theorems {
-    static func apply(_ j: Judgement) -> [Judgement] {
+    public static func apply(_ j: Judgement) -> [Judgement] {
         let res: [[Statement]] = self.allCases.map {
             var results = $0.rules.compactMap { $0(j.statement) }
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {

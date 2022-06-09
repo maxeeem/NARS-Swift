@@ -328,6 +328,8 @@ DispatchQueue.global().async {
     output.reset()
     print("\n\n\n\n\n")
 */
+    
+    /*
     nars.perform(
         ((.variable(.independent("x")) --> "M") => (.variable(.independent("x")) --> "P"))-*,
         ((.variable(.independent("x")) --> "S") => (.variable(.independent("x")) --> "M"))-*,
@@ -342,7 +344,14 @@ DispatchQueue.global().async {
         ("{Tweety}" --> "P")-*,
         ((.instance(.variable(.independent("x"))) --> "P") => (.instance(.variable(.independent("x"))) --> "Q"))-*
     ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
+ 
+    */
     
+    let test: Statement = .compound(.n, [.compound(.n, [.symbol("T")])])
+    print("1.", test)
+    
+    let result = Theorems.apply(test-*)
+    print("2.", result)
 }
 
 // MARK: Tests

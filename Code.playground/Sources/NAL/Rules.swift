@@ -53,11 +53,17 @@ extension Rules {
             
             var x: [Judgement?] = []
             
-            if case .compound(let conn, _) = t1, conn == .n {
-                return x // negation is handled elsewhere
+            if case .compound(let conn, let ts1) = t1, conn == .n {
+//                print("1.", t1, t2)
+                if ts1[0] == t2 {
+                    return x // negation is handled elsewhere
+                }
             }
-            if case .compound(let conn, _) = t2, conn == .n {
-                return x // negation is handled elsewhere
+            if case .compound(let conn, let ts2) = t2, conn == .n {
+//                print("2.", t1, t2)
+                if ts2[0] == t1 {
+                    return x // negation is handled elsewhere
+                }
             }
             
         variableEliminationIndependent:
@@ -411,11 +417,6 @@ extension Rules {
         }
         
             
-            
-            // MARK: Variable introduction
-            // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
-            // TODO: implement
-            
             /// original code
             
             j1 = Judgement(t1, j1.truthValue, j1.derivationPath)
@@ -427,8 +428,12 @@ extension Rules {
             })
             
             
-            /// independent-variable introduction rules
-            // // TODO: introVarInner from CompositionalRules in OpenNARS
+            // MARK: Variable introduction
+            // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
+            
+            /// independent-variable introduction
+            ///
+            // TODO: introVarInner from CompositionalRules in OpenNARS
             ///
             if self == .induction || self == .comparison {
                 if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
@@ -741,8 +746,8 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad<Bool?> = { (ar
 // MARK: Utility
 
 private func +(_ a: [Term], b: [Term]) -> Quad<Term> {
-//    let a = a.count == 1 ? a + [.NULL] : a
-//    let b = b.count == 1 ? b + [.NULL] : b
+    let a = a.count == 1 ? a + [.NULL] : a
+    let b = b.count == 1 ? b + [.NULL] : b
     assert(a.count == 2 && b.count == 2)
     return (a[0], a[1], b[0], b[1])
 }

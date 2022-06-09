@@ -278,6 +278,14 @@ extension Theorems {
                     }); return t
                 }
             ]
+        case .similarity:
+            return [
+                { var t: Statement?
+                    match(.compound(.n, [.compound(.n, ["T1"])]), $0, compound: { T1, T2 in
+                        t = (.compound(.n, [.compound(.n, [T1])])) <=> (T1)
+                    }); return t
+                }
+            ]
         case .implication:
             return [
                 { var t: Statement?
@@ -391,8 +399,13 @@ private func match(_ lhs: Statement, _ rhs: Statement,
     if case .compound(let cl, let tl) = lhs,
        case .compound(let cr, let tr) = rhs {
         if cl == cr {
-            if tr.count == 1 { // instance/property
-                compound(tr[0], .NULL)
+            if tr.count == 1 { // instance/property or negation
+                if case .compound(let conn, let ts) = tr[0], conn == .n {
+                    print("--", ts[0])
+                    compound(ts[0], .NULL)
+                } else {
+                    compound(tr[0], .NULL)
+                }
             } else { // TODO: expand to more than two terms
                 if case .statement = tr[0], case .statement = tr[1] {
                     match(tr[1], tr[0], extractCompound: false, statement: { s, p in
