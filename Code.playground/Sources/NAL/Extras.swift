@@ -294,7 +294,7 @@ extension Judgement {
             return true // judgements have the same root
         } else if p1.count == 1 && p2.count == 1 {
             if p1[0].hasSuffix("\(ETERNAL)") && p2[0].hasSuffix("\(ETERNAL)") {
-                return true // judgements are both eternal
+                return false // judgements are both eternal
             }
         }
         
@@ -318,14 +318,14 @@ extension Variable {
 
 
 extension Term {
-    func replace(_ varName: String, _ termName: String) -> Term {
+    func replace(varName: String, termName: String) -> Term {
         switch self {
         case .symbol:
             return self
         case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(varName, termName)})
+            return .compound(conn, terms.map{$0.replace(varName: varName, termName: termName)})
         case .statement(let sub, let cop, let pre):
-            return .statement(sub.replace(varName, termName), cop, pre.replace(varName, termName))
+            return .statement(sub.replace(varName: varName, termName: termName), cop, pre.replace(varName: varName, termName: termName))
         case .variable(let vari):
             switch vari {
             case .independent(let str):
@@ -342,7 +342,35 @@ extension Term {
                 return self
             }
         case .operation(let name, let terms):
-            return .operation(name, terms.map{$0.replace(varName, termName)})
+            return .operation(name, terms.map{$0.replace(varName: varName, termName: termName)})
+        }
+    }
+    
+    func replace(termName: String, indepVarName: String) -> Term {
+        switch self {
+        case .symbol(let str):
+            if str == termName {
+                return .variable(.independent(indepVarName))
+            }
+            return self
+        case .statement(let sub, let cop, let pre):
+            return .statement(sub.replace(termName: termName, indepVarName: indepVarName), cop, pre.replace(termName: termName, indepVarName: indepVarName))
+        default: // TODO: properly handle all cases
+            return self
+        }
+    }
+    
+    func replace(termName: String, depVarName: String) -> Term {
+        switch self {
+        case .symbol(let str):
+            if str == termName {
+                return .variable(.dependent(depVarName, []))
+            }
+            return self
+        case .statement(let sub, let cop, let pre):
+            return .statement(sub.replace(termName: termName, depVarName: depVarName), cop, pre.replace(termName: termName, depVarName: depVarName))
+        default: // TODO: properly handle all cases
+            return self
         }
     }
 }

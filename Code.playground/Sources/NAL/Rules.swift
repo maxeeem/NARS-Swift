@@ -123,8 +123,8 @@ extension Rules {
             var rep1 = sub1
             var rep2 = pre1
             for (k, v) in sol {
-                rep1 = rep1.replace(k, v)
-                rep2 = rep2.replace(k, v)
+                rep1 = rep1.replace(varName: k, termName: v)
+                rep2 = rep2.replace(varName: k, termName: v)
 //                print("+++\n", sub1, rep1, "\n", pre1, rep2)
             }
             
@@ -194,8 +194,8 @@ extension Rules {
             var rep1 = sub1
             var rep2 = pre1
             for (k, v) in sol {
-                rep1 = rep1.replace(k, v)
-                rep2 = rep2.replace(k, v)
+                rep1 = rep1.replace(varName: k, termName: v)
+                rep2 = rep2.replace(varName: k, termName: v)
 //                print("+++\n", sub1, rep1, "\n", pre1, rep2)
             }
             
@@ -264,8 +264,8 @@ extension Rules {
                 var rep1 = terms[0]
                 var rep2 = terms[1]
                 for (k, v) in sol {
-                    rep1 = rep1.replace(k, v)
-                    rep2 = rep2.replace(k, v)
+                    rep1 = rep1.replace(varName: k, termName: v)
+                    rep2 = rep2.replace(varName: k, termName: v)
 //                    print("+++\n", terms[0], rep1, "\n", terms[1], rep2)
                 }
                 
@@ -352,8 +352,8 @@ extension Rules {
                 var rep1 = terms[0]
                 var rep2 = terms[1]
                 for (k, v) in sol {
-                    rep1 = rep1.replace(k, v)
-                    rep2 = rep2.replace(k, v)
+                    rep1 = rep1.replace(varName: k, termName: v)
+                    rep2 = rep2.replace(varName: k, termName: v)
 //                    print("+++\n", terms[0], rep1, "\n", terms[1], rep2)
                 }
                 
@@ -396,7 +396,35 @@ extension Rules {
                  rule_generator(r)((j2, j1))] // switch order of premises
             })
             
-
+            
+            /// variable introduction rules
+            // // TODO: introVarInner from CompositionalRules in OpenNARS
+            ///
+            if self == .induction || self == .comparison {
+                if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
+                   case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
+                    
+                    if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
+                       let xc = term(at: common, in: (t1.terms + t2.terms)) {
+                        
+                        let vari = variable_and_temporal.flatMap { r in
+                            [rule_generator(r)((j1, j2)),
+                             rule_generator(r)((j2, j1))] // switch order of premises
+                        }.compactMap { $0 }
+                        
+                        let rep: [Judgement] = vari.compactMap { j in
+                            let r = j.statement.replace(termName: xc.description, indepVarName: "x")
+                            if j.statement.description == r.description {
+                                return nil // variable substitution was not successful
+                            }
+                            return Judgement(r, j.truthValue, j.derivationPath)
+                        }
+                        
+                        x.append(contentsOf: rep)
+                    }
+                }
+            }
+            
 //            print("+++", x)
             return x
         }

@@ -292,7 +292,7 @@ DispatchQueue.global().async {
     print("K1", res1)
     
      */
-    
+    /*
     let s3: Judgement = ("M" --> "T1")-*
     
     let s4: Judgement = (
@@ -324,6 +324,14 @@ DispatchQueue.global().async {
     )
     
     print(nars.memory)
+    
+    output.reset()
+    print("\n\n\n\n\n")
+*/
+    nars.perform(
+        ("M" --> "P")-*,
+        ("M" --> "S")-*
+    )
     
     
 }
