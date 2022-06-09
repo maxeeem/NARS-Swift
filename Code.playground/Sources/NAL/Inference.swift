@@ -1,5 +1,9 @@
 
 /// Local
+///
+// TODO: handle variables properly
+// independent #x can be merged with independent #y
+//
 public func revision(j1: Judgement, j2: Judgement) -> Judgement {
     let (f1, c1) = (j1.truthValue.f, j1.truthValue.c)
     let (f2, c2) = (j2.truthValue.f, j2.truthValue.c)

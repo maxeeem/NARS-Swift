@@ -86,7 +86,12 @@ extension Rules {
                 break variableEliminationIndependent
             }
 
-            let vars3: [LogicTerm] = t2.terms.map { LogicValue($0.description) }
+            let vars3: [LogicTerm] = t2.terms.map {
+                if case .variable(let v) = $0 {
+                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
+                }
+                return LogicValue($0.description)
+            }
             
             var ll1: List = .empty
             for v in vars1.reversed() {
@@ -109,7 +114,9 @@ extension Rules {
                 sol[varName] = ""
             }
             
+            var solved = false
             for s in solve((ll1 === ll3) || (ll2 === ll3)) {
+                if solved == false { solved = true }
                 for v in variInt.map({LogicVariable(named: $0)}) {
                     let sub = s[v]
                     if !sub.equals(v) { // LogicKit will return self by default
@@ -118,6 +125,9 @@ extension Rules {
                 }
             }
             
+            if !solved {
+                break variableEliminationIndependent
+            }
 //            print(">>>+++===", sol)
             
             var rep1 = sub1
@@ -157,7 +167,12 @@ extension Rules {
                 break variableEliminationIndependent2
             }
 
-            let vars3: [LogicTerm] = t1.terms.map { LogicValue($0.description) }
+            let vars3: [LogicTerm] = t1.terms.map {
+                if case .variable(let v) = $0 {
+                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
+                }
+                return LogicValue($0.description)
+            }
             
             var ll1: List = .empty
             for v in vars1.reversed() {
@@ -180,7 +195,9 @@ extension Rules {
                 sol[varName] = ""
             }
             
+            var solved = false
             for s in solve((ll1 === ll3) || (ll2 === ll3)) {
+                if solved == false { solved = true }
                 for v in variInt.map({LogicVariable(named: $0)}) {
                     let sub = s[v]
                     if !sub.equals(v) { // LogicKit will return self by default
@@ -189,6 +206,9 @@ extension Rules {
                 }
             }
             
+            if !solved {
+                break variableEliminationIndependent2
+            }
 //            print(">>>+++===", sol)
             
             var rep1 = sub1
@@ -250,7 +270,9 @@ extension Rules {
                     sol[varName] = ""
                 }
                 
+                var solved = false
                 for s in solve((ll1 === ll3) || (ll2 === ll3)) {
+                    if solved == false { solved = true }
                     for v in variInt.map({LogicVariable(named: $0)}) {
                         let sub = s[v]
                         if !sub.equals(v) { // LogicKit will return self by default
@@ -259,6 +281,9 @@ extension Rules {
                     }
                 }
                 
+                if !solved {
+                    break variableEliminationDependent
+                }
 //                print(">>>+++===[[", sol)
                 
                 var rep1 = terms[0]
@@ -338,7 +363,9 @@ extension Rules {
                     sol[varName] = ""
                 }
                 
+                var solved = false
                 for s in solve((ll1 === ll3) || (ll2 === ll3)) {
+                    if solved == false { solved = true }
                     for v in variInt.map({LogicVariable(named: $0)}) {
                         let sub = s[v]
                         if !sub.equals(v) { // LogicKit will return self by default
@@ -347,6 +374,9 @@ extension Rules {
                     }
                 }
                 
+                if !solved {
+                    break variableEliminationDependent2
+                }
 //                print(">>>+++===[[", sol)
                 
                 var rep1 = terms[0]
@@ -452,6 +482,8 @@ extension Rules {
                     }
                 }
             }
+            
+            // TODO: multi-variable introduction rules
             
 //            print("+++", x)
             return x

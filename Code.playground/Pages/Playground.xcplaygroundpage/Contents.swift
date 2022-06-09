@@ -329,10 +329,19 @@ DispatchQueue.global().async {
     print("\n\n\n\n\n")
 */
     nars.perform(
-        ("M" --> "T1")-*,
-        ("M" --> "T2")-*
-    )
+        ((.variable(.independent("x")) --> "M") => (.variable(.independent("x")) --> "P"))-*,
+        ((.variable(.independent("x")) --> "S") => (.variable(.independent("x")) --> "M"))-*,
+        .cycle
+    ) /// <(#x -> S) => (#x -> P)>. %1.00;0.81%.ded
     
+    output.reset()
+    print("\n\n\n\n\n")
+    
+    nars.perform(
+        ("P" --> "Q")-*,
+        ("{Tweety}" --> "P")-*,
+        ((.instance(.variable(.independent("x"))) --> "P") => (.instance(.variable(.independent("x"))) --> "Q"))-*
+    ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
     
 }
 
