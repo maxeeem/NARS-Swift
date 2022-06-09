@@ -17,7 +17,7 @@ class Single_Step: XCTestCase {
     
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        Sentence.defaultPause = 300 // in milliseconds
+        Sentence.defaultPause = 1000 // in milliseconds
     }
 
     override func tearDownWithError() throws {

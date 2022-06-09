@@ -56,6 +56,9 @@
                <Test
                   Identifier = "Single_Step/testMultiStep()">
                </Test>
+               <Test
+                  Identifier = "Single_Step/testSample()">
+               </Test>
             </SkippedTests>
          </TestableReference>
       </Testables>

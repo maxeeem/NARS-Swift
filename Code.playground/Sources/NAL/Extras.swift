@@ -367,6 +367,8 @@ extension Term {
                 return .variable(.dependent(depVarName, []))
             }
             return self
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, depVarName: depVarName), cop, pre.replace(termName: termName, depVarName: depVarName))
         default: // TODO: properly handle all cases

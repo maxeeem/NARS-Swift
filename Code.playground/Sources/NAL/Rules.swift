@@ -397,7 +397,7 @@ extension Rules {
             })
             
             
-            /// variable introduction rules
+            /// independent-variable introduction rules
             // // TODO: introVarInner from CompositionalRules in OpenNARS
             ///
             if self == .induction || self == .comparison {
@@ -421,6 +421,34 @@ extension Rules {
                         }
                         
                         x.append(contentsOf: rep)
+                    }
+                }
+            }
+            
+            /// dependent-variable introduction
+            
+            if self == .intersection {
+                if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
+                   case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
+
+                    if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
+                       let xc = term(at: common, in: (t1.terms + t2.terms)) {
+
+                        let vari = conditional.flatMap { r in
+                            [rule_generator(r)((j1, j2)),
+                             rule_generator(r)((j2, j1))] // switch order of premises
+                        }.compactMap { $0 }
+                        
+                        let rep: [Judgement] = vari.compactMap { j in
+                            let r = j.statement.replace(termName: xc.description, depVarName: "x")
+                            if j.statement.description == r.description {
+                                return nil // variable substitution was not successful
+                            }
+                            return Judgement(r, j.truthValue, j.derivationPath)
+                        }
+                        
+                        x.append(contentsOf: rep)
+
                     }
                 }
             }

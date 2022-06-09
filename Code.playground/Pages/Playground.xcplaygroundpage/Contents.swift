@@ -329,8 +329,8 @@ DispatchQueue.global().async {
     print("\n\n\n\n\n")
 */
     nars.perform(
-        ("M" --> "P")-*,
-        ("M" --> "S")-*
+        ("M" --> "T1")-*,
+        ("M" --> "T2")-*
     )
     
     

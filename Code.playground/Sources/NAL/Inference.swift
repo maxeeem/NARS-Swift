@@ -202,6 +202,8 @@ extension Rules {
         let P = Term.symbol("P")
         let M = Term.symbol("M")
         let C = Term.symbol("C")
+        let T1 = Term.symbol("T1")
+        let T2 = Term.symbol("T2")
         switch self {
         case .deduction:
             return [
@@ -217,6 +219,10 @@ extension Rules {
             return [
                 (         C => P,                 S,     ç.c_(C, S) => P, tf),
                 (ç.c_(C, M) => P,            M => S,     ç.c_(C, S) => P, tf)
+            ]
+        case .intersection:
+            return [
+                (             T1,                T2,        ç.c_(T1, T2), tf) // TODO: verify nothing else needs to be checked
             ]
         default:
             return []
