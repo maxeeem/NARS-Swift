@@ -29,6 +29,9 @@ extension Sentence {
     public init(_ j: Judgement) {
         self = .judgement(j)
     }
+    public init(_ g: Goal) {
+        self = .goal(g)
+    }
 }
 
 extension TermLink {
@@ -109,6 +112,8 @@ extension Sentence: CustomStringConvertible {
         switch self {
         case .judgement(let judgement):
             return "\(judgement)"
+        case .goal(let goal):
+            return "\(goal)"
         case .question(let question):
             return "\(question)"
         case .pause(let t):

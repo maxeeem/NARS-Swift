@@ -28,9 +28,16 @@ public enum Rules: String, CaseIterable {
     case conversion
     case contraposition
     case revision
+}
+
+extension Rules {
+    static let strong: [Rules] = [.deduction, .analogy, .resemblance]
+    //TODO: should we add intersection, difference and union to the list?
     
-    case similarityFromReversedInheritance
-    case inheritanceFromSimilarityAndReversedInheritance
+    static func immediate(_ j: Judgement) -> [Judgement] {
+        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
+        return immediate.compactMap { $0(j) }
+    }
 }
 
 extension Rules {
@@ -55,14 +62,14 @@ extension Rules {
             
             if case .compound(let conn, let ts1) = t1, conn == .n {
 //                print("1.", t1, t2)
-                if ts1[0] == t2 {
-                    return x // negation is handled elsewhere
+                if ts1[0] == t2 { // TODO: use similarity helper to account for symmetrical connectors and copulas
+                    return x // no conclusion can be reached if premises are just opposite of each other
                 }
             }
             if case .compound(let conn, let ts2) = t2, conn == .n {
 //                print("2.", t1, t2)
-                if ts2[0] == t1 {
-                    return x // negation is handled elsewhere
+                if ts2[0] == t1 { // TODO: use similarity helper to account for symmetrical connectors and copulas
+                    return x // no conclusion can be reached if premises are just opposite of each other
                 }
             }
             
@@ -469,10 +476,12 @@ extension Rules {
                     if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
                        let xc = term(at: common, in: (t1.terms + t2.terms)) {
 
+                        checkOverlap = false
                         let vari = conditional.flatMap { r in
                             [rule_generator(r)((j1, j2)),
                              rule_generator(r)((j2, j1))] // switch order of premises
                         }.compactMap { $0 }
+                        checkOverlap = true
                         
                         let rep: [Judgement] = vari.compactMap { j in
                             let r = j.statement.replace(termName: xc.description, depVarName: "x")
@@ -490,19 +499,25 @@ extension Rules {
             
             // TODO: multi-variable introduction rules
             
+            let unique = Dictionary(grouping: x.flatMap({$0})) {
+                $0.statement.description
+            }.values.compactMap {
+                $0.max { j1, j2 in
+                    let j = choice(j1: j1, j2: j2)
+                    return j.statement == j2.statement
+                }
+            }
+            
 //            print("+++", x)
-            return x
+//            print("===", unique)
+            return unique
         }
-    }
-    static let strong: [Rules] = [.deduction, .analogy, .resemblance]
-    
-    static func immediate(_ j: Judgement) -> [Judgement] {
-        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
-        return immediate.compactMap { $0(j) }
     }
 }
 
 // MARK: Rule application
+
+private var checkOverlap = false // TODO: dirty trick to get dependent-variable introduction to work
 
 let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
     // premise (p1) premise (p2) conclusion (c) truth-function (tf)
@@ -623,7 +638,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 let sTerm = term(at: subject, in: terms)!
                 let pTerm1 = term(at: pT1, in: terms)!
                 let pTerm2 = term(at: pT2, in: terms)!
-                if j1.evidenceOverlap(j2) {
+                if checkOverlap && j1.evidenceOverlap(j2) {
                     return nil
                 }
                 guard let compound = ç.connect(pTerm1, ct, pTerm2) else {
@@ -643,7 +658,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     let pTerm = term(at: predicate, in: terms)!
                     let sTerm1 = term(at: sT1, in: terms)!
                     let sTerm2 = term(at: sT2, in: terms)!
-                    if j1.evidenceOverlap(j2) {
+                    if checkOverlap && j1.evidenceOverlap(j2) {
                         return nil
                     }
                     guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
@@ -746,8 +761,8 @@ private var identifyCommonTerms: ((Statement, Statement)) -> Quad<Bool?> = { (ar
 // MARK: Utility
 
 private func +(_ a: [Term], b: [Term]) -> Quad<Term> {
-    let a = a.count == 1 ? a + [.NULL] : a
-    let b = b.count == 1 ? b + [.NULL] : b
+    let a = (a.count == 1) ? a + [.NULL] : a
+    let b = (b.count == 1) ? b + [.NULL] : b
     assert(a.count == 2 && b.count == 2)
     return (a[0], a[1], b[0], b[1])
 }

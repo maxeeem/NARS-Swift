@@ -343,7 +343,7 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("[smart]" --> "[bright]")-*,
-           .cycle
+           .cycle(2)
        )
        outputMustContain("<[bright] <–> [smart]>.")// %1.00;0.90%")
     }

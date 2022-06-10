@@ -58,7 +58,7 @@ let defaultScript = [
 DispatchQueue.global().async { 
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
-    /*
+    
     nars.perform(defaultScript)
     
     //debugPrint(nars.memory)
@@ -261,7 +261,7 @@ DispatchQueue.global().async {
 //        ((.compound(.x, [.variable(.independent("1")), .variable(.independent("2"))]) --> "opposite") <=> (.compound(.x, [.variable(.independent("2")), .variable(.independent("1"))]) --> "opposite"))-?
 //    )
     sleep(2)
- */
+ 
 /*
     output.reset()
     print("\n\n\n\n\n")
@@ -325,11 +325,11 @@ DispatchQueue.global().async {
     
     print(nars.memory)
     
+     */
     output.reset()
     print("\n\n\n\n\n")
-*/
     
-    /*
+    
     nars.perform(
         ((.variable(.independent("x")) --> "M") => (.variable(.independent("x")) --> "P"))-*,
         ((.variable(.independent("x")) --> "S") => (.variable(.independent("x")) --> "M"))-*,
@@ -345,7 +345,14 @@ DispatchQueue.global().async {
         ((.instance(.variable(.independent("x"))) --> "P") => (.instance(.variable(.independent("x"))) --> "Q"))-*
     ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
  
-    */
+    output.reset()
+    print("\n\n\n\n\n")
+
+    nars.perform(
+        ("M" --> "T1")-*,
+        ("M" --> "T2")-*
+//        .cycle
+    )
     
     let test: Statement = .compound(.n, [.compound(.n, [.symbol("T")])])
     print("1.", test)

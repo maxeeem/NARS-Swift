@@ -116,6 +116,15 @@ extension Concept {
             }
         }
         
+        // store symmetrical compound
+        if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
+            if terms.count == 2 { // TODO: handle compounds with multiple terms
+                let flipped: Statement = .compound(conn, terms.reversed())
+                if beliefs.peek(flipped.description) == nil {
+                    derived.append(Judgement(flipped, j.truthValue, j.derivationPath))
+                }
+            }
+        }
         
         defer {
             switch j.statement {
@@ -136,7 +145,7 @@ extension Concept {
                 break // TODO: is this accurate?
             }
 
-            let newPriority: Double
+            let newPriority: Double // TODO: this needs to be handled properly
             if let maxPriority = derived.map({$0.truthValue.confidence}).max() {
                 newPriority = ((originalPriority ?? 0.9) + maxPriority) / 2
             } else {

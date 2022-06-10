@@ -1,6 +1,6 @@
 
 
-public typealias Theorem = (Term) -> Statement?
+public typealias Theorem = (Statement) -> Statement?
 
 public enum Theorems: CaseIterable {
     case inheritance

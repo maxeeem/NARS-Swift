@@ -1,12 +1,15 @@
 import Dispatch
 
 public enum Sentence {
-    case pause(Int)
     case judgement(Judgement)
+    case goal(Goal)
     case question(Question)
     
+    case pause(Int)
     case cycle(Int)
-    
+}
+
+extension Sentence {
     /// default wait time in milliseconds (0.001s)
     /// neurons spike between 5ms and 1000ms
     public static var pause: Sentence { .pause(defaultPause) }
@@ -21,11 +24,12 @@ public final class NARS: Item {
     
     public var name = Term.symbol("SELF") // TODO: inject via init
     
-    public internal(set) var recent = Bag<Belief>(4,20)
+    public internal(set) var recent = Bag<Belief>(4,40)
     public internal(set) var memory = Bag<Concept>()
     public internal(set) lazy var imagination = WrappedBag(memory)
     
-    public let output: (String) -> Void
+    public var output: (String) -> Void
+    
     private var queue = DispatchQueue(label: "input", qos: .userInitiated)
     private var iqueue = DispatchQueue(label: "imagination", qos: .userInitiated)
     private var cycleQueue = DispatchQueue(label: "cycle", qos: .utility)
@@ -34,7 +38,7 @@ public final class NARS: Item {
 //    public var pendingTasks = Bag<Task>()
 //    private var lastQuestion: Statement?
 
-    lazy var item = DispatchWorkItem { [weak self] in
+    lazy var cycleItem = DispatchWorkItem { [weak self] in
         while true {
             guard let s = self, s.cycle else { continue }
             
@@ -80,7 +84,7 @@ public final class NARS: Item {
         if !cycle {
             cycleQueue.suspend()
         }
-        cycleQueue.async(execute: item)
+        cycleQueue.async(execute: cycleItem)
     }
     
     public func reset() {
@@ -281,6 +285,9 @@ extension NARS {
                 imagine(recurse: false)
             }
             
+        case .goal:
+            break // TODO: finish implementation 
+        
         case .question(let question):
             /// consider a question 
             if case .statement(let s, _, let p) = question.statement {

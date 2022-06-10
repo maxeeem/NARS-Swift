@@ -250,6 +250,11 @@ extension Judgement: CustomStringConvertible {
     }
 }
 
+extension Goal: CustomStringConvertible {
+    public var description: String {
+        "<\(statement)>! " + "\(desireValue)"
+    }
+}
 
 extension Term: Comparable {
     public static func < (lhs: Term, rhs: Term) -> Bool {
@@ -294,7 +299,17 @@ extension Judgement {
             return true // judgements have the same root
         } else if p1.count == 1 && p2.count == 1 {
             if p1[0].hasSuffix("\(ETERNAL)") && p2[0].hasSuffix("\(ETERNAL)") {
-                return false // judgements are both eternal
+                // judgements are both eternal
+//                if p1[0] == p2[0] {
+//                    // TODO: do proper comparison taking into account symmetrical statements
+//                    // so <bird <-> swan> should be same as <swan <-> bird>
+                    return true // same path
+//                } else {
+//                    if p1[0].hasPrefix(statement.description) && p2[0].hasPrefix(j2.statement.description) {
+//                        return false // both statements are user inputs
+//                    }
+//                    return false // different path
+//                }
             }
         }
         

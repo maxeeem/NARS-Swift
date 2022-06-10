@@ -26,7 +26,7 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
 public func negation(j1: Judgement) -> Judgement {
     let f = 1 - j1.truthValue.f
     let c = j1.truthValue.c
-    let cs = Term.compound(.n, [j1.statement])
+    let cs = neg(j1.statement)
     let cj = cs + (f, c, ETERNAL)
     return Judgement(cs, TruthValue(f, c, .negation), Judgement.mergeEvidence(j1, cj))
 }
@@ -50,11 +50,18 @@ public func contraposition(j1: Judgement) -> Judgement? {
     }
     let (f, c) = (j1.truthValue.f, j1.truthValue.c)
     let c1 = (1 - f) * c / ((1 - f) * (c + k))
-    let cs = Term.compound(.n, [p]) => Term.compound(.n, [s])
+    let cs = neg(p) => neg(s)
     let cj = cs + (0, c1, ETERNAL)
     return Judgement(cs, TruthValue(0, c1, .contraposition), Judgement.mergeEvidence(j1, cj))
 }
 
+private func neg(_ s: Statement) -> Statement {
+    if case .compound(let conn, let terms) = s, conn == .n, terms.count == 1 {
+        return terms[0] // double negative
+    } else {
+        return .compound(.n, [s])
+    }
+}
 
 extension Rules {
     public var allRules: [Rule] {
@@ -401,7 +408,6 @@ private func match(_ lhs: Statement, _ rhs: Statement,
         if cl == cr {
             if tr.count == 1 { // instance/property or negation
                 if case .compound(let conn, let ts) = tr[0], conn == .n {
-                    print("--", ts[0])
                     compound(ts[0], .NULL)
                 } else {
                     compound(tr[0], .NULL)
