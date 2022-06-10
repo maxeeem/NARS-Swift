@@ -72,357 +72,19 @@ extension Rules {
                     return x // no conclusion can be reached if premises are just opposite of each other
                 }
             }
+             
+            /// variable elimination
             
-        variableEliminationIndependent:
-        if case .statement(let sub1, let cop1, let pre1) = t1, cop1 == .implication || cop1 == .equivalence {
-            if false == sub1.terms.contains(where: { if case .variable = $0 { return true } ; return false }) {
-                break variableEliminationIndependent
+            /// independent
+            t1 = variableEliminationIndependent(t1, t2)
+            t2 = variableEliminationIndependent(t2, t1)
+             
+            /// dependent
+            if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
+                return result
+            } else if let result = variableEliminationDependent(t2, t1, j2, j1, self) {
+                return result
             }
-            let vars1: [LogicTerm] = sub1.terms.map {
-                if case .variable(let v) = $0 {
-                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                }
-                return LogicValue($0.description)
-            }
-            let vars2: [LogicTerm] = pre1.terms.map {
-                if case .variable(let v) = $0 {
-                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                }
-                return LogicValue($0.description)
-            }
-            
-            let vari1: [String] = sub1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-            let vari2: [String] = pre1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-            
-            let variInt = Set(vari1).intersection(Set(vari2))
-            if variInt.isEmpty {
-                break variableEliminationIndependent
-            }
-
-            let vars3: [LogicTerm] = t2.terms.map {
-                if case .variable(let v) = $0 {
-                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                }
-                return LogicValue($0.description)
-            }
-            
-            var ll1: List = .empty
-            for v in vars1.reversed() {
-                ll1 = List.cons(v, ll1)
-            }
-            
-            var ll2: List = .empty
-            for v in vars2.reversed() {
-                ll2 = List.cons(v, ll2)
-            }
-            
-            var ll3: List = .empty
-            for v in vars3.reversed() {
-                ll3 = List.cons(v, ll3)
-            }
-            
-            var sol = Dictionary<String, String>()
-            
-            for varName in variInt {
-                sol[varName] = ""
-            }
-            
-            var solved = false
-            for s in solve((ll1 === ll3) || (ll2 === ll3)) {
-                if solved == false { solved = true }
-                for v in variInt.map({LogicVariable(named: $0)}) {
-                    let sub = s[v]
-                    if !sub.equals(v) { // LogicKit will return self by default
-                        sol[v.name] = "\(sub)"
-                    }
-                }
-            }
-            
-            if !solved {
-                break variableEliminationIndependent
-            }
-//            print(">>>+++===", sol)
-            
-            var rep1 = sub1
-            var rep2 = pre1
-            for (k, v) in sol {
-                rep1 = rep1.replace(varName: k, termName: v)
-                rep2 = rep2.replace(varName: k, termName: v)
-//                print("+++\n", sub1, rep1, "\n", pre1, rep2)
-            }
-            
-            t1 = .statement(rep1, cop1, rep2)
-        }
-            
-        variableEliminationIndependent2:
-        if case .statement(let sub1, let cop1, let pre1) = t2, cop1 == .implication || cop1 == .equivalence {
-            if false == sub1.terms.contains(where: { if case .variable = $0 { return true } ; return false }) {
-                break variableEliminationIndependent2
-            }
-            let vars1: [LogicTerm] = sub1.terms.map {
-                if case .variable(let v) = $0 {
-                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                }
-                return LogicValue($0.description)
-            }
-            let vars2: [LogicTerm] = pre1.terms.map {
-                if case .variable(let v) = $0 {
-                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                }
-                return LogicValue($0.description)
-            }
-            
-            let vari1: [String] = sub1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-            let vari2: [String] = pre1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-            
-            let variInt = Set(vari1).intersection(Set(vari2))
-            if variInt.isEmpty {
-                break variableEliminationIndependent2
-            }
-
-            let vars3: [LogicTerm] = t1.terms.map {
-                if case .variable(let v) = $0 {
-                    return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                }
-                return LogicValue($0.description)
-            }
-            
-            var ll1: List = .empty
-            for v in vars1.reversed() {
-                ll1 = List.cons(v, ll1)
-            }
-            
-            var ll2: List = .empty
-            for v in vars2.reversed() {
-                ll2 = List.cons(v, ll2)
-            }
-            
-            var ll3: List = .empty
-            for v in vars3.reversed() {
-                ll3 = List.cons(v, ll3)
-            }
-            
-            var sol = Dictionary<String, String>()
-            
-            for varName in variInt {
-                sol[varName] = ""
-            }
-            
-            var solved = false
-            for s in solve((ll1 === ll3) || (ll2 === ll3)) {
-                if solved == false { solved = true }
-                for v in variInt.map({LogicVariable(named: $0)}) {
-                    let sub = s[v]
-                    if !sub.equals(v) { // LogicKit will return self by default
-                        sol[v.name] = "\(sub)"
-                    }
-                }
-            }
-            
-            if !solved {
-                break variableEliminationIndependent2
-            }
-//            print(">>>+++===", sol)
-            
-            var rep1 = sub1
-            var rep2 = pre1
-            for (k, v) in sol {
-                rep1 = rep1.replace(varName: k, termName: v)
-                rep2 = rep2.replace(varName: k, termName: v)
-//                print("+++\n", sub1, rep1, "\n", pre1, rep2)
-            }
-            
-            t2 = .statement(rep1, cop1, rep2)
-        }
-            
-            
-        variableEliminationDependent:
-        if case .compound(let conn, let terms) = t1, conn == .c || conn == .U || conn == .Ω {
-            if terms.count == 2 { // TODO: handle compounds with more terms
-                let vars1: [LogicTerm] = terms[0].terms.map {
-                    if case .variable(let v) = $0 {
-                        return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                    }
-                    return LogicValue($0.description)
-                }
-                let vars2: [LogicTerm] = terms[1].terms.map {
-                    if case .variable(let v) = $0 {
-                        return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                    }
-                    return LogicValue($0.description)
-                }
-                
-                let vari1: [String] = terms[0].terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-                let vari2: [String] = terms[1].terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-
-                let variInt = Set(vari1).intersection(Set(vari2))
-                if variInt.isEmpty {
-                    break variableEliminationDependent
-                }
-                
-                let vars3: [LogicTerm] = t2.terms.map { LogicValue($0.description) }
-                
-                var ll1: List = .empty
-                for v in vars1.reversed() {
-                    ll1 = List.cons(v, ll1)
-                }
-                
-                var ll2: List = .empty
-                for v in vars2.reversed() {
-                    ll2 = List.cons(v, ll2)
-                }
-                
-                var ll3: List = .empty
-                for v in vars3.reversed() {
-                    ll3 = List.cons(v, ll3)
-                }
-                
-                var sol = Dictionary<String, String>()
-                
-                for varName in variInt {
-                    sol[varName] = ""
-                }
-                
-                var solved = false
-                for s in solve((ll1 === ll3) || (ll2 === ll3)) {
-                    if solved == false { solved = true }
-                    for v in variInt.map({LogicVariable(named: $0)}) {
-                        let sub = s[v]
-                        if !sub.equals(v) { // LogicKit will return self by default
-                            sol[v.name] = "\(sub)"
-                        }
-                    }
-                }
-                
-                if !solved {
-                    break variableEliminationDependent
-                }
-//                print(">>>+++===[[", sol)
-                
-                var rep1 = terms[0]
-                var rep2 = terms[1]
-                for (k, v) in sol {
-                    rep1 = rep1.replace(varName: k, termName: v)
-                    rep2 = rep2.replace(varName: k, termName: v)
-//                    print("+++\n", terms[0], rep1, "\n", terms[1], rep2)
-                }
-                
-                let tv = TruthValue.deduction(j1.truthValue, TruthValue(1, reliance))
-                let jr1 = Judgement(rep1, tv, j1.derivationPath)
-                let jr2 = Judgement(rep2, tv, j1.derivationPath)
-                
-                let t1s = self.allRules.flatMap { r in
-                    [rule_generator(r)((jr1, jr2)),
-                     rule_generator(r)((jr2, jr1))]
-                }.compactMap { $0 }
-//                print("t1s", t1s)
-                for t1j in t1s {
-                    x.append(contentsOf: Rules.allCases.flatMap { r in
-                        r.apply((t1j, j2))
-//                        [rule_generator(r)((t1j, j2)),
-//                         rule_generator(r)((j2, t1j))] // switch order of premises
-                    })
-                }
-                
-                return x
-//                t1 = .compound(conn, [rep1, rep2])
-            }
-        }
-            
-        variableEliminationDependent2:
-        if case .compound(let conn, let terms) = t2, conn == .c || conn == .U || conn == .Ω {
-            if terms.count == 2 { // TODO: handle compounds with more terms
-                let vars1: [LogicTerm] = terms[0].terms.map {
-                    if case .variable(let v) = $0 {
-                        return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                    }
-                    return LogicValue($0.description)
-                }
-                let vars2: [LogicTerm] = terms[1].terms.map {
-                    if case .variable(let v) = $0 {
-                        return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
-                    }
-                    return LogicValue($0.description)
-                }
-                
-                let vari1: [String] = terms[0].terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-                let vari2: [String] = terms[1].terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
-
-                let variInt = Set(vari1).intersection(Set(vari2))
-                if variInt.isEmpty {
-                    break variableEliminationDependent2
-                }
-                
-                let vars3: [LogicTerm] = t1.terms.map { LogicValue($0.description) }
-                
-                var ll1: List = .empty
-                for v in vars1.reversed() {
-                    ll1 = List.cons(v, ll1)
-                }
-                
-                var ll2: List = .empty
-                for v in vars2.reversed() {
-                    ll2 = List.cons(v, ll2)
-                }
-                
-                var ll3: List = .empty
-                for v in vars3.reversed() {
-                    ll3 = List.cons(v, ll3)
-                }
-                
-                var sol = Dictionary<String, String>()
-                
-                for varName in variInt {
-                    sol[varName] = ""
-                }
-                
-                var solved = false
-                for s in solve((ll1 === ll3) || (ll2 === ll3)) {
-                    if solved == false { solved = true }
-                    for v in variInt.map({LogicVariable(named: $0)}) {
-                        let sub = s[v]
-                        if !sub.equals(v) { // LogicKit will return self by default
-                            sol[v.name] = "\(sub)"
-                        }
-                    }
-                }
-                
-                if !solved {
-                    break variableEliminationDependent2
-                }
-//                print(">>>+++===[[", sol)
-                
-                var rep1 = terms[0]
-                var rep2 = terms[1]
-                for (k, v) in sol {
-                    rep1 = rep1.replace(varName: k, termName: v)
-                    rep2 = rep2.replace(varName: k, termName: v)
-//                    print("+++\n", terms[0], rep1, "\n", terms[1], rep2)
-                }
-                
-                
-                let jr1 = Judgement(rep1, j2.truthValue, j2.derivationPath)
-                let jr2 = Judgement(rep2, j2.truthValue, j2.derivationPath)
-                
-                let t2s = self.allRules.flatMap { r in
-                    [rule_generator(r)((jr1, jr2)),
-                     rule_generator(r)((jr2, jr1))]
-                }.compactMap { $0 }
-//                print("\n", self)
-//                print("t2s", t2s)
-                for t2j in t2s {
-                    x.append(contentsOf: Rules.allCases.flatMap { r in
-                        r.apply((j1, t2j))
-//                        [rule_generator(r)((j1, t2j)),
-//                         rule_generator(r)((t2j, j1))] // switch order of premises
-                    })
-                }
-//                print("x", j1, x)
-                return x
-//                t2 = .compound(conn, [rep1, rep2])
-            }
-        }
-        
             
             /// original code
             
@@ -443,63 +105,20 @@ extension Rules {
             // TODO: introVarInner from CompositionalRules in OpenNARS
             ///
             if self == .induction || self == .comparison {
-                if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
-                   case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
-                    
-                    if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
-                       let xc = term(at: common, in: (t1.terms + t2.terms)) {
-                        
-                        let vari = variable_and_temporal.flatMap { r in
-                            [rule_generator(r)((j1, j2)),
-                             rule_generator(r)((j2, j1))] // switch order of premises
-                        }.compactMap { $0 }
-                        
-                        let rep: [Judgement] = vari.compactMap { j in
-                            let r = j.statement.replace(termName: xc.description, indepVarName: "x")
-                            if j.statement.description == r.description {
-                                return nil // variable substitution was not successful
-                            }
-                            return Judgement(r, j.truthValue, j.derivationPath)
-                        }
-                        
-                        x.append(contentsOf: rep)
-                    }
-                }
+                x.append(contentsOf: variableIntroduction(dependent: false, t1, t2, j1, j2, self))
             }
             
             /// dependent-variable introduction
             
             if self == .intersection {
-                if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
-                   case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
-
-                    if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
-                       let xc = term(at: common, in: (t1.terms + t2.terms)) {
-
-                        checkOverlap = false
-                        let vari = conditional.flatMap { r in
-                            [rule_generator(r)((j1, j2)),
-                             rule_generator(r)((j2, j1))] // switch order of premises
-                        }.compactMap { $0 }
-                        checkOverlap = true
-                        
-                        let rep: [Judgement] = vari.compactMap { j in
-                            let r = j.statement.replace(termName: xc.description, depVarName: "x")
-                            if j.statement.description == r.description {
-                                return nil // variable substitution was not successful
-                            }
-                            return Judgement(r, j.truthValue, j.derivationPath)
-                        }
-                        
-                        x.append(contentsOf: rep)
-
-                    }
-                }
+                x.append(contentsOf: variableIntroduction(dependent: true, t1, t2, j1, j2, self))
             }
             
+            ///
             // TODO: multi-variable introduction rules
+            ///
             
-            let unique = Dictionary(grouping: x.flatMap({$0})) {
+            let unique = Dictionary(grouping: x.compactMap({$0})) {
                 $0.statement.description
             }.values.compactMap {
                 $0.max { j1, j2 in
@@ -796,4 +415,160 @@ private func countTruths(in q: Quad<Bool?>) -> Int {
     if q.2 == x { i += 1 }
     if q.3 == x { i += 1 }
     return i
+}
+
+// MARK: Variable introduction and elimination
+
+private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
+    var t1 = t1
+    if case .statement(let sub1, let cop1, let pre1) = t1, cop1 == .implication || cop1 == .equivalence {
+        if false == sub1.terms.contains(where: { if case .variable = $0 { return true } ; return false }) {
+            return t1
+        }
+        
+        if let (rep1, rep2) = helper((sub1, pre1), t2) {
+            
+            t1 = .statement(rep1, cop1, rep2)
+        }
+    }
+    return t1
+}
+
+private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?]? {
+    if case .compound(let conn, let terms) = t1, conn == .c || conn == .U || conn == .Ω {
+        if terms.count == 2 { // TODO: handle compounds with more terms
+            
+            if let (rep1, rep2) = helper((terms[0], terms[1]), t2) {
+            
+                let tv = TruthValue.deduction(j1.truthValue, TruthValue(1, reliance))
+                let jr1 = Judgement(rep1, tv, j1.derivationPath)
+                let jr2 = Judgement(rep2, tv, j1.derivationPath)
+                
+                let t1s = r.allRules.flatMap { r in
+                    [rule_generator(r)((jr1, jr2)),
+                     rule_generator(r)((jr2, jr1))]
+                }.compactMap { $0 }
+
+                var x: [Judgement?] = []
+
+                for t1j in t1s {
+                    x.append(contentsOf: Rules.allCases.flatMap { r in
+                        r.apply((t1j, j2))
+                    })
+                }
+                
+                return x
+            }
+        }
+    }
+    return nil
+}
+
+private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
+    var x: [Judgement?] = []
+    if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
+       case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
+
+        if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
+           let xc = term(at: common, in: (t1.terms + t2.terms)) {
+
+            if dependent { checkOverlap = false }
+            
+            let vari = r.conditional.flatMap { r in
+                [rule_generator(r)((j1, j2)),
+                 rule_generator(r)((j2, j1))] // switch order of premises
+            }.compactMap { $0 }
+            
+            if dependent { checkOverlap = true }
+            
+            let rep: [Judgement] = vari.compactMap { j in
+                var r: Term
+                if dependent {
+                    r = j.statement.replace(termName: xc.description, depVarName: "x")
+                } else {
+                    r = j.statement.replace(termName: xc.description, indepVarName: "x")
+                }
+                if j.statement.description == r.description {
+                    return nil // variable substitution was not successful
+                }
+                return Judgement(r, j.truthValue, j.derivationPath)
+            }
+            
+            x.append(contentsOf: rep)
+        }
+    }
+    return x
+}
+
+
+private func helper(_ terms: (Term, Term), _ other: Term) -> (Term, Term)? {
+    let vars1: [LogicTerm] = terms.0.terms.map {
+        if case .variable(let v) = $0 {
+            return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
+        }
+        return LogicValue($0.description)
+    }
+    let vars2: [LogicTerm] = terms.1.terms.map {
+        if case .variable(let v) = $0 {
+            return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables
+        }
+        return LogicValue($0.description)
+    }
+    
+    let vari1: [String] = terms.0.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
+    let vari2: [String] = terms.1.terms.compactMap({ if case .variable(let v) = $0 { return v.name } ; return nil })
+
+    let variInt = Set(vari1).intersection(Set(vari2))
+    if variInt.isEmpty {
+        return nil
+    }
+    
+    let vars3: [LogicTerm] = other.terms.map { LogicValue($0.description) }
+    
+    var ll1: List = .empty
+    for v in vars1.reversed() {
+        ll1 = List.cons(v, ll1)
+    }
+    
+    var ll2: List = .empty
+    for v in vars2.reversed() {
+        ll2 = List.cons(v, ll2)
+    }
+    
+    var ll3: List = .empty
+    for v in vars3.reversed() {
+        ll3 = List.cons(v, ll3)
+    }
+    
+    var sol = Dictionary<String, String>()
+    
+    for varName in variInt {
+        sol[varName] = ""
+    }
+    
+    var solved = false
+    for s in solve((ll1 === ll3) || (ll2 === ll3)) {
+        if solved == false { solved = true }
+        for v in variInt.map({LogicVariable(named: $0)}) {
+            let sub = s[v]
+            if !sub.equals(v) { // LogicKit will return self by default
+                sol[v.name] = "\(sub)"
+            }
+        }
+    }
+    
+    if !solved {
+        return nil
+    }
+//                print(">>>+++===[[", sol)
+    
+    var rep1 = terms.0
+    var rep2 = terms.1
+    for (k, v) in sol {
+        rep1 = rep1.replace(varName: k, termName: v)
+        rep2 = rep2.replace(varName: k, termName: v)
+//                    print("+++\n", terms[0], rep1, "\n", terms[1], rep2)
+    }
+    
+    return (rep1, rep2)
 }
