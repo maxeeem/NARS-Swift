@@ -105,13 +105,13 @@ extension Rules {
             // TODO: introVarInner from CompositionalRules in OpenNARS
             ///
             if self == .induction || self == .comparison {
-                x.append(contentsOf: variableIntroduction(dependent: false, t1, t2, j1, j2, self))
+                x.append(contentsOf: variableIntroductionIndependent(t1, t2, j1, j2, self))
             }
             
             /// dependent-variable introduction
             
             if self == .intersection {
-                x.append(contentsOf: variableIntroduction(dependent: true, t1, t2, j1, j2, self))
+                x.append(contentsOf: variableIntroductionDependent(t1, t2, j1, j2, self))
             }
             
             ///
@@ -457,11 +457,19 @@ private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1
                     })
                 }
                 
-                return x
+                return x.isEmpty ? nil : x
             }
         }
     }
     return nil
+}
+
+private func variableIntroductionIndependent(_ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
+    variableIntroduction(dependent: false, t1, t2, j1, j2, r)
+}
+
+private func variableIntroductionDependent(_ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
+    variableIntroduction(dependent: true, t1, t2, j1, j2, r)
 }
 
 private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
