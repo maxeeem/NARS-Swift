@@ -144,6 +144,8 @@ public final class NARS: Item {
                     cycle = true
                     think(n * Sentence.defaultPause)
                     cycle = false
+                } else {
+                    think(n * Sentence.defaultPause)
                 }
             }
         }

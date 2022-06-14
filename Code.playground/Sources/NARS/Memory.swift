@@ -50,7 +50,10 @@ extension AbstractBag where I == Concept {
             put(concept)
             return derivedJudgements
         case .compound(let c, let ts):
-            if [.c, .d, .n].contains(c) {
+            if c == .n, ts.count == 1 {
+                return consider(ts[0], derive: derive, f)
+            }
+            if [.c, .d].contains(c) {
                 let terms = Set(ts.flatMap{$0.terms})
                 for t in terms {
                     if var concept = get(t.description) {
@@ -108,8 +111,11 @@ extension AbstractBag where I == Concept {
             if let c = peek(word) {
                 return c.beliefs.peek(identifier) != nil
             }
-        case .compound(_, _):
-            return false // TODO: finish implementation
+        case .compound(let c, let ts):
+            if c == .n, ts.count == 1 {
+                return contains(ts[0]-*)
+            }
+//            return !ts.map { contains($0-*) }.contains(false) // TODO: finish implementation
         case .statement(let s, _, let p):
             if let sc = peek(s.description), let pc = peek(p.description) {
                 return sc.beliefs.peek(identifier) != nil && pc.beliefs.peek(identifier) != nil

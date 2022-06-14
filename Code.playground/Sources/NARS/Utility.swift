@@ -22,6 +22,13 @@ extension Question {
     }
 }
 
+extension Goal {
+    public init(_ f: @autoclosure () -> Statement) {
+        statement = f()
+        desireValue = DesireValue(1.0, 0.9) // TODO: what is the correct default?
+    }
+}
+
 extension Sentence {
     public init(_ q: Question) {
         self = .question(q)
@@ -79,6 +86,11 @@ extension Statement {
     public static postfix func -?(_ s: Statement) -> Sentence { Sentence(s-?) }
 }
 
+postfix operator -!
+extension Statement {
+    public static postfix func -!(_ s: Statement) -> Goal { Goal(s) }
+    public static postfix func -!(_ s: Statement) -> Sentence { Sentence(s-?) }
+}
 
 //postfix operator -!
 //extension Statement {

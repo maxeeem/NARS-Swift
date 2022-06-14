@@ -63,7 +63,7 @@ public enum Variable: Hashable {
 
 public typealias ç = Connector
 
-public enum Connector: String {
+public enum Connector: String, CaseIterable {
     /// intensional set
     case intSet = "[]"  /// Ω 
     /// extensional set
