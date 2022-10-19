@@ -9,7 +9,7 @@ public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? //
 
 public typealias Infer = (Judgement) -> Judgement?
 
-public enum Rules: String, CaseIterable {
+public enum Rules: String, CaseIterable, Codable {
     // NAL-1
     case deduction
     case induction
@@ -73,6 +73,12 @@ extension Rules {
                 }
             }
              
+            /// temporal
+            
+//            if j1.truthValue.rule == nil && j2.truthValue.rule == nil {
+//                
+//            }
+            
             /// variable elimination
             
             /// independent
@@ -88,8 +94,8 @@ extension Rules {
             
             /// original code
             
-            j1 = Judgement(t1, j1.truthValue, j1.derivationPath)
-            j2 = Judgement(t2, j2.truthValue, j2.derivationPath)
+            j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
+            j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
             
             x.append(contentsOf: self.allRules.flatMap { r in
                 [rule_generator(r)((j1, j2)),
@@ -119,7 +125,7 @@ extension Rules {
             ///
             
             let unique = Dictionary(grouping: x.compactMap({$0})) {
-                $0.statement.description
+                $0.identifier
             }.values.compactMap {
                 $0.max { j1, j2 in
                     let j = choice(j1: j1, j2: j2)
@@ -142,176 +148,150 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
     // premise (p1) premise (p2) conclusion (c) truth-function (tf)
     var (p1, p2, c, tf) = arg
 
-    var p1I = false
-    var p2I = false
-
-    // add implicit terms
-    switch p1 {
-    case .symbol: fallthrough
-    case .compound:
-        p1 = .statement(.symbol("E"), .implication, p1)
-        p1I = true
-    case .statement: fallthrough
-    case .variable: fallthrough
-    case .operation:
-        break
-    }
-    switch p2 {
-    case .symbol: fallthrough
-    case .compound:
-        p2 = .statement(.symbol("E"), .implication, p2)
-        p2I = true
-    case .statement: fallthrough
-    case .variable: fallthrough
-    case .operation:
-        break
-    }
-    switch c {
-    case .symbol: fallthrough
-    case .compound:
-        c = .statement(.symbol("E"), .implication, c)
-    case .statement: fallthrough
-    case .variable: fallthrough
-    case .operation:
-        break
-    }
-
-    let commonTerms = identifyCommonTerms((p1, p2))
-    let total = countTruths(in: commonTerms)
-    
-    if total < 2 { // no conclusion
-        return { _ in nil }
-    }
-    
     return { (arg) in
         let (j1, j2) = arg
-        var t1 = j1.statement // test
-        var t2 = j2.statement // test
-//        print(p1, p2, j1, j2)
-//        print("=", commonTerms)
-//        return nil
-
         
-        if p1I {
-            t1 = .statement(.symbol("E"), .implication, t1)
-        }
-        if p2I {
-            t2 = .statement(.symbol("E"), .implication, t2)
+        if let j1t = j1.tense, let j2t = j2.tense, j1t != j2t {
+            return nil // temporal order cannot be determined
         }
         
-        let first = firstIndex(of: false, in: commonTerms)! // 1
-        let common = firstIndex(of: true, in: commonTerms)! // 0
-        let second = firstIndex(of: nil, in: commonTerms) ?? common // 2
-        let x1 = term(at: first, in: (t1.terms + t2.terms)) // animal
-        let xc = term(at: common, in: (t1.terms + t2.terms)) // bird
-        let x2 = term(at: second, in: (t1.terms + t2.terms)) // robin
-        
-        let ct1 = commonTerms.0 == true ? xc : // bird
-            commonTerms.0 == false ? x1 : // animal
-            x2 // robin
-        let ct2 = commonTerms.1 == true ? xc : // bird
-            commonTerms.1 == false ? x1 : // animal
-            x2 // robin
-        let ct3 = commonTerms.2 == true ? xc : // bird
-            commonTerms.2 == false ? x1 : // animal
-            x2 // robin
-        let ct4 = commonTerms.3 == true ? xc : // bird
-            commonTerms.3 == false ? x1 : // animal
-            x2 // robin
-        
-        guard case .statement(_, let c1, _) = p1,
-              case .statement(_, let c2, _) = p2 else {
-            return nil // should never happen
-        }
-        
-        let s1: Statement = .statement(ct1!, c1, ct2!)
-        let s2: Statement = .statement(ct3!, c2, ct4!)
-//        print("\n---", s1, s2)
-//        print("===", t1, t2)
-//        print(s1 == t1, s2 == t2)
-//        if "\(s1) \(s2)" == "E => ({Birdie} -> {Tweety} ∧ {Tweety} -> {Birdie}) ({Birdie} -> {Tweety} ∧ {Tweety} -> {Birdie}) <=> ({Birdie} <–> {Tweety})" {
-//            print("yo")
-//        }
-
-        if s1 == t1, s2 == t2 {
-//            print("here")
-            // conclusion
-            var statement: Statement!
-            var terms = p1.terms + p2.terms
+        // temporal
+        // TODO: need to check copulas to ensure temporal order can be established
+        if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
+           case .statement(var cs, var cc, var cp) = c,
+           cc == .implication || cc == .equivalence {
+            let forward = j1.timestamp < j2.timestamp
+            let delta = forward ? j2.timestamp - j1.timestamp : j1.timestamp - j2.timestamp
             
-            // from original conclusion (c) get
-            // subject (cs) copula (cc) predicate (cp)
-            guard case .statement(let cs, let cc, let cp) = c else {
-                return nil // should never happen
+            let window = 50 * 1000000 // 50 ms
+            let distance = 10
+            // delta should be less than some param
+            // otherwise rules should not apply
+            // here we choose 1 second computed as
+            // distance factor on either side of the window
+            
+            guard delta < window * 2 * distance else {
+                return nil
+            }
+//                print("N", delta, window, forward, j1, j2)
+//                print(j1.timestamp, j2.timestamp)
+            
+            if delta < window {
+//                    print("||", c)
+                if cc == .implication {
+                    cc = .concurrentImp
+                } else if cc == .equivalence {
+                    cc = .concurrentEq
+                }
+            } else if forward {
+//                    print(">>", c)
+                if cc == .implication {
+                    cc = .predictiveImp
+                } else if cc == .equivalence {
+                    cc = .predictiveEq
+                }
+            } else {
+//                    print("<<", c)
+                if cc == .implication {
+                    cc = .retrospectiveImp
+                } else if cc == .equivalence {
+                    let swap = cs
+                    cs = cp
+                    cc = .predictiveEq
+                    cp = swap
+                }
             }
             
-            if case .compound(let ct, let ts) = cp, ts.count == 2 { // compound term
+            // use temporal conclusion
+            c = .statement(cs, cc, cp)
+        }
+
+        var result = c // conclusion
+
+        let test1: LogicGoal = (p1.logic() === j1.statement.logic())
+        let test2: LogicGoal = (p2.logic() === j2.statement.logic())
+        
+        let substitution = solve(test1 && test2).makeIterator().next()
+        
+        // TODO: use LogicVariableFactory to avoid collision with terms
+        // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
+        
+        if let sol = substitution {
+//            print("\n---SOL---\n", sol, "\n")
+            let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
+            let valid = sol.allSatisfy { (v, _) in
+                ts.contains { $0.equals(v) }
+            }
+
+            if valid {
+                for item in sol {
+                    //                print(item.LogicVariable.name)
+                    //                print(type(of: item.LogicTerm))
+                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                    //                print("result\n", result)
+                }
+            }
+        }
+//        print("}}}}", j1, j2, result)
+        if result == c { // no conclusion
+            return nil
+        }
+        
+        // helper
+        func validate(_ term: Term) -> Term? {
+            switch term {
                 
-                // TODO: check that compounds do not contain each other
-                
-                // apply composition
-                let subject = firstIndex(of: cs, in: terms)! // M, 0
-                let pT1 = firstIndex(of: ts[0], in: terms)!
-                let pT2 = firstIndex(of: ts[1], in: terms)!
-                terms = t1.terms + t2.terms
-                let sTerm = term(at: subject, in: terms)!
-                let pTerm1 = term(at: pT1, in: terms)!
-                let pTerm2 = term(at: pT2, in: terms)!
+            case .compound(let connector, let terms):
+                if terms.count != 2 { // TODO: handle multiple components
+                    if terms.count == 1, connector == .intSet || connector == .extSet {
+                        return term // instances and properties are allowed one component
+                    }
+                    return nil
+                }
                 if checkOverlap && j1.evidenceOverlap(j2) {
                     return nil
                 }
-                guard let compound = ç.connect(pTerm1, ct, pTerm2) else {
+                guard let compound = ç.connect(terms[0], connector, terms[1]) else {
                     return nil // invalid compound
                 }
-                statement = .statement(sTerm, cc, compound)
+                return compound
                 
-            } else if case .compound(let ct, let ts) = cs, ts.count == 2 { // compound term
-                    
-                    // TODO: check that compounds do not contain each other
-                    
-                    // apply composition
-                    let predicate = firstIndex(of: cp, in: terms)! // M, 0
-                    let sT1 = firstIndex(of: ts[0], in: terms)!
-                    let sT2 = firstIndex(of: ts[1], in: terms)!
-                    terms = t1.terms + t2.terms
-                    let pTerm = term(at: predicate, in: terms)!
-                    let sTerm1 = term(at: sT1, in: terms)!
-                    let sTerm2 = term(at: sT2, in: terms)!
-                    if checkOverlap && j1.evidenceOverlap(j2) {
-                        return nil
-                    }
-                    guard let compound = ç.connect(sTerm1, ct, sTerm2) else {
-                        return nil // invalid compound
-                    }
-                    statement = .statement(compound, cc, pTerm)
+            case .statement(let subject, let cop, let predicate):
+                if let sub = validate(subject), let pre = validate(predicate) {
+                    return .statement(sub, cop, pre)
+                }
+                return nil
                 
-            } else {
-                let subject = firstIndex(of: cs, in: terms)!
-                let predicate = firstIndex(of: cp, in: terms)!
-                terms = t1.terms + t2.terms
-                statement = .statement(term(at: subject, in: terms)!, cc, term(at: predicate, in: terms)!)
+            default:
+                return term
             }
+        }
+        
+        // TODO: handle temporal compounds
+        // TODO: check that compounds do not contain each other
+
+//        print("here", result)
+        if let statement = validate(result) {
+//            print("accepted", result)
             
             if statement.isTautology {
                 return nil
             }
-            
-            // remove implicit terms
-            if case .statement(let s, let c, let p) = statement, s == .symbol("E"), c == .implication {
-                statement = p
-            }
-            
+
             let truthValue = tf(j1.truthValue, j2.truthValue)
             let derivationPath = Judgement.mergeEvidence(j1, j2)
-            return Judgement(statement, truthValue, derivationPath)
+            
+//            print("accepted", statement, truthValue)
+            
+            return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
         }
+        
         return nil
     }
 }
 
 
-
-// MARK: Helpers
+// MARK: Helpers -- TODO: REMOVE -- used in variable introduction only prior to new rule_generator
 
 private var identifyCommonTerms: ((Statement, Statement)) -> Quad<Bool?> = { (arg) in
     let t1 = arg.0.terms
@@ -482,10 +462,17 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
 
             if dependent { checkOverlap = false }
             
-            let vari = r.conditional.flatMap { r in
+            var vari = r.conditional.flatMap { r in
                 [rule_generator(r)((j1, j2)),
                  rule_generator(r)((j2, j1))] // switch order of premises
             }.compactMap { $0 }
+            
+            if dependent == false { // Table 10.3
+                vari.append(contentsOf: r.variable_and_temporal.flatMap { r in
+                    [rule_generator(r)((j1, j2)),
+                     rule_generator(r)((j2, j1))] // switch order of premises
+                }.compactMap { $0 })
+            }
             
             if dependent { checkOverlap = true }
             
@@ -509,7 +496,7 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
 }
 
 
-private func helper(_ terms: (Term, Term), _ other: Term) -> (Term, Term)? {
+public func helper(_ terms: (Term, Term), _ other: Term) -> (Term, Term)? {
     let vars1: [LogicTerm] = terms.0.terms.map {
         if case .variable(let v) = $0 {
             return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables

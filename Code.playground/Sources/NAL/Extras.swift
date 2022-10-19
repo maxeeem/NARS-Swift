@@ -28,11 +28,9 @@ extension Judgement: Equatable {
     }
 }
 
-let ETERNAL: UInt64 = 18446744073709551615 // DispatchTime.distantFuture.rawValue
-
 // convenience initializer for Judgement
 public func +(_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
-    Judgement(s, TruthValue(fc.0, fc.1), ["\(s)+\(fc.2)"])
+    Judgement(s, TruthValue(fc.0, fc.1), timestamp: fc.2)
 }
 
 infix operator -* : Copula
@@ -45,18 +43,18 @@ extension Statement {
     public static postfix func -*(_ s: Statement) -> Judgement {
         switch s {
         case .symbol:
-            return s -* (1.0, 0.9, ETERNAL)
+            return s + (1.0, 0.9, ETERNAL)
         case .compound:
-            return s -* (1.0, 0.9, ETERNAL) // TODO: is this accurate?
+            return s + (1.0, 0.9, ETERNAL) // TODO: is this accurate?
         case .statement(let subject, _, let predicate):
             return subject == predicate ?
-            s -* (1.0, 1.0, ETERNAL) // tautology
+            s + (1.0, 1.0, ETERNAL) // tautology
                 :
-            s -* (1.0, 0.9, ETERNAL) // fact
+            s + (1.0, 0.9, ETERNAL) // fact
         case .variable:
-            return s -* (1.0, 0.9, ETERNAL) // TODO: is this accurate?
+            return s + (1.0, 0.9, ETERNAL) // TODO: is this accurate?
         case .operation:
-            return .NULL -* (1.0, 0.9, ETERNAL)
+            return .NULL + (1.0, 0.9, ETERNAL)
         }
     }
 }
@@ -77,6 +75,30 @@ extension Statement {
             return false
         }
     }
+}
+
+extension Statement {
+    static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
+}
+
+infix operator &
+func & (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.Ω_(lhs, rhs) }
+infix operator |
+func | (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.U_(lhs, rhs) }
+
+infix operator -
+func - (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.l_(lhs, rhs) }
+infix operator ~
+func ~ (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.ø_(lhs, rhs) }
+
+func * (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.x_(lhs, rhs) }
+
+func && (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.c_(lhs, rhs) }
+func || (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.d_(lhs, rhs) }
+
+extension Array where Element == Statement { // TODO: use connect(:) method to create compounds
+    static prefix func + (_ s: Array<Statement>) -> Statement { .compound(.c, s)}
+    static prefix func - (_ s: Array<Statement>) -> Statement { .compound(.d, s)}
 }
 
 //prefix operator •
@@ -116,11 +138,51 @@ extension Term {
 }
 */
 
+//
+// TODO: check all code
+// TODO: Whenever a judgement is constructed from another judgement or a statement, make sure we keep temporal information
+//
+
 extension Judgement {
-    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String]) {
+    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String] = [], tense: Tense? = nil, timestamp: UInt64 = 0) {
         self.statement = statement
         self.truthValue = truthValue
-        self.derivationPath = derivationPath
+        self.tense = tense
+        self.timestamp = tense == nil ? ETERNAL : timestamp
+        if derivationPath.isEmpty {
+            let description = Judgement.sortedDescription(statement)
+//            print("--", description)
+            self.derivationPath = ["\(description)+\((truthValue.f, truthValue.c, timestamp))"]
+        } else {
+            self.derivationPath = derivationPath
+        }
+//        print(statement)
+//        print(derivationPath)
+    }
+    
+    private static func sortedDescription(_ statement: Statement) -> String {
+        var st = ""
+        switch statement {
+        case .statement(let s, let c, let p):
+            if c == .similarity {
+                st = (s < p) ? "\(s) \(c.rawValue) \(p)" : "\(p) \(c.rawValue) \(s)"
+            } else if c == .equivalence {
+                let sub = sortedDescription(s)
+                let pre = sortedDescription(p)
+                st = (sub < pre) ? "(\(sub)) \(c.rawValue) (\(pre))" : "(\(pre)) \(c.rawValue) (\(sub))"
+            } else {
+                st = "\(statement)"
+            }
+        case .compound(let c, let terms):
+            if c == .c || c == .d || c == .n {
+                st = "\(c.rawValue) \(terms.map{"(\(sortedDescription($0)))"}.sorted().joined(separator: ", "))"
+            } else {
+                st = "\(statement)"
+            }
+        default:
+            st = "\(statement)"
+        }
+        return st
     }
 }
 
@@ -256,10 +318,27 @@ extension Goal: CustomStringConvertible {
     }
 }
 
+extension Tense: CustomStringConvertible {
+    public var description: String {
+        rawValue
+    }
+}
+
+
 extension Term: Comparable {
     public static func < (lhs: Term, rhs: Term) -> Bool {
         lhs.description < rhs.description
     }
+}
+
+
+extension Judgement {
+    public var identifier: String { tense == nil ? statement.description : tense!.description + " " + statement.description }
+}
+
+
+extension Question {
+    public var identifier: String { tense == nil ? statement.description : tense!.description + " " + statement.description }
 }
 
 
@@ -298,18 +377,25 @@ extension Judgement {
         if p1.isEmpty && p2.isEmpty {
             return true // judgements have the same root
         } else if p1.count == 1 && p2.count == 1 {
-            if p1[0].hasSuffix("\(ETERNAL)") && p2[0].hasSuffix("\(ETERNAL)") {
+            if p1[0].hasSuffix("\(ETERNAL))") && p2[0].hasSuffix("\(ETERNAL))") {
                 // judgements are both eternal
-//                if p1[0] == p2[0] {
+//                print("p1", p1)
+//                print("p2", p2)
+                if p1[0] == p2[0] // same path or one is a theorem which has E as its evidential base
+                    || p1[0].hasSuffix("+(1.0, 1.0, \(ETERNAL))") || p2[0].hasSuffix("+(1.0, 1.0, \(ETERNAL))") {
+                
+//                    if p1[0].prefix(while: {$0 != "+"}) == p2[0].prefix(while: {$0 != "+"}) { // NO GOOD
+                        
+//                    || p1[0].hasPrefix("(swan <–> bird) <=> (swan -> bird ∧ bird -> swan)") || p1[0].hasPrefix("(bird <–> swan) <=> (bird -> swan ∧ swan -> bird)") {
 //                    // TODO: do proper comparison taking into account symmetrical statements
 //                    // so <bird <-> swan> should be same as <swan <-> bird>
                     return true // same path
-//                } else {
+                } else {
 //                    if p1[0].hasPrefix(statement.description) && p2[0].hasPrefix(j2.statement.description) {
 //                        return false // both statements are user inputs
 //                    }
-//                    return false // different path
-//                }
+                    return false // different path
+                }
             }
         }
         
@@ -389,5 +475,127 @@ extension Term {
         default: // TODO: properly handle all cases
             return self
         }
+    }
+    
+    func replace(termName: String, term: Term) -> Term {
+        switch self {
+        case .symbol(let str):
+            if str == termName {
+                return term
+            }
+            return self
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(termName: termName, term: term)})
+        case .statement(let sub, let cop, let pre):
+            return .statement(sub.replace(termName: termName, term: term), cop, pre.replace(termName: termName, term: term))
+        default: // TODO: properly handle all cases
+            return self
+        }
+    }
+}
+
+
+extension Sequence where Element == Term {
+    func toList() -> List {
+        var list: List = .empty
+        for term in self.reversed() {
+            list = List.cons(term.logic(), list)
+        }
+        return list
+    }
+}
+
+
+extension Variable {
+    init?(_ string: String) {
+        if string.hasPrefix("?") {
+            let name = string.suffix(from: string.index(string.startIndex, offsetBy: 1))
+            self = .query(name.isEmpty ? nil : String(name))
+            return
+        }
+        if string.hasPrefix("#") {
+            let name = string.suffix(from: string.index(string.startIndex, offsetBy: 1))
+            if name.isEmpty {
+                self = .dependent(nil, [])
+                return
+            } else {
+                // TODO: parse independent vars list
+                if let idx = name.firstIndex(of: "(") {
+                    let trimmed = name.prefix(upTo: idx)
+                    self = .dependent(String(trimmed), [])
+                    return
+                }
+                return nil
+            }
+        }
+        return nil
+    }
+}
+
+extension Term {
+    func logic() -> LogicTerm {
+        switch self {
+        case .symbol(let name):
+            return LogicVariable(named: name)
+        case .compound(let c, let terms):
+            return List.cons(LogicValue(c), terms.toList())
+        case .statement(let s, let c, let p):
+            return List.cons(LogicValue(c), List.cons(s.logic(), List.cons(p.logic(), List.empty)))
+            
+        case .variable(let vari):
+            //        switch vari {
+            //        case .independent(let name):
+            //            return List.cons(LogicValue("var-ind"), List.cons(LogicVariable(named: name), List.empty))
+            //        case .dependent(let name, let vars):
+            //            var ll: List = .empty
+            //            for v in vars.reversed() {
+            //                ll = List.cons(LogicVariable(named: v), ll)
+            //            }
+            //            ll = List.cons(LogicValue("var-ind"), ll)
+            //            return List.cons(LogicValue("var-dep"), List.cons(LogicVariable(named: name ?? "x()"), ll))
+            //        }
+            return LogicVariable(named: self.description) // TODO: handle nested variables
+//            return LogicVariable(named: vari.name ?? "x")
+            
+        case .operation(let op, let terms):
+            return List.cons(LogicValue(op), terms.toList())
+        }
+    }
+        
+    static func from(logic: LogicTerm) -> Term {
+        if let variable = logic as? LogicVariable {
+            if variable.name.hasPrefix("#") || variable.name.hasPrefix("?") {
+                if let vari = Variable(variable.name) {
+                    return .variable(vari)
+                }
+            }
+            return .symbol(variable.name)
+        }
+        if let list = logic as? List {
+            if case .cons(let head, let tail) = list {
+                if let value = head as? LogicValue<Connector> { // compound
+                    return .compound(value.extract(), process(list: tail))
+                }
+                
+                if let value = head as? LogicValue<Copula> { // statement
+                    let terms = process(list: tail)
+                    return .statement(terms[0], value.extract(), terms[1])
+                }
+                
+                if let value = head as? LogicValue<String> { // operation
+                    return .operation(value.extract(), process(list: tail))
+                }
+            }
+        }
+        // helper
+        func process(list: LogicTerm) -> [Term] {
+            var terms: [Term] = []
+            if case .cons(let head, let tail) = list as? List {
+                terms.append(Term.from(logic: head))
+                terms.append(contentsOf: process(list: tail))
+            }
+            return terms
+        }
+        return .NULL
     }
 }

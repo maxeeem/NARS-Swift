@@ -8,3 +8,6 @@ let reliance: Double = 0.9
 
 var k: Double {evidentialHorizon}
 var r: Int {occamsRazor}
+
+let ETERNAL: UInt64 = 18446744073709551615 // DispatchTime.distantFuture.rawValue
+

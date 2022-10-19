@@ -1,6 +1,6 @@
 import Dispatch
 
-public enum Sentence {
+public enum Sentence: Codable {
     case judgement(Judgement)
     case goal(Goal)
     case question(Question)
@@ -24,7 +24,7 @@ public final class NARS: Item {
     
     public var name = Term.symbol("SELF") // TODO: inject via init
     
-    public internal(set) var recent = Bag<Belief>(4,40)
+    public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
     public internal(set) var memory = Bag<Concept>()
     public internal(set) lazy var imagination = WrappedBag(memory)
     
@@ -89,8 +89,13 @@ public final class NARS: Item {
     
     public func reset() {
         dreaming = false
+        thinking = false
+        cycleQueue.suspend()
         memory = Bag<Concept>()
         imagination = WrappedBag(memory)
+        recent = Bag<Belief>(4,40)
+        cycleQueue.resume()
+//        sleep(2)
     }
     
     public func perform(_ script: Sentence...) { // convenience
@@ -104,15 +109,33 @@ public final class NARS: Item {
             /// PROCESS
             self.queue.async { // default processing queue
                 
-                /// JUDGEMENT
-                if case .judgement(let j) = s {
-                    // process in recent memory
-                    self.process(recent: j)
+                var s = s // for updating timstamp
                 
+                var recent: [Judgement] = []
+                
+                /// JUDGEMENT
+                if case .judgement(var j) = s {
+                    // set time stamp if not yet set
+                    if j.timestamp == 0 {
+                        let now = DispatchWallTime.now()
+                        if j.derivationPath.count == 1 { // also update derivationPath
+                            j = Judgement(j.statement, j.truthValue, tense: j.tense, timestamp: now.rawValue)
+                        } else {
+                            j.timestamp = now.rawValue
+                        }
+                        s = .judgement(j) // update original sentence
+                    }
+                    // process in recent memory
+                    recent = self.process(recent: j)
+                
+                //
+                // TODO: account for tense in question answering
+                //
+
                 /// QUESTION
                 } else if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
                     // check recent memory, then imagination
-                    if let answer = self.recent.peek(q.statement.description)?.judgement // OR
+                    if let answer = self.recent.peek(q.identifier)?.judgement // OR
                         ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
                         // check main memory if the answer is already present
                         if let c = self.memory.items[sub.description] {
@@ -131,6 +154,10 @@ public final class NARS: Item {
                 
                 /// SENTENCE
                 self.process(s, userInitiated: true) // process in main memory
+                
+                for el in recent { // add stable patterns from recent memory
+                    self.process(.judgement(el), recurse: false, userInitiated: true)
+                }
             }
             
             /// PAUSE
@@ -180,27 +207,88 @@ extension NARS: Equatable {
 }
 
 extension NARS {
-    fileprivate func process(recent j: Judgement) {
-        guard recent.peek(j.description) == nil else {
-            return // no need to process what we already know
-        }
+    fileprivate func process(recent j: Judgement) -> [Judgement] {
+//        guard recent.peek(j.identifier) == nil else {
+//            print("}}", j)
+//            return // no need to process what we already know
+//        }
+//        print(">", j)
         
         var derived: [Belief] = [j + 0.9]
         
         Theorems.apply(j).forEach {
-            if recent.peek($0.statement.description) == nil {
+            if recent.peek($0.identifier) == nil {
                 recent.put($0 + 0.9)
             }
         }
         
+//        print("D", derived)
+//        print("R", recent)
+        var stable: [Judgement] = []
+        
         while let b = recent.get() {
             derived.append(b)
-        
+//            print("L", b, j)
+            // process temporal
+            if b.judgement.truthValue.rule == nil, b.judgement.timestamp != ETERNAL, j.timestamp != ETERNAL {
+//                print("K", b.judgement, j)
+                // only process direct experiences
+                Rules.allCases.flatMap { rs in
+                    rs.variable_and_temporal.flatMap { r in
+                        [rule_generator(r)((j, b.judgement)),
+                         rule_generator(r)((b.judgement, j))] // switch order of premises
+                    }
+                }.forEach {
+                    if var el = $0 {
+//                        print(">>--", el)
+//                        // set time stamp if not yet set
+//                        if el.timestamp == 0 {
+//                            let now = DispatchWallTime.now()
+//                            if el.derivationPath.count == 1 { // also update derivationPath
+//                                el = el.statement + (el.truthValue.f, el.truthValue.c, now.rawValue)
+//                            } else {
+//                                el.timestamp = now.rawValue
+//                            }
+//                        }
+                        foo()
+                        if el.tense != nil {
+                            let tv = el.truthValue
+                            let elc = tv.c / (tv.c + k)
+//                            print("KK", el, el.derivationPath)
+                            el = Judgement(el.statement, TruthValue(tv.f, elc, el.truthValue.rule), el.derivationPath, tense: nil, timestamp: ETERNAL)
+                            foo()
+                            
+                            // add to main memory
+                            // TODO: figure out how to accomplish evidence accumulation
+                            // because as it stands, there is evidence overlap
+                            // so choice rule will be used instead of revision
+//                            process(.judgement(el), recurse: false, userInitiated: true)
+                            stable.append(el)
+                        }
+                        
+                        func foo() {
+                            if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
+                                el = choice(j1: d.judgement, j2: el)
+                            }
+                            derived.append(el + 0.9)
+                        }
+                    }
+                }
+            }
+            
             Rules.allCases.flatMap { r in
                 r.apply((b.judgement, j))
             }.forEach {
-                if let el = $0 {
-                    if let d = derived.first(where: { $0.judgement.statement == el.statement }) {
+                if var el = $0 {
+//                    if el.timestamp == 0 {
+//                        let now = DispatchWallTime.now()
+//                        if el.derivationPath.count == 1 { // also update derivationPath
+//                            el = el.statement + (el.truthValue.f, el.truthValue.c, now.rawValue)
+//                        } else {
+//                            el.timestamp = now.rawValue
+//                        }
+//                    }
+                    if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
                         derived.append(choice(j1: d.judgement, j2: el) + 0.9)
                     } else {
                         derived.append(el + 0.9)
@@ -212,10 +300,23 @@ extension NARS {
         derived.forEach {
             recent.put($0)
         }
+        
+        return stable
     }
     
     fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
-        lastPerformance = DispatchWallTime.now()
+        let now = DispatchWallTime.now()
+        lastPerformance = now
+            
+        var input = input // set time stamp if not yet set
+        if case .judgement(var j) = input, j.timestamp == 0 {
+            if j.derivationPath.count == 1 { // also update derivationPath
+                input = .judgement(j.statement + (j.truthValue.f, j.truthValue.c, now.rawValue))
+            } else {
+                j.timestamp = now.rawValue
+                input = .judgement(j)
+            }
+        }
 
         output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
         

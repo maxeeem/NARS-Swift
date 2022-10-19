@@ -1,5 +1,5 @@
 
-public enum Copula: String, CaseIterable {
+public enum Copula: String, CaseIterable, Codable {
     //// Primary
     case inheritance       =    "->" // NAL 1
     case similarity        =   "<–>"     // 2
@@ -72,10 +72,10 @@ public func •->• (_ s: String, p: Term  ) -> Statement { s• •->•  p }
 public func •->• (_ s: Term,   p: String) -> Statement { s  •->• •p }
 public func •->• (_ s: String, p: String) -> Statement { s• •->• •p }
 
-prefix operator >>|=> //  "/=>"  future
-prefix operator <<|=> //  "\=>"   past
-prefix operator   |=> //  "|=>"  present
+prefix operator >> //  "/=>"  future
+prefix operator << //  "\=>"   past
+prefix operator || //  "|=>"  present
 
-public prefix func >>|=>(_ s: Term) -> Statement { .NULL >>|=> s }
-public prefix func <<|=>(_ s: Term) -> Statement { .NULL <<|=> s }
-public prefix func   |=>(_ s: Term) -> Statement { .NULL   |=> s }
+public prefix func >>(_ s: Term) -> Statement { .NULL >>|=> s } /// it will rain
+public prefix func <<(_ s: Term) -> Statement { .NULL <<|=> s } /// it rained
+public prefix func ||(_ s: Term) -> Statement { .NULL   |=> s } /// it's raining

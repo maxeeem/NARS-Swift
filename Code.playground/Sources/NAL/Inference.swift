@@ -28,7 +28,7 @@ public func negation(j1: Judgement) -> Judgement {
     let c = j1.truthValue.c
     let cs = neg(j1.statement)
     let cj = cs + (f, c, ETERNAL)
-    return Judgement(cs, TruthValue(f, c, .negation), Judgement.mergeEvidence(j1, cj))
+    return Judgement(cs, TruthValue(f, c, .negation), Judgement.mergeEvidence(j1, cj), tense: j1.tense, timestamp: j1.timestamp)
 }
 
 public func conversion(j1: Judgement) -> Judgement? {
@@ -40,7 +40,7 @@ public func conversion(j1: Judgement) -> Judgement? {
     let c1 = f * c / (f * c + k)
     let cs = Term.statement(p, copula, s)
     let cj = cs + (1, c1, ETERNAL)
-    return Judgement(cs, TruthValue(1, c1, .conversion), Judgement.mergeEvidence(j1, cj))
+    return Judgement(cs, TruthValue(1, c1, .conversion), Judgement.mergeEvidence(j1, cj), tense: j1.tense, timestamp: j1.timestamp)
 }
 
 public func contraposition(j1: Judgement) -> Judgement? {
@@ -52,7 +52,7 @@ public func contraposition(j1: Judgement) -> Judgement? {
     let c1 = (1 - f) * c / ((1 - f) * (c + k))
     let cs = neg(p) => neg(s)
     let cj = cs + (0, c1, ETERNAL)
-    return Judgement(cs, TruthValue(0, c1, .contraposition), Judgement.mergeEvidence(j1, cj))
+    return Judgement(cs, TruthValue(0, c1, .contraposition), Judgement.mergeEvidence(j1, cj), tense: j1.tense, timestamp: j1.timestamp)
 }
 
 private func neg(_ s: Statement) -> Statement {
@@ -65,7 +65,7 @@ private func neg(_ s: Statement) -> Statement {
 
 extension Rules {
     public var allRules: [Rule] {
-        let rules = /*local +*/ firstOrder + higherOrder + compositional + conditionalSyllogistic
+        let rules = /*local +*/ firstOrder + higherOrder + higherOrderTemporal + compositional + conditionalSyllogistic
         var permutations: [Rule] = []
         for r in rules {
             let (p1, p2, c, tf) = r
@@ -114,6 +114,15 @@ extension Rules {
             return (p1, p2, c, tf)
         }
     }
+    var higherOrderTemporal: [Rule] {
+        return higherOrder.map { (arg) in
+            var (p1, p2, c, tf) = arg
+            p1 = replaceCopulasTemporal(p1)
+            p2 = replaceCopulasTemporal(p2)
+            c = replaceCopulasTemporal(c)
+            return (p1, p2, c, tf)
+        }
+    }
     var firstOrder: [Rule] {
         let S = Term.symbol("S")
         let P = Term.symbol("P")
@@ -123,7 +132,7 @@ extension Rules {
         /// then a conclusion could not be derived
         switch self {
         case .deduction:
-            ///    true, false, nil, true
+            ///     true, false, nil, true
             return [(M --> P,     S --> M, S --> P, tf),
                     (P --> M,     M --> S, P --> S, tfi)]
         case .induction:
@@ -162,13 +171,13 @@ extension Rules {
         switch self {
         case .intersection:
             return [ /// first order
-                (M --> T1,    M --> T2,    M --> ç.Ω_(T1, T2), tf),
-                (T1 --> M,    T2 --> M,    ç.U_(T1, T2) --> M, tf),
+                (M --> T1,    M --> T2,    M --> (T1 & T2), tf),
+                (T1 --> M,    T2 --> M,    (T1 | T2) --> M, tf),
                 /// higher order
-                ( M => T1,    M => T2 ,    M => ç.c_(T1, T2), tf),
-                ( T1 => M,    T2 => M ,    ç.d_(T1, T2) --> M, tf),
+                ( M => T1,    M => T2 ,    M => (T1 && T2), tf),
+                ( T1 => M,    T2 => M ,    (T1 || T2) --> M, tf),
                 /// conditional
-                (      T1,          T2,    ç.c_(T1, T2), tf) // TODO: verify nothing else needs to be checked
+                (      T1,          T2,    (T1 && T2), tf) // TODO: verify nothing else needs to be checked
             ]
         case .union:
             return [ /// first order
@@ -181,9 +190,11 @@ extension Rules {
                 (      T1,          T2,    ç.d_(T1, T2), tf) // TODO: verify nothing else needs to be checked
             ]
         case .difference:
-            return [(M --> T1,    M --> T2,    M --> ç.l_(T1, T2), tf),
+            return [//(M --> T1,    M --> T2,    M --> ç.l_(T1, T2), tf),
+                    (M --> T1,    M --> T2,    M --> (T1 - T2), tf),
                     (M --> T1,    M --> T2,    M --> ç.l_(T2, T1), tfi),
-                    (T1 --> M,    T2 --> M,    ç.ø_(T1, T2) --> M, tf),
+                    //(T1 --> M,    T2 --> M,    ç.ø_(T1, T2) --> M, tf),
+                    (T1 --> M,    T2 --> M,    (T1 ~ T2) --> M, tf),
                     (T1 --> M,    T2 --> M,    ç.ø_(T2, T1) --> M, tfi)]
         default:
             return []
@@ -218,8 +229,8 @@ extension Rules {
         switch self {
         case .deduction:
             return [
-                (ç.c_(C, S) => P,                 S,             C  => P, tf),
-                (ç.c_(C, S) => P,            M => S,     ç.c_(C, M) => P, tf)
+                ((C && S) => P,                 S,             C  => P, tf),
+                ((C && S) => P,            M => S,        (C && M) => P, tf)
             ]
         case .abduction:
             return [
@@ -245,9 +256,9 @@ extension Rules {
         let P = Term.symbol("P")
         switch self {
         case .induction:
-            return [(P, S,  S  => P, tf)]
+            return [(P,  S,  S  => P, tf)]
         case .comparison:
-            return [(S, P,  S <=> P, tf)]
+            return [(S,  P,  S <=> P, tf)]
         default:
             return []
         }
@@ -267,6 +278,18 @@ extension Rules {
         }
         return statement
     }
+    private func replaceCopulasTemporal(_ statement: Statement) -> Statement {
+        var statement = statement
+        if case .statement(let s, let c, let p) = statement {
+            if c == .implication {
+                statement = .statement(s, .concurrentImp, p)
+            }
+//            if c == .similarity {
+//                statement = .statement(s, .equivalence, p)
+//            }
+        }
+        return statement
+    }
 }
 
 extension Theorems {
@@ -275,8 +298,8 @@ extension Theorems {
         case .inheritance:
             return [
                 { var t: Statement?
-                    match(.compound(.Ω, ["T1", "T2"]), $0, compound: { T1, T2 in
-                        t = (.compound(.Ω, [T1, T2])) --> (T1)
+                    match(("T1"• & "T2"•), $0, compound: { T1, T2 in
+                        t = (T1 & T2) --> (T1)
                     }); return t
                 },
                 { var t: Statement?
@@ -290,6 +313,7 @@ extension Theorems {
                 { var t: Statement?
                     match(.compound(.n, [.compound(.n, ["T1"])]), $0, compound: { T1, T2 in
                         t = (.compound(.n, [.compound(.n, [T1])])) <=> (T1)
+                        t = -(-T1) <=> (T1)
                     }); return t
                 }
             ]
@@ -308,6 +332,7 @@ extension Theorems {
                 { var t: Statement?
                     match(.compound(.c, ["S1", "S2"]), $0, compound: { S1, S2 in
                         t = .compound(.c, [S1, S2]) => (S1)
+                        t = +[S1, S2]
                     }); return t
                 }
             ]
@@ -316,6 +341,7 @@ extension Theorems {
                 { var t: Statement?
                     match("S" <-> "P", $0, statement: { S, P in
                         t = (S <-> P) <=> .compound(.c, [(S --> P), (P --> S)])
+                        t = (S <-> P) <=> +[(S --> P), (P --> S)]
                     }); return t
                 },
                 

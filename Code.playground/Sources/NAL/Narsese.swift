@@ -1,39 +1,41 @@
 
 // Grammar
 
-public enum Tense: Hashable {
-    case past
-    case present
-    case future
+public enum Tense: String, Hashable, Codable {
+    case past    = "<<"
+    case present = "||"
+    case future  = ">>"
 }
 
 public typealias Statement = Term
 
-public struct Judgement: Hashable {
+public struct Judgement: Hashable, Codable {
     public let statement: Statement
     public let truthValue: TruthValue
     
-    public let tense: Tense? = nil
+    public let tense: Tense?
     public let derivationPath: [String]
+    
+    public var timestamp: UInt64 = 0
 }
 
 public typealias DesireValue = TruthValue
 
-public struct Goal: Hashable {
+public struct Goal: Hashable, Codable {
     public let statement: Statement
     public let desireValue: DesireValue
 }
 
-public enum Quest: Hashable {
+public enum Quest: Hashable, Codable {
     case truth
     case desire
 }
 
-public struct Question: Hashable {
+public struct Question: Hashable, Codable {
     public let statement: Statement
-    public let type: Quest = .truth
+    public let type: Quest
     
-    public let tense: Tense? = nil
+    public let tense: Tense?
 }
 
 //public enum Question: Equatable {
@@ -47,7 +49,7 @@ public struct Question: Hashable {
 //    case statement(Term, Copula, Term)
 //}
 
-public indirect enum Term: Hashable {
+public indirect enum Term: Hashable, Codable {
     case symbol(String)
     case compound(Connector, [Term])
     case statement(Term, Copula, Term)
@@ -55,7 +57,7 @@ public indirect enum Term: Hashable {
     case operation(String, [Term])
 }
 
-public enum Variable: Hashable {
+public enum Variable: Hashable, Codable {
     case independent(String)
     case dependent(String?, [String])
     case query(String?)
@@ -63,7 +65,7 @@ public enum Variable: Hashable {
 
 public typealias ç = Connector
 
-public enum Connector: String, CaseIterable {
+public enum Connector: String, CaseIterable, Codable {
     /// intensional set
     case intSet = "[]"  /// Ω 
     /// extensional set
@@ -228,12 +230,19 @@ extension Term {
         switch self {
         case .symbol:
             return [self]
-        case .compound(_, let terms):
+        case .compound(let c, let terms):
 //            if conn == .n, terms.count == 1, case .statement = terms[0] {
 //                return terms[0].terms
 //            }
 //            return terms.count == 1 ? terms + [.NULL] : terms
-            return terms
+
+//            if terms.count < 3 {
+                return terms
+//            } else {
+//                let head = Array(terms.prefix(through: terms.endIndex-2))
+//                let tail = terms.last!
+//                return [.compound(c, head), tail]
+//            }
         case .statement(let subject, _, let predicate):
             return [subject, predicate]
         case .variable:

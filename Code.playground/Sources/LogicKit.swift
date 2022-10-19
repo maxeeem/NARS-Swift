@@ -5,6 +5,7 @@
 //  Created by Dimitri Racordon on 07.02.17.
 //  Copyright © 2017 University of Geneva. All rights reserved.
 //
+//  https://github.com/kyouko-taiga/SwiftKanren
 
 protocol LogicTerm {
 
@@ -100,6 +101,9 @@ struct LogicValue<T: Equatable>: LogicTerm {
         return false
     }
 
+    func extract() -> T {
+        return wrapped
+    }
 }
 
 extension LogicValue: Equatable {

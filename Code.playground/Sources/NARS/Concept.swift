@@ -11,7 +11,7 @@ public struct TermLink: Item {
 }
 
 public struct Belief: Item {
-    public var identifier: String { judgement.statement.description }
+    public var identifier: String { judgement.identifier }
     public var priority: Double = 0.9
     public let judgement: Judgement
 }
@@ -87,10 +87,11 @@ extension Concept {
         var j = j
         
         // revision goes first
-        if let b = beliefs.get(j.statement.description) {
+        if let b = beliefs.get(j.identifier) {
             originalPriority = b.priority
             var judgement: Judgement
             if j.evidenceOverlap(b.judgement) {
+//                print("Overlap:", j.derivationPath, b.judgement.derivationPath)
                 judgement = choice(j1: j, j2: b.judgement)
             } else {
                 if j.truthValue.rule == .conversion {
@@ -99,6 +100,10 @@ extension Concept {
                     judgement = j
                 } else {
                     judgement = revision(j1: j, j2: b.judgement)
+//                    print("-", j)
+//                    print("-", b.judgement)
+//                    print("j", j.derivationPath)
+//                    print("b", b.judgement.derivationPath)
                 }
             }
             // wait to put back original belief to process another one
@@ -111,8 +116,9 @@ extension Concept {
         // store symmetrical statement
         if case .statement(let sub, let cop, let pre) = j.statement, (cop == .equivalence || cop == .similarity) {
             let flipped: Statement = .statement(pre, cop, sub)
-            if beliefs.peek(flipped.description) == nil {
-                derived.append(Judgement(flipped, j.truthValue, j.derivationPath))
+            let jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
+            if beliefs.peek(jflipped.identifier) == nil {
+                derived.append(jflipped)
             }
         }
         
@@ -120,8 +126,9 @@ extension Concept {
         if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
             if terms.count == 2 { // TODO: handle compounds with multiple terms
                 let flipped: Statement = .compound(conn, terms.reversed())
-                if beliefs.peek(flipped.description) == nil {
-                    derived.append(Judgement(flipped, j.truthValue, j.derivationPath))
+                let jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
+                if beliefs.peek(jflipped.identifier) == nil {
+                    derived.append(jflipped)
                 }
             }
         }
@@ -194,25 +201,43 @@ extension Concept {
 //            derived.forEach { print($0) }
 //        derived = derived.filter { $0.truthValue.rule != nil }
         let dict = Dictionary(grouping: derived) { el in
-            el.statement.description
+            el.identifier
         }
 //        print("---", dict)
         let r = dict.values.flatMap { judgements in
+            let js = judgements
+            let maxj =
             judgements.max { j1, j2 in
                 let c = choice(j1: j1, j2: j2)
+//                if c.statement == ("robin"• --> "animal"•) {
+//                    print("00000")
+//                    print(j1, j2, c)
+//                }
                 return c.statement == j2.statement
             }
+//            print("<|>", maxj, js)
+            return maxj
         }
-            .filter { beliefs.peek($0.statement.description) == nil }//&& $0.statement != j.statement }
+            .filter { beliefs.peek($0.identifier) == nil }//&& $0.statement != j.statement }
 //        print("\n\n\n", j)
 //        print(beliefs)
-//        print(r)
+//        print("+++", r)
 //        print("\n\n")
         
         derived = r
         
+            // TODO: process `values`
+            // like rules but modifiable by the system
+            // statements using variables
+        
         return derived
     }
+    
+    
+    //
+    // TODO: account for tense in question answering
+    //
+    
     
     // returns relevant belief or derived judgements if any
     func answer(_ q: Question) -> [Judgement] {
@@ -256,7 +281,7 @@ extension Concept {
             } else { // TODO: handle other cases 
                 result = answer(q.statement)
                 let dict = Dictionary(grouping: result) { el in
-                    el.statement.description
+                    el.identifier
                 }
 //                print("---", dict)
                 let r = dict.values.flatMap { judgements in

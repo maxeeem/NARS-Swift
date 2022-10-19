@@ -37,7 +37,7 @@ extension Theorems {
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
                 results.append(contentsOf:
                     Rules.strong.flatMap {
-                        $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath), t-*(1,reliance, ETERNAL)))
+                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1,reliance, ETERNAL)))
                     }.compactMap { $0 }
                )
             }
@@ -45,7 +45,7 @@ extension Theorems {
                 if terms.count == 2 { // TODO: handle compounds with multiple terms
                     results.append(contentsOf:
                         Rules.strong.flatMap {
-                            $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath), t-*(1,reliance, ETERNAL)))
+                        $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1,reliance, ETERNAL)))
                         }.compactMap { $0 }
                    )
                 }
@@ -54,7 +54,7 @@ extension Theorems {
         }
         
         let unique = Dictionary(grouping: results.flatMap({$0})) {
-            $0.statement.description
+            $0.identifier
         }.values.compactMap {
             $0.max { j1, j2 in
                 let j = choice(j1: j1, j2: j2)

@@ -105,7 +105,7 @@ extension AbstractBag where I == Concept {
     }
     
     func contains(_ j: Judgement) -> Bool {
-        let identifier = j.statement.description
+        let identifier = j.identifier
         switch j.statement {
         case .symbol(let word):
             if let c = peek(word) {

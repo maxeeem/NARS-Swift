@@ -31,6 +31,15 @@ output.callback = { s in
 
 output.reset = {
     nars.reset()
+    sleep(1)
+    nars.reset()
+    sleep(1)
+    nars.reset()
+    sleep(1)
+    nars.reset()
+    sleep(1)
+    nars.reset()
+    sleep(5)
     output.text += "\n/// memory reset"
 }
 

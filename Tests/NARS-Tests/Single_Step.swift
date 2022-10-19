@@ -17,7 +17,7 @@ class Single_Step: XCTestCase {
     
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        Sentence.defaultPause = 1000 // in milliseconds
+        Sentence.defaultPause = 500 // in milliseconds
     }
 
     override func tearDownWithError() throws {
@@ -40,6 +40,250 @@ class Single_Step: XCTestCase {
             .pause
         )
         outputMustContain("💡 <(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
+    }
+    // KK <P |=> S>. %1.00;0.45%.ind ["S+(1.0, 0.9, 16781238065391810616)", "P+(1.0, 0.9, 16781238065392859616)"]
+    // KK <P |=> S>. %1.00;0.45%.ind ["S+(1.0, 0.9, 16781238065391810616)", "P+(1.0, 0.9, 16781238065378744616)"]
+
+    // KK <S |=> P>. %1.00;0.45%.ind ["P+(1.0, 0.9, 16781238065392859616)", "S+(1.0, 0.9, 16781238065391810616)"]
+    // KK <S |=> P>. %1.00;0.45%.ind ["P+(1.0, 0.9, 16781238065378744616)", "S+(1.0, 0.9, 16781238065391810616)"]
+
+
+    func test4() {
+        nars.cycle = true
+        nars.perform(
+            ||("_P_"•)-*,
+//            .pause,
+            ||("_S_"•)-*
+//            .cycle
+        )
+//        print(nars.memory)
+        nars.perform(
+            ||("_P_"•)-*,
+//            .pause,
+            ||("_S_"•)-*
+//            .cycle
+        )
+        nars.perform(
+            ||("_P_"•)-*,
+//            .pause,
+            ||("_S_"•)-*
+              , .pause
+//            .cycle
+        )
+        nars.cycle = false
+        print(nars.memory)
+    }
+    
+    func testLogic() {
+        let m = Term.variable(.independent("m"))
+        let p = Term.variable(.independent("p"))
+        let s = Term.variable(.independent("s"))
+        let st  = Term.compound(.c, [m, p, s, m])//( m   -->  p  ) => ( s   -->  m  )
+        let res = Term.compound(.c, ["M"•, "P"•, "S"•, "M"•])//("M"• --> "P"•) => ("S"• --> "M"•)
+        let x = helper((st, st), res)
+        print(x)
+    }
+    
+    // [(M --> P,     S --> M,      S --> P, tf),
+    //
+    // [(A --> B,     C --> A,      C --> B, tf),
+    func testLogicRules() {
+        let M = LogicVariable(named: "M")
+        let P = LogicVariable(named: "P")
+        let S = LogicVariable(named: "S")
+        
+        let copula = LogicValue("-->")
+        
+        let s1 = List.cons(copula, List.cons(M, List.cons(P, List.empty)))
+        let s2 = List.cons(copula, List.cons(S, List.cons(M, List.empty)))
+        let c  = List.cons(copula, List.cons(S, List.cons(P, List.empty)))
+
+        let A = LogicValue("A")
+        let B = LogicValue("B")
+        let C = LogicValue("C")
+        
+        let cop = LogicValue("-->")
+        
+        let t1 = List.cons(cop, List.cons(A, List.cons(B, List.empty)))
+        let t2 = List.cons(cop, List.cons(C, List.cons(A, List.empty)))
+
+        let x = LogicVariable(named: "x")
+        
+        let goal = (s1 === t1) && (s2 === t2) && (c === x)
+        
+        for solution in solve(goal) {
+            print(solution)
+        }
+//        print(c)
+    }
+    
+    func testlist() {
+        let list = List.cons(LogicValue("statement"), List.cons(LogicValue("copula"), List.cons(LogicVariable(named: "A"), List.cons(LogicVariable(named: "B"), List.empty))))
+        
+        print(list)
+        print("\n")
+                
+        var ll: List = .empty
+
+        func iterate(_ list: List) {
+            if case .cons(let head, let tail) = list {
+                if let list1 = tail as? List {
+                    iterate(list1)
+                }
+                let term: LogicTerm
+                if let val = head as? LogicVariable {
+                    term = LogicVariable(named: val.name + "•")
+                } else {
+                    term = head
+                }
+                ll = List.cons(term, ll)
+            }
+        }
+        
+        iterate(list)
+
+        print(ll)
+    }
+    
+    func testfoo() {
+        print(Variable("") ?? "none")
+        print(Variable("?")!)
+        print(Variable("?x")!)
+        print(Variable("#")!)
+        print(Variable("#y()")!)
+        print(Variable("#y(#x)")!)
+    }
+    
+    func testbar() {
+        let rule = Rules.deduction.firstOrder[0]
+        let j1: Judgement = ("bird" --> "animal")-*
+        let j2: Judgement = ("robin" --> "bird")-*
+        print(rule)
+        var results = rule_generator(rule)((j1, j2))
+            
+        var result = rule.2
+
+        let t1: LogicGoal = (rule.0.logic() === j1.statement.logic())
+        let t2: LogicGoal = (rule.1.logic() === j2.statement.logic())
+        
+//        print(solve(
+//            (("E" => j1.statement).logic() === ("E" => "S").logic()) &&
+//            ((("bird" --> "animal") <=> ("robin" --> "bird")).logic()) === ("S" <=> "P").logic()))
+        
+        for sol in solve(t1 && t2) {
+            print("\n---SOL---\n", sol, "\n")
+            let ts = (rule.0.terms + rule.1.terms + rule.2.terms).flatMap { $0.terms.map({ $0.logic() }) }
+            let valid = sol.allSatisfy { (v, _) in
+                ts.contains { $0.equals(v) }
+            }
+            
+            if valid {
+                for item in sol {
+                    // TODO: filter out invalid substitutions
+                    
+                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                    //                print("result\n", result)
+                }
+            }
+        }
+        
+        print("final\n", result)
+    }
+    
+    func testbar2() {
+        let rule = Rules.union.compositional[0]
+        print(rule)
+
+        let t1 = Term.compound(.U, ["{Mars}", "{Pluto}", "{Venus}"])
+        let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
+
+        let j1: Judgement = ("planetX" --> t1)-*
+        let j2: Judgement = ("planetX" --> t2)-*
+
+        var results = rule_generator(rule)((j1, j2))
+            print("==", results)
+
+        var result = rule.2
+
+        let test1: LogicGoal = (rule.0.logic() === j1.statement.logic())
+        let test2: LogicGoal = (rule.1.logic() === j2.statement.logic())
+        
+        if let sol = solve(test1 && test2).makeIterator().next() {
+            print("\n---SOL---\n", sol, "\n")
+            let ts = (rule.0.terms + rule.1.terms + rule.2.terms).flatMap { $0.terms.map({ $0.logic() }) }
+            let valid = sol.allSatisfy { (v, _) in
+                ts.contains { $0.equals(v) }
+            }
+            
+            if valid {
+                for item in sol {
+                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                }
+            }
+        }
+        print("final\n", result)
+    }
+    
+    func testMapping() {
+//        let sample = Rules.allCases.flatMap { rules in
+//            rules.allRules.map { r in
+//                (r.0^, r.1^, r.2^)
+//            }
+//        }
+//        print(sample)
+//        return
+        let S = Term.symbol("S")
+        let P = Term.symbol("P")
+        let M = Term.symbol("M")
+        let C = Term.symbol("C")
+        
+        let rule: Rule = ((C && S) => P, M => S, (C && M) => P, TruthValue.deduction)
+        
+        print(rule.0.logic())
+        
+        let test1: Term = .statement(.compound(.c, ["_C_"•, "_S_"•]), .implication, .statement("E"•, .implication, "_P_"•))
+        let test2: Term = .statement("_M_"•, .implication, "_S_"•)
+        
+        for sol in solve((rule.0.logic() === test1.logic()) && (rule.1.logic() === test2.logic())) {
+            print("\n---SOL---\n", sol, "\n")
+            
+            var result = rule.2
+            for item in sol {
+//                print(item.LogicVariable.name)
+//                print(type(of: item.LogicTerm))
+//                if let variable = item.LogicTerm as? LogicVariable {
+//                    rule.2.map()
+                result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+//                    print("result\n", result)
+//                }
+            }
+            
+            print("final\n", result)
+            print(rule.2.logic())
+        }
+    }
+    
+    func test5() {
+        nars.perform(
+            ("A" |=> "B")-*,
+            ("A" |=> "C")-*,
+            .cycle
+        )
+    }
+    
+    func test6() {
+        nars.perform(
+            ((("#x"• * "room_101"•) --> "enter") <<|=> (("#x"• * "door_101"•) --> "open"))-*(0.9),
+            ((("#y"• * "door_101"•) --> "open") <<|=> (("#y"• * "key_101"•) --> "hold"))-*(0.8),
+            .cycle(5)
+        )
+    }
+    
+    func testtest() {
+        nars.perform(
+            ("" --> "")-*,
+            (("robin" --> "[flying]") => ("robin" --> "bird"))-*
+        )
     }
     
     func testMultiStep() {
@@ -240,7 +484,7 @@ class Single_Step: XCTestCase {
            ("bird" --> "swan")-*(0.1),
            .cycle
        )
-        outputMustContain("<bird <–> swan>. %0.10;0.81%")
+//        outputMustContain("⏱ <bird <–> swan>.")// %0.10;0.81%")
 
         nars.perform(
            ("bird" <-> "swan")-?,

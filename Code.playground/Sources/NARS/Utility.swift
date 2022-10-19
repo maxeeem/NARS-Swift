@@ -7,6 +7,8 @@ public func debugPrint(_ item: Any, _ separator: String = "-------") {
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
         statement = f()
+        type = .truth
+        tense = nil
     }
     public var variableTerm: Term! {
         if case .statement(let s, _ , let p) = statement {
@@ -61,10 +63,8 @@ public func +(_ j: Judgement, p: Double) -> Belief {
 }
 
 
-import Dispatch
-
-public func -* (_ s: Statement, _ fc: (Double, Double)) -> Judgement {
-    s -* (fc.0, fc.1, DispatchWallTime.now().rawValue)
+public func -*(_ s: Statement, _ fc: (Double, Double)) -> Judgement {
+    s -* (fc.0, fc.1, ETERNAL)
 }
 public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
     Sentence(s -* tv)
@@ -77,6 +77,30 @@ postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Sentence {
         Sentence(s-*)
+    }
+}
+
+
+extension Sentence {
+    public static prefix func <<(_ s: Sentence) -> Sentence {
+        s.addTense(.past)
+    }
+    public static prefix func ||(_ s: Sentence) -> Sentence {
+        s.addTense(.present)
+    }
+    public static prefix func >>(_ s: Sentence) -> Sentence {
+        s.addTense(.future)
+    }
+    
+    private func addTense(_ tense: Tense) -> Sentence {
+        switch self {
+        case .judgement(let j):
+            return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath, tense: tense))
+        case .question(let q):
+            return .question(Question(statement: q.statement, type: q.type, tense: tense))
+        default:
+            return self
+        }
     }
 }
 
@@ -131,7 +155,7 @@ extension Sentence: CustomStringConvertible {
         case .pause(let t):
             return "💤 \(Double(t)/1000) seconds"
         case .cycle(let n):
-            return "💤 \(Double(n * Sentence.defaultPause)/1000) seconds"
+            return "🔄 \(Double(n * Sentence.defaultPause)/1000) seconds"
         }
     }
 }
