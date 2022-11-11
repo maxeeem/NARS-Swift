@@ -21,7 +21,7 @@ public final class Bag<I: Item>: AbstractBag {
     
     internal var queue = DispatchQueue(label: "ioqueue", qos: .background)
     
-    public init(_ levels: Int = 10, _ capacity: Int = 100) {
+    public init(_ levels: Int = 100, _ capacity: Int = 10000) {
         buckets = Array(repeating: [], count: levels)
         self.levels = levels
         self.capacity = capacity

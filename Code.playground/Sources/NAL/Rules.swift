@@ -35,7 +35,7 @@ extension Rules {
     //TODO: should we add intersection, difference and union to the list?
     
     static func immediate(_ j: Judgement) -> [Judgement] {
-        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
+        let immediate: [Infer] = [/*negation(j1:),*/ conversion(j1:), contraposition(j1:)]
         return immediate.compactMap { $0(j) }
     }
 }
@@ -54,7 +54,7 @@ extension Rules {
             
             var t1 = j1.statement // test
             var t2 = j2.statement // test
-    //        print(p1, p2, j1, j2)
+//            print(p1, p2, j1, j2)
     //        print("=", commonTerms)
     //        return nil
             
@@ -80,11 +80,17 @@ extension Rules {
 //            }
             
             /// variable elimination
-            
+//            print("before")
+//            print("t1", t1)
+//           print("t2", t2)
+//           print("")
             /// independent
             t1 = variableEliminationIndependent(t1, t2)
             t2 = variableEliminationIndependent(t2, t1)
-             
+//            print("after")
+//             print("t1", t1)
+//            print("t2", t2)
+//            print("")
             /// dependent
             if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
                 return result
@@ -155,101 +161,161 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             return nil // temporal order cannot be determined
         }
         
-        // temporal
+        /*
+         * MARK: do temporal
+         */
+        
         // TODO: need to check copulas to ensure temporal order can be established
-        if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
-           case .statement(var cs, var cc, var cp) = c,
-           cc == .implication || cc == .equivalence {
-            let forward = j1.timestamp < j2.timestamp
-            let delta = forward ? j2.timestamp - j1.timestamp : j1.timestamp - j2.timestamp
-            
-            let window = 50 * 1000000 // 50 ms
-            let distance = 10
-            // delta should be less than some param
-            // otherwise rules should not apply
-            // here we choose 1 second computed as
-            // distance factor on either side of the window
-            
-            guard delta < window * 2 * distance else {
-                return nil
-            }
-//                print("N", delta, window, forward, j1, j2)
-//                print(j1.timestamp, j2.timestamp)
-            
-            if delta < window {
-//                    print("||", c)
-                if cc == .implication {
-                    cc = .concurrentImp
-                } else if cc == .equivalence {
-                    cc = .concurrentEq
-                }
-            } else if forward {
-//                    print(">>", c)
-                if cc == .implication {
-                    cc = .predictiveImp
-                } else if cc == .equivalence {
-                    cc = .predictiveEq
-                }
-            } else {
-//                    print("<<", c)
-                if cc == .implication {
-                    cc = .retrospectiveImp
-                } else if cc == .equivalence {
-                    let swap = cs
-                    cs = cp
-                    cc = .predictiveEq
-                    cp = swap
-                }
-            }
-            
-            // use temporal conclusion
-            c = .statement(cs, cc, cp)
+        
+        guard let temporal = temporalReasoning(c) else {
+            return nil // outside temporal window
         }
 
-        var result = c // conclusion
+        c = temporal // introduce temporal copulas
 
-        let test1: LogicGoal = (p1.logic() === j1.statement.logic())
-        let test2: LogicGoal = (p2.logic() === j2.statement.logic())
+        /*
+         * MARK: appply logic
+         */
         
-        let substitution = solve(test1 && test2).makeIterator().next()
+        guard let result = logicReasoning(c) else {
+            return nil // no conclusion
+        }
         
-        // TODO: use LogicVariableFactory to avoid collision with terms
-        // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
+        //        print("here", result)
+
+        // TODO: handle temporal compounds
+        // TODO: check that compounds do not contain each other
+
+        /*
+         * MARK: check results
+         */
         
-        if let sol = substitution {
-//            print("\n---SOL---\n", sol, "\n")
-            let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
-            let valid = sol.allSatisfy { (v, _) in
-                ts.contains { $0.equals(v) }
+        if let statement = validate(result), !statement.isTautology {
+//            print("accepted", result)
+            let truthValue = tf(j1.truthValue, j2.truthValue)
+            let derivationPath = Judgement.mergeEvidence(j1, j2)
+//            print("--")
+//            print(j1, j2)
+//            print("accepted", statement, truthValue, c)
+            return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
+        }
+        
+        return nil // PROGRAM END
+        
+        
+        // MARK: - helpers
+        
+        func temporalReasoning(_ t: Term) -> Term? {
+            if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
+               case .statement(var cs, var cc, var cp) = t,
+               cc == .implication || cc == .equivalence {
+                let forward = j1.timestamp < j2.timestamp
+                let delta = forward ? j2.timestamp - j1.timestamp : j1.timestamp - j2.timestamp
+                
+                let window = 50 * 1000000 // 50 ms
+                let distance = 10
+                // delta should be less than some param
+                // otherwise rules should not apply
+                // here we choose 1 second computed as
+                // distance factor on either side of the window
+                
+                guard delta < window * 2 * distance else {
+                    return nil
+                }
+                //                print("N", delta, window, forward, j1, j2)
+                //                print(j1.timestamp, j2.timestamp)
+                
+                if delta < window {
+                    //                    print("||", t)
+                    if cc == .implication {
+                        cc = .concurrentImp
+                    } else if cc == .equivalence {
+                        cc = .concurrentEq
+                    }
+                } else if forward {
+                    //                    print(">>", t)
+                    if cc == .implication {
+                        cc = .predictiveImp
+                    } else if cc == .equivalence {
+                        cc = .predictiveEq
+                    }
+                } else {
+                    //                    print("<<", t)
+                    if cc == .implication {
+                        cc = .retrospectiveImp
+                    } else if cc == .equivalence {
+                        let swap = cs
+                        cs = cp
+                        cc = .predictiveEq
+                        cp = swap
+                    }
+                }
+                
+                // use temporal conclusion
+                return .statement(cs, cc, cp)
             }
-
-            if valid {
-                for item in sol {
-                    //                print(item.LogicVariable.name)
-                    //                print(type(of: item.LogicTerm))
-                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
-                    //                print("result\n", result)
+            return t // use original conclusion
+        }
+        
+        func logicReasoning(_ t: Term) -> Term? {
+            var result = t
+            var map: [String: Term] = [:]
+            let test1: LogicGoal = (p1.logic() === j1.statement.logic())
+            let test2: LogicGoal = (p2.logic() === j2.statement.logic())
+            
+            let substitution = solve(test1 && test2).makeIterator().next()
+            
+            // TODO: use LogicVariableFactory to avoid collision with terms
+            // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
+            
+            if let sol = substitution {
+                //            print("\n---SOL---\n", sol, "\n")
+                let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
+                let valid = sol.allSatisfy { (v, _) in
+                    ts.contains { $0.equals(v) }
+                }
+                
+                if valid {
+                    for item in sol {
+                        //                print(item.LogicVariable.name)
+                        //                print(type(of: item.LogicTerm))
+                        result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                        //                print("result\n", result)
+                    }
                 }
             }
-        }
-//        print("}}}}", j1, j2, result)
-        if result == c { // no conclusion
-            return nil
+            
+//            print("}}}}", j1, j2, result)
+            
+            return (result == t) ? nil : result
         }
         
-        // helper
         func validate(_ term: Term) -> Term? {
             switch term {
-                
+
+            // TODO: difference connectors take exactly 2 terms
+
             case .compound(let connector, let terms):
                 if terms.count != 2 { // TODO: handle multiple components
                     if terms.count == 1, connector == .intSet || connector == .extSet {
+                        if case .compound(let c, let ts) = terms[0] {
+                            if ts.count == 1, c == .intSet || c == .extSet {
+                                return nil // prevent nesting i.e. [{x}], {{x}}, [[x]], {[x]}
+                            }
+                        }
                         return term // instances and properties are allowed one component
+                    }
+//                    print("here", term)
+                    if connector == .x || connector == .i || connector == .e {
+                        return term
                     }
                     return nil
                 }
                 if checkOverlap && j1.evidenceOverlap(j2) {
                     return nil
+                }
+                if connector == .x || connector == .i || connector == .e {
+                    return term
                 }
                 guard let compound = ç.connect(terms[0], connector, terms[1]) else {
                     return nil // invalid compound
@@ -258,6 +324,11 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 
             case .statement(let subject, let cop, let predicate):
                 if let sub = validate(subject), let pre = validate(predicate) {
+//                    if case .compound(let cs, _) = subject, case .compound(let cp, _) = predicate {
+//                        if cs == .x && cp == .x {
+//                            return nil
+//                        }
+//                    }
                     return .statement(sub, cop, pre)
                 }
                 return nil
@@ -266,138 +337,12 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 return term
             }
         }
-        
-        // TODO: handle temporal compounds
-        // TODO: check that compounds do not contain each other
-
-//        print("here", result)
-        if let statement = validate(result) {
-//            print("accepted", result)
-            
-            if statement.isTautology {
-                return nil
-            }
-
-            let truthValue = tf(j1.truthValue, j2.truthValue)
-            let derivationPath = Judgement.mergeEvidence(j1, j2)
-            
-//            print("accepted", statement, truthValue)
-            
-            return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
-        }
-        
-        return nil
     }
 }
 
 
-// MARK: Helpers -- TODO: REMOVE -- used in variable introduction only prior to new rule_generator
 
-private var identifyCommonTerms: ((Statement, Statement)) -> Quad<Bool?> = { (arg) in
-    let t1 = arg.0.terms
-    let t2 = arg.1.terms
-    let res = t1 + t2
-    var out = Quad<Bool?>(nil, nil, nil, nil)
-    var tmp = Array<Term>()
-    Array(0..<3+1)
-        .compactMap { i in
-            let t = term(at: i, in: res)
-            return t == nil ? nil : (i, t!)
-        }
-        .forEach { (arg: (Int, Term)) in
-            let (i, t) = arg
-            if i == 0 {
-                tmp.append(t)
-                set(&out, i, false)
-            }
-            if i == 1 && !helper(i, t) {
-                tmp.append(t)
-                set(&out, i, false)
-            }
-            if i == 2 && !helper(i, t) {
-                tmp.append(t)
-                set(&out, i, nil)
-            }
-            if i == 3 { 
-                helper(i, t)             
-//                set(&out, i, nil)
-            }
-        }
-        @discardableResult
-        func helper(_ i: Int, _ t: Term) -> Bool {
-            if tmp.contains(t) {
-                if let idx = firstIndex(of: t, in: res) {
-                    set(&out, idx, true)
-                }
-                set(&out, i, true)
-                return true
-            }
-            return false
-        }
- /*
-        .forEach { (arg: (Int, Term)) in
-            let (i, t) = arg
-            let seen = helper(i, t)
-            tmp.append(t)
-            set(&out, i, false)
-            if !seen {
-                tmp.append(t)
-                set(&out, i, nil)
-            }
-    }
-    func helper(_ i: Int, _ t: Term) -> Bool {
-        if !tmp.contains(t) { return false }
-        let idx = firstIndex(of: t, in: res)
-        if idx != nil { set(&out, idx!, true) }
-        set(&out, i, true)
-        return true
-    }
- */
-    return out
-}
-
-
-// MARK: Utility
-
-private func +(_ a: [Term], b: [Term]) -> Quad<Term> {
-    let a = (a.count == 1) ? a + [.NULL] : a
-    let b = (b.count == 1) ? b + [.NULL] : b
-    assert(a.count == 2 && b.count == 2)
-    return (a[0], a[1], b[0], b[1])
-}
-
-private func firstIndex<T>(of t: T, in q: Quad<T>) -> Int? {
-    (q.0 == t ? 0 :
-    (q.1 == t ? 1 :
-    (q.2 == t ? 2 :
-    (q.3 == t ? 3 : nil))))
-}
-
-private func term(at i: Int, in q: Quad<Term>) -> Term? {
-    (i == 0 ? q.0 :
-    (i == 1 ? q.1 :
-    (i == 2 ? q.2 :
-    (i == 3 ? q.3 : nil))))
-}
-
-private func set(_ q: inout Quad<Bool?>, _ i: Int, _ value: Bool?) {
-    (i == 0 ? q.0 = value :
-    (i == 1 ? q.1 = value :
-    (i == 2 ? q.2 = value :
-    (i == 3 ? q.3 = value : () ))))
-}
-
-private func countTruths(in q: Quad<Bool?>) -> Int {
-    var i = 0
-    let x = true
-    if q.0 == x { i += 1 }
-    if q.1 == x { i += 1 }
-    if q.2 == x { i += 1 }
-    if q.3 == x { i += 1 }
-    return i
-}
-
-// MARK: Variable introduction and elimination
+// MARK: - Variable introduction and elimination
 
 private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
     var t1 = t1
@@ -456,10 +401,11 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
     var x: [Judgement?] = []
     if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
        case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
-
-        if let common = firstIndex(of: true, in: identifyCommonTerms((t1, t2))),
-           let xc = term(at: common, in: (t1.terms + t2.terms)) {
-
+        
+        let common = Set(t1.terms).intersection(t2.terms)
+        
+        if !common.isEmpty {
+            
             if dependent { checkOverlap = false }
             
             var vari = r.conditional.flatMap { r in
@@ -477,11 +423,13 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
             if dependent { checkOverlap = true }
             
             let rep: [Judgement] = vari.compactMap { j in
-                var r: Term
-                if dependent {
-                    r = j.statement.replace(termName: xc.description, depVarName: "x")
-                } else {
-                    r = j.statement.replace(termName: xc.description, indepVarName: "x")
+                var r = j.statement
+                for (i, c) in common.enumerated() {
+                    if dependent {
+                        r = r.replace(termName: c.description, depVarName: "x\(i)")
+                    } else {
+                        r = r.replace(termName: c.description, indepVarName: "x\(i)")
+                    }
                 }
                 if j.statement.description == r.description {
                     return nil // variable substitution was not successful
@@ -496,7 +444,7 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
 }
 
 
-public func helper(_ terms: (Term, Term), _ other: Term) -> (Term, Term)? {
+private func helper(_ terms: (Term, Term), _ other: Term) -> (Term, Term)? {
     let vars1: [LogicTerm] = terms.0.terms.map {
         if case .variable(let v) = $0 {
             return LogicVariable(named: v.name ?? "_") // TODO: properly handle anonymous variables

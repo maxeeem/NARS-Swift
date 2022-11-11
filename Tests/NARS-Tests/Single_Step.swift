@@ -9,6 +9,8 @@ import XCTest
 
 @testable import NARS
 
+var lastCycle: [(UInt64, String)] = []
+
 class Single_Step: XCTestCase {
 
     var output: [String] = []
@@ -17,11 +19,16 @@ class Single_Step: XCTestCase {
     
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        Sentence.defaultPause = 500 // in milliseconds
+        Sentence.defaultPause = 1000 // in milliseconds
     }
 
     override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
+//        lastCycle.append(contentsOf: nars.lastCycle)
+//        for interval in lastCycle {
+//            print(interval.1, "@", interval.0)
+//        }
+//        nars.lastCycle.removeAll()
         nars.reset()
         output.removeAll()
     }
@@ -33,14 +40,37 @@ class Single_Step: XCTestCase {
     func testSample() {
         nars.perform(
             ("{tom}" --> "cat")-*,
-            (Term.compound(.x, ["{tom}", "[sky]"]) --> "likes")-*,
+            (Term.compound(.x, ["{tom}", "{sky}"]) --> "likes")-*,
+            .cycle,
+//            ("{tom}" --> Term.compound(.e, ["likes", .º, "{sky}"]))-*,
+//            ("{sky}" --> Term.compound(.e, ["likes", "{tom}", .º]))-*,
             ("{sky}" --> "[blue]")-*,
             .cycle,
             (Term.compound(.x, ["cat", "[blue]"]) --> "likes")-?,
+//            ("cat" --> Term.compound(.e, ["likes", .º, "[blue]"]))-?,
             .pause
         )
         outputMustContain("💡 <(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
     }
+    
+    func testik() {
+        let relation = ç.x_("water", "salt") --> "dissolve"
+        let knowledge = "rain" --> "water"
+        
+//        nars.perform(
+//            relation-*,
+//            knowledge-*,
+//            .cycle
+//        )
+        
+        let image = "water" --> ç.e_("dissolve", "º", "salt")
+        nars.perform(
+            image-*,
+            knowledge-*,
+            .cycle
+        )
+    }
+    
     // KK <P |=> S>. %1.00;0.45%.ind ["S+(1.0, 0.9, 16781238065391810616)", "P+(1.0, 0.9, 16781238065392859616)"]
     // KK <P |=> S>. %1.00;0.45%.ind ["S+(1.0, 0.9, 16781238065391810616)", "P+(1.0, 0.9, 16781238065378744616)"]
 
@@ -52,6 +82,7 @@ class Single_Step: XCTestCase {
         nars.cycle = true
         nars.perform(
             ||("_P_"•)-*,
+              ("_P_"•)-*(1.0,0.9,0),
 //            .pause,
             ||("_S_"•)-*
 //            .cycle
@@ -64,7 +95,7 @@ class Single_Step: XCTestCase {
 //            .cycle
         )
         nars.perform(
-            ||("_P_"•)-*,
+            ||("_P_"•)-*,//(1.0,0.9,0),
 //            .pause,
             ||("_S_"•)-*
               , .pause
@@ -74,14 +105,110 @@ class Single_Step: XCTestCase {
         print(nars.memory)
     }
     
+//    func testMnist() {
+//        var kb = [Sentence]()
+//        var map = [Int:Int]()
+//        for i in 0..<10 {
+//            kb.append(("{mnist_\(i)}" --> "mnist")-*)
+//            for j in 0..<10 {
+//                kb.append(("{mnist_\(i)}" --> "[t_\(j)]")-*(0.1))
+////                for k in 0..<10 {
+////                    kb.append(("[t_\(j)]" --> "\(k)")-*(0.1))
+////                }
+//            }
+//            let r = Int.random(in: 0...9)
+//            kb.append(("{mnist_\(i)}" --> "\(r)")-*)
+//            map[i] = r
+//        }
+//        
+////        print(kb)
+//        for k in kb {
+//            // prefix(through: "\(k)".index("\(k)".endIndex, offsetBy: -13))
+//            var s = "\(k)"
+//            _ = s.removeLast()
+//            print(s.replacingOccurrences(of: "->", with: "-->"))
+//        }
+//        nars.perform(kb +
+//                     [.pause, ("{mnist_7}" --> "?")-?, .pause]
+//        )
+//
+//        Thread.sleep(forTimeInterval: 45)
+//        print(nars.memory)
+//    }
+    
     func testLogic() {
-        let m = Term.variable(.independent("m"))
-        let p = Term.variable(.independent("p"))
-        let s = Term.variable(.independent("s"))
-        let st  = Term.compound(.c, [m, p, s, m])//( m   -->  p  ) => ( s   -->  m  )
-        let res = Term.compound(.c, ["M"•, "P"•, "S"•, "M"•])//("M"• --> "P"•) => ("S"• --> "M"•)
-        let x = helper((st, st), res)
-        print(x)
+        let subject: Term = "S" <-> "P"
+        let predicate: Term = "{S}" <-> "{P}"
+        let theorem: Statement = subject <=> predicate
+        
+        let test: Statement = "{car}" <-> "{auto}"
+        
+        print(theorem.terms)
+        
+        let x = theorem.terms.map({ $0.logic() === test.logic() }).reduce(success, ||)
+        
+        var res_x: [Statement] = []
+        for sol in solve(x) {
+            print(sol)
+            let ts = test.terms.flatMap({ $0.terms.map({ $0.logic() }) })
+//            print(ts)
+            let valid = sol.allSatisfy { (v, _) in
+                !ts.contains { $0.equals(v) }
+            }
+//            print("yo", sol[LogicVariable(named: "P")])
+            
+            if valid {
+                var r = theorem
+                for item in sol {
+//                    print(">", item.LogicVariable, item.LogicTerm)
+//                    if !ts.contains(where: { $0.equals(item.LogicVariable) }) {
+//                        print("hre", item.LogicVariable, item.LogicTerm)
+                        r = r.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+//                    }
+                }
+                if r != theorem {
+                    res_x.append(r)
+                }
+            }
+        }
+        print("x", res_x)
+        print(res_x.min(by: { $0.complexity < $1.complexity }))
+    }
+    func testLogic2() {
+        let subject: Term = "S"• <-> "P"•
+        let predicate: Term = +["S" --> "P", "P" --> "S"]
+        let theorem: Statement = subject <=> predicate
+        
+        let test: Statement = "car"• <-> "auto"•
+        
+//        print(theorem.terms)
+        
+        let x = theorem.terms.map({ $0.logic() === test.logic() }).reduce(success, ||)
+        
+        let goal = (test.logic() === subject.logic()) && (test.logic() === predicate.logic())
+//        let goal = test.logic() === theorem.logic()
+
+        var res_x = theorem
+        for sol in solve(x) {
+            print(sol)
+            let ts = test.terms.flatMap({ $0.terms.map({ $0.logic() }) })
+//            print(ts)
+            let valid = sol.allSatisfy { (v, _) in
+                !ts.contains { $0.equals(v) }
+            }
+//            print("yo", sol[LogicVariable(named: "P")])
+            
+            if valid {
+                for item in sol {
+//                    print(">", item.LogicVariable, item.LogicTerm)
+//                    if !ts.contains(where: { $0.equals(item.LogicVariable) }) {
+//                        print("hre", item.LogicVariable, item.LogicTerm)
+                        res_x = res_x.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+//                    }
+                }
+            }
+        }
+        print("x", res_x)
     }
     
     // [(M --> P,     S --> M,      S --> P, tf),
@@ -153,7 +280,7 @@ class Single_Step: XCTestCase {
         print(Variable("#y()")!)
         print(Variable("#y(#x)")!)
     }
-    
+    /*
     func testbar() {
         let rule = Rules.deduction.firstOrder[0]
         let j1: Judgement = ("bird" --> "animal")-*
@@ -262,7 +389,7 @@ class Single_Step: XCTestCase {
             print(rule.2.logic())
         }
     }
-    
+    */
     func test5() {
         nars.perform(
             ("A" |=> "B")-*,
@@ -271,11 +398,43 @@ class Single_Step: XCTestCase {
         )
     }
     
-    func test6() {
+    func test6() { // nal7.0.nal
+        let x = Term.variable(.independent("x"))
+        let y = Term.variable(.independent("y"))
         nars.perform(
-            ((("#x"• * "room_101"•) --> "enter") <<|=> (("#x"• * "door_101"•) --> "open"))-*(0.9),
-            ((("#y"• * "door_101"•) --> "open") <<|=> (("#y"• * "key_101"•) --> "hold"))-*(0.8),
-            .cycle(5)
+            (((x * "room_101"•) --> "enter") <<|=> ((x * "door_101"•) --> "open"))-*(0.9),
+            (((x * "door_101"•) --> "open") <<|=> ((x * "key_101"•) --> "hold"))-*(0.8),
+//            ("enter-room"• <<|=> "open-door"•)-*(0.9),
+//            ("open-door"• <<|=> "hold-key"•)-*(0.8),
+            .cycle
+        )
+        /*
+         '********** temporal deduction/explification
+
+         'Someone enter the room_101 after he open the door_101
+         <<(*, $x, room_101) --> enter> =\> <(*, $x, door_101) --> open>>. %0.9%
+
+         'Someone open the door_101 after he hold the key_101
+         <<(*, $y, door_101) --> open> =\> <(*, $y, key_101) --> hold>>. %0.8%
+
+         100
+
+         'If someone enter room_101, he should hold key_101 before
+         ''outputMustContain('<<(*,$1,room_101) --> enter> =\> <(*,$1,key_101) --> hold>>. %0.72;0.58%')
+         'If someone hold key_101, he will enter room_101
+         ''outputMustContain('<<(*,$1,key_101) --> hold> =/> <(*,$1,room_101) --> enter>>. %1.00;0.37%')
+         */
+    }
+    
+    func testInf() {
+        nars.perform(
+            ("bird" --> "animal")-*, // (1, 0.9)
+            ("robin" -->  "bird")-*,
+            .pause,
+            ("bird" --> "animal")-?,
+            ("bird" --> "mammal")-?,
+            .pause(3000),
+            .cycle(2)
         )
     }
     
@@ -290,6 +449,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("a" --> "b")-*,
             ("b" --> "c")-*,
+//            .cycle,
 //            ("x" --> "y")-*,
 //            ("y" --> "z")-*,
             ("c" --> "d")-*,
@@ -484,7 +644,7 @@ class Single_Step: XCTestCase {
            ("bird" --> "swan")-*(0.1),
            .cycle
        )
-//        outputMustContain("⏱ <bird <–> swan>.")// %0.10;0.81%")
+        outputMustContain("⏱ <bird <–> swan>. %0.10;0.81%")
 
         nars.perform(
            ("bird" <-> "swan")-?,
@@ -501,7 +661,7 @@ class Single_Step: XCTestCase {
            ("[smart]" --> "[bright]")-?,
            .pause
        )
-       outputMustContain("💡 <[smart] -> [bright]>. %0.90;0.66%")
+       outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
     }
     
 //    func testNal2_09() throws {
@@ -758,6 +918,51 @@ class Single_Step: XCTestCase {
         outputMustContain("💡 <(swimmer ø swan) -> bird>.") // should be %0.10;0.73%
     }
     
+    func testVari() {
+        nars.perform(
+            ((.variable(.independent("x")) --> "_M") => (.variable(.independent("x")) --> "_P"))-*,
+            ((.variable(.independent("x")) --> "_S") => (.variable(.independent("x")) --> "_M"))-*,
+            .pause
+        ) /// <(#x -> S) => (#x -> P)>. %1.00;0.81%.ded
+        outputMustContain("⏱ <(#x -> _S) => (#x -> _P)>. %1.00;0.81%")
+    }
+    
+    func testVari2() {
+        nars.perform(
+//            ("_P" --> "_Q")-*,
+            ("{Tweety}" --> "_P")-*,
+            ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*,
+            .pause
+        ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
+        outputMustContain("⏱ <{Tweety} -> _Q>. %1.00;0.81%")
+    }
+    /*
+    func testVari3() {
+        let j1: Judgement = ("{Tweety}" --> "_P")-*
+        let j2: Judgement = (.instance(.variable(.independent("x"))) --> "_P")-* //=> (.instance(.variable(.independent("x"))) --> "_Q"))-*
+        
+        let k: Judgement = (.instance(.variable(.independent("x"))) --> "_Q")-*
+        
+        for sol in solve(j1.statement.logic() === j2.statement.logic() || j1.statement.logic() === k.statement.logic()) {
+            print("\n---SOL---\n", sol, "\n")
+//            let ts = (rule.0.terms + rule.1.terms + rule.2.terms).flatMap { $0.terms.map({ $0.logic() }) }
+//            let valid = sol.allSatisfy { (v, _) in
+//                ts.contains { $0.equals(v) }
+//            }
+//
+//            if valid {
+//                for item in sol {
+//                    // TODO: filter out invalid substitutions
+//
+//                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+//                    //                print("result\n", result)
+//                }
+//            }
+        }
+        
+//        print("final\n", result)
+    }
+    */
 //    func testNal3_111() throws {
 //        nars.perform(
 //            ("a" --> "b")-*,

@@ -143,6 +143,16 @@ extension Connector {
         }
         
         // TODO: should we be filtering terms by intensional/extension
+        if [.intSet, .extSet, .Ω, .U, .l, .ø].contains(c) {
+            if case .compound(let c1, _) = t1,
+               case .compound(let c2, _) = t2 {
+                if c1 == .x || c1 == .e || c1 == .i
+                    || c2 == .x || c2 == .e || c2 == .i {
+                    return nil
+                }
+            }
+        }
+        
         switch c {
         /// definition 7.1 -- intensional/extensional sets
         case .intSet: res = t1t.union(t2t)
@@ -246,7 +256,7 @@ extension Term {
         case .statement(let subject, _, let predicate):
             return [subject, predicate]
         case .variable:
-            return []
+            return [self] //TODO: Do we need to recurse into dependent variables?
         case .operation(_, let terms):
             return terms
         }

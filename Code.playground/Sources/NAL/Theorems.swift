@@ -13,13 +13,13 @@ public enum Theorems: CaseIterable {
 extension Theorems {
     public static func apply(_ j: Judgement) -> [Judgement] {
         let res: [[Statement]] = self.allCases.map {
-            var results = $0.rules.compactMap { $0(j.statement) }
+            var results = $0.rules.compactMap { helper(t: $0, s: j.statement) }
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-                results.append(contentsOf: $0.rules.compactMap { $0(.statement(p, c, s)) })
+                results.append(contentsOf: $0.rules.compactMap { helper(t: $0, s: .statement(p, c, s)) })
             }
             if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
                 if terms.count == 2 { // TODO: handle compounds with multiple terms
-                    results.append(contentsOf: $0.rules.compactMap { $0(.compound(conn, terms.reversed())) })
+                    results.append(contentsOf: $0.rules.compactMap { helper(t: $0, s: .compound(conn, terms.reversed())) })
                 }
             }
             return results
@@ -65,3 +65,33 @@ extension Theorems {
         return unique
     }
 }
+
+
+// MARK: - Helper
+
+private func helper(t: Statement, s: Statement) -> Statement? {
+    var results = [Term]()
+    let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
+    
+    for sol in solve(goal) {
+//                print(sol)
+        let ts = s.terms.flatMap({ $0.terms.map({ $0.logic() }) })
+
+        let valid = sol.allSatisfy { (v, _) in
+            !ts.contains { $0.equals(v) }
+        }
+        
+        if valid {
+            var result = t
+            for item in sol {
+                result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+            }
+            if result != t {
+                results.append(result)
+            }
+        }
+    }
+    
+    return results.min(by: { $0.complexity < $1.complexity })
+}
+

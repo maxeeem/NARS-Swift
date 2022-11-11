@@ -95,7 +95,7 @@ public final class NARS: Item {
         imagination = WrappedBag(memory)
         recent = Bag<Belief>(4,40)
         cycleQueue.resume()
-//        sleep(2)
+        sleep(2)
     }
     
     public func perform(_ script: Sentence...) { // convenience
@@ -111,7 +111,7 @@ public final class NARS: Item {
                 
                 var s = s // for updating timstamp
                 
-                var recent: [Judgement] = []
+//                var recent: [Judgement] = []
                 
                 /// JUDGEMENT
                 if case .judgement(var j) = s {
@@ -126,7 +126,12 @@ public final class NARS: Item {
                         s = .judgement(j) // update original sentence
                     }
                     // process in recent memory
-                    recent = self.process(recent: j)
+                    DispatchQueue.global().async {
+                        let recent = self.process(recent: j)
+                        for el in recent { // add stable patterns from recent memory
+                            self.process(.judgement(el), recurse: false, userInitiated: true)
+                        }
+                    }
                 
                 //
                 // TODO: account for tense in question answering
@@ -155,9 +160,9 @@ public final class NARS: Item {
                 /// SENTENCE
                 self.process(s, userInitiated: true) // process in main memory
                 
-                for el in recent { // add stable patterns from recent memory
-                    self.process(.judgement(el), recurse: false, userInitiated: true)
-                }
+//                for el in recent { // add stable patterns from recent memory
+//                    self.process(.judgement(el), recurse: false, userInitiated: true)
+//                }
             }
             
             /// PAUSE
@@ -196,6 +201,8 @@ public final class NARS: Item {
     }
     
     private var thinking = false
+    public var lastCycle: [(UInt64,String)] = []
+    private var lastInput: Sentence!
 }
 
 // MARK: Private
@@ -208,10 +215,10 @@ extension NARS: Equatable {
 
 extension NARS {
     fileprivate func process(recent j: Judgement) -> [Judgement] {
-//        guard recent.peek(j.identifier) == nil else {
+        guard recent.peek(j.identifier) == nil else {
 //            print("}}", j)
-//            return // no need to process what we already know
-//        }
+            return []// no need to process what we already know
+        }
 //        print(">", j)
         
         var derived: [Belief] = [j + 0.9]
@@ -276,24 +283,28 @@ extension NARS {
                 }
             }
             
-            Rules.allCases.flatMap { r in
-                r.apply((b.judgement, j))
-            }.forEach {
-                if var el = $0 {
-//                    if el.timestamp == 0 {
-//                        let now = DispatchWallTime.now()
-//                        if el.derivationPath.count == 1 { // also update derivationPath
-//                            el = el.statement + (el.truthValue.f, el.truthValue.c, now.rawValue)
-//                        } else {
-//                            el.timestamp = now.rawValue
-//                        }
-//                    }
-                    if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
-                        derived.append(choice(j1: d.judgement, j2: el) + 0.9)
-                    } else {
-                        derived.append(el + 0.9)
+            if b.judgement.statement != j.statement {
+                
+                Rules.allCases.flatMap { r in
+                    r.apply((b.judgement, j))
+                }.forEach {
+                    if var el = $0 {
+                        //                    if el.timestamp == 0 {
+                        //                        let now = DispatchWallTime.now()
+                        //                        if el.derivationPath.count == 1 { // also update derivationPath
+                        //                            el = el.statement + (el.truthValue.f, el.truthValue.c, now.rawValue)
+                        //                        } else {
+                        //                            el.timestamp = now.rawValue
+                        //                        }
+                        //                    }
+                        if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
+                            derived.append(choice(j1: d.judgement, j2: el) + 0.9)
+                        } else {
+                            derived.append(el + 0.9)
+                        }
                     }
                 }
+                
             }
         }
         
@@ -305,7 +316,16 @@ extension NARS {
     }
     
     fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
+//        var recurse = recurse; recurse = true
         let now = DispatchWallTime.now()
+//        if lastCycle.count == 1 && lastCycle[0] == (0,"") {
+//            lastCycle.remove(at: 0) // first cycle
+//        }
+        let duration = lastInput == nil ? 0 : lastPerformance.rawValue - now.rawValue
+        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)"
+        lastCycle.append((duration, label))
+        
+        lastInput = input
         lastPerformance = now
             
         var input = input // set time stamp if not yet set
@@ -318,7 +338,7 @@ extension NARS {
             }
         }
 
-        output((userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)")
+        output(label)
         
         // memory or imagination
         let derivedJudgements: [Judgement] = {
@@ -339,6 +359,7 @@ extension NARS {
             })
             derivedJudgements = Array(Set(derivedJudgements)) //TODO: use choice to additionally resolve duplicates
 //        print(derivedJudgements)
+//            print("processed \(input)\n\tderived \(derivedJudgements)")
             return derivedJudgements
         }()
         
@@ -354,7 +375,7 @@ extension NARS {
 
                     iqueue.async {
 //                    self.dreaming = true
-                    // re-process question
+                        // re-process question
                         self.process(input)
                     }
                 }
@@ -396,12 +417,18 @@ extension NARS {
             if case .statement(let s, _, let p) = question.statement {
                 if case .variable = s {
                     if let winner = derivedJudgements.first {
+                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
+                        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
+                        lastCycle.append((duration, label))
                         output(".  💡 \(winner)")
                     } else {
                         output("\t(2)I don't know 🤷‍♂️")
                     }
                 } else if case .variable = p {
                     if let winner = derivedJudgements.first {
+                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
+                        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
+                        lastCycle.append((duration, label))
                         output(".  💡 \(winner)")
                     } else {
                         output("\t(2)I don't know 🤷‍♂️")
@@ -417,9 +444,13 @@ extension NARS {
                         process(.judgement(winner),
                                      recurse: false, // determines if derived judgements are inserted
                                      userInitiated: true) // will cause insertion into main memory
+                    } else {
+                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
+                        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
+                        lastCycle.append((duration, label))
                     }
-                    
                     output(".  💡 \(winner)")
+                    print("}}", winner.derivationPath)
 //                    print("here", dreaming, cycle)
                     break
                     

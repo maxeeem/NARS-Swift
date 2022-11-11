@@ -113,10 +113,11 @@ extension Concept {
             }
         }
         
+        var jflipped: Judgement = j
         // store symmetrical statement
         if case .statement(let sub, let cop, let pre) = j.statement, (cop == .equivalence || cop == .similarity) {
             let flipped: Statement = .statement(pre, cop, sub)
-            let jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
+            jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
             if beliefs.peek(jflipped.identifier) == nil {
                 derived.append(jflipped)
             }
@@ -126,7 +127,7 @@ extension Concept {
         if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
             if terms.count == 2 { // TODO: handle compounds with multiple terms
                 let flipped: Statement = .compound(conn, terms.reversed())
-                let jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
+                jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
                 if beliefs.peek(jflipped.identifier) == nil {
                     derived.append(jflipped)
                 }
@@ -168,8 +169,20 @@ extension Concept {
         guard derive else { return derived }
         
         /// apply two-premise rules
+        twoPremiseRules:
         if var b = beliefs.get() {
+            
+            if b.judgement.statement == jflipped.statement {
+                if let b1 = beliefs.get() {
+                    beliefs.put(b)
+                    b = b1 // use another belief
+                } else {
+                    beliefs.put(b)
+                    break twoPremiseRules
+                }
+            }
 //            print("--", b, j)
+            
             // apply rules
             let results = Rules.allCases
                 .flatMap { r in
@@ -218,7 +231,8 @@ extension Concept {
 //            print("<|>", maxj, js)
             return maxj
         }
-            .filter { beliefs.peek($0.identifier) == nil }//&& $0.statement != j.statement }
+            .filter { beliefs.peek($0.identifier) == nil
+            }//&& $0.statement != j.statement }
 //        print("\n\n\n", j)
 //        print(beliefs)
 //        print("+++", r)

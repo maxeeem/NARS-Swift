@@ -68,6 +68,20 @@ DispatchQueue.global().async {
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
     
+    let frame = 1...3
+    let pixels: [Term] = frame.map { .symbol("pixel\($0)") }
+    
+    let figures = [0.0, 1.0, 0.0]
+    let intensities: [Term] = zip(pixels, figures).map { .symbol("pixel\($0)") }
+    
+//    let one: Term = .compound(.x, pixels)
+    
+    nars.perform(
+//        ()
+    )
+    
+    output.reset()
+    
     nars.perform(defaultScript)
     
     //debugPrint(nars.memory)

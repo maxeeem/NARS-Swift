@@ -66,11 +66,17 @@ public func +(_ j: Judgement, p: Double) -> Belief {
 public func -*(_ s: Statement, _ fc: (Double, Double)) -> Judgement {
     s -* (fc.0, fc.1, ETERNAL)
 }
-public func -*(_ s: Statement, _ tv: (Double, Double)) -> Sentence {
-    Sentence(s -* tv)
+public func -*(_ s: Statement, _ fc: (Double, Double)) -> Sentence {
+    Sentence(s -* fc)
+}
+public func -*(_ s: Statement, _ fct: (Double, Double, UInt64)) -> Sentence {
+    Sentence(s -* fct)
 }
 public func -*(_ s: Statement, _ f: Double) -> Sentence {
     Sentence(s -* (f, 0.9))
+}
+public func -*(_ s: Statement, _ t: UInt64) -> Sentence {
+    Sentence(s -* (1, 0.9, t))
 }
 
 postfix operator -*
@@ -95,7 +101,7 @@ extension Sentence {
     private func addTense(_ tense: Tense) -> Sentence {
         switch self {
         case .judgement(let j):
-            return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath, tense: tense))
+            return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath, tense: tense, timestamp: j.timestamp))
         case .question(let q):
             return .question(Question(statement: q.statement, type: q.type, tense: tense))
         default:

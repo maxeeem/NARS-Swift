@@ -81,14 +81,14 @@ extension Statement {
     static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
 }
 
-infix operator &
+//infix operator &
 func & (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.Ω_(lhs, rhs) }
-infix operator |
+//infix operator |
 func | (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.U_(lhs, rhs) }
 
-infix operator -
+//infix operator -
 func - (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.l_(lhs, rhs) }
-infix operator ~
+//infix operator ~
 func ~ (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.ø_(lhs, rhs) }
 
 func * (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.x_(lhs, rhs) }
@@ -262,7 +262,7 @@ extension Term: CustomStringConvertible {
         case .variable(let variable):
             switch variable {
             case .independent(let word):
-                return "#\(word)"
+                return "#\(word)" //TODO: update to use `$`
             case .dependent(let word, let variables):
                 if let w = word {
                     let independents = variables.map { "#\($0)" }
@@ -296,7 +296,14 @@ extension TruthValue: CustomStringConvertible {
 
 extension Rules: CustomStringConvertible {
     public var description: String {
-        "." + rawValue.prefix(3)
+        switch self {
+        case .conversion:
+            return ".cnv"
+        case .contraposition:
+            return ".cnt"
+        default:
+            return "." + rawValue.prefix(3)
+        }
     }
 }
 
@@ -363,9 +370,15 @@ extension Judgement {
         } else if j2.derivationPath.isEmpty {
             return j1.derivationPath
         } else {
-            return zip(j1.derivationPath, j2.derivationPath).reduce([], { partialResult, next in
+            var tail: [String] = []
+            if j1.derivationPath.count < j2.derivationPath.count {
+                tail = Array(j2.derivationPath.suffix(from: j1.derivationPath.endIndex))
+            } else if j2.derivationPath.count > j1.derivationPath.count {
+                tail = Array(j1.derivationPath.suffix(from: j1.derivationPath.count))
+            }
+            return (zip(j1.derivationPath, j2.derivationPath).reduce([], { partialResult, next in
                 partialResult + (next.0 == next.1 ? [next.0] : [next.0, next.1])
-            }).suffix(100)
+            }) + tail).suffix(100)
         }
     }
     
