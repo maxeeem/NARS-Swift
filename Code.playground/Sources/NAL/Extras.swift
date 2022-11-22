@@ -501,6 +501,11 @@ extension Term {
             return .compound(conn, terms.map{$0.replace(termName: termName, term: term)})
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, term: term), cop, pre.replace(termName: termName, term: term))
+        case .variable:
+            if description == termName {
+                return term
+            }
+            return self
         default: // TODO: properly handle all cases
             return self
         }
@@ -538,7 +543,8 @@ extension Variable {
                     self = .dependent(String(trimmed), [])
                     return
                 }
-                return nil
+                self = .independent(String(name))
+                return
             }
         }
         return nil
@@ -548,8 +554,8 @@ extension Variable {
 extension Term {
     func logic() -> LogicTerm {
         switch self {
-        case .symbol(let name):
-            return LogicVariable(named: name)
+        case .symbol:
+            return LogicValue(self)
         case .compound(let c, let terms):
             return List.cons(LogicValue(c), terms.toList())
         case .statement(let s, let c, let p):
@@ -576,13 +582,13 @@ extension Term {
     }
         
     static func from(logic: LogicTerm) -> Term {
+        if let value = logic as? LogicValue<Term> {
+            return value.extract()
+        }
         if let variable = logic as? LogicVariable {
-            if variable.name.hasPrefix("#") || variable.name.hasPrefix("?") {
-                if let vari = Variable(variable.name) {
-                    return .variable(vari)
-                }
+            if let vari = Variable(variable.name) {
+                return .variable(vari)
             }
-            return .symbol(variable.name)
         }
         if let list = logic as? List {
             if case .cons(let head, let tail) = list {
@@ -609,6 +615,7 @@ extension Term {
             }
             return terms
         }
-        return .NULL
+        
+        return .NULL // DEFAULT
     }
 }

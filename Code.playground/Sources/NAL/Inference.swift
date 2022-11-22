@@ -139,9 +139,9 @@ extension Rules {
         return x1 + x2 + x3
     }
     var firstOrder: [Rule] {
-        let S = Term.symbol("S")
-        let P = Term.symbol("P")
-        let M = Term.symbol("M")
+        let S = Term.variable(.independent("S"))
+        let P = Term.variable(.independent("P"))
+        let M = Term.variable(.independent("M"))
         /// first unique term is `false`, second and third are `nil`
         /// if there is no common term term identified by `true`
         /// then a conclusion could not be derived
@@ -179,9 +179,9 @@ extension Rules {
     }
     
     var compositional: [Rule] {
-        let M = Term.symbol("M")
-        let T1 = Term.symbol("T1")
-        let T2 = Term.symbol("T2")
+        let M = Term.variable(.independent("M"))
+        let T1 = Term.variable(.independent("T1"))
+        let T2 = Term.variable(.independent("T2"))
         
         switch self {
         case .intersection:
@@ -217,8 +217,8 @@ extension Rules {
     }
     
     var conditionalSyllogistic: [Rule] {
-        let S = Term.symbol("S")
-        let P = Term.symbol("P")
+        let S = Term.variable(.independent("S"))
+        let P = Term.variable(.independent("P"))
         switch self {
         case .deduction:
             return [(S  => P,           S,       P, tf)]
@@ -235,12 +235,12 @@ extension Rules {
     /// premises must be seen as based on the same implicit condition
     
     var conditional: [Rule] {
-        let S = Term.symbol("S")
-        let P = Term.symbol("P")
-        let M = Term.symbol("M")
-        let C = Term.symbol("C")
-        let T1 = Term.symbol("T1")
-        let T2 = Term.symbol("T2")
+        let S = Term.variable(.independent("S"))
+        let P = Term.variable(.independent("P"))
+        let M = Term.variable(.independent("M"))
+        let C = Term.variable(.independent("C"))
+        let T1 = Term.variable(.independent("T1"))
+        let T2 = Term.variable(.independent("T2"))
         switch self {
         case .deduction:
             return [
@@ -267,8 +267,8 @@ extension Rules {
     }
     
     var variable_and_temporal: [Rule] {
-        let S = Term.symbol("S")
-        let P = Term.symbol("P")
+        let S = Term.variable(.independent("S"))
+        let P = Term.variable(.independent("P"))
         switch self {
         case .induction:
             return [(P,  S,  S  => P, tf)]
@@ -283,13 +283,13 @@ extension Rules {
 
 extension Theorems {
     public var rules: [Statement] {
-        let S = Term.symbol("S")
-        let P = Term.symbol("P")
-        let S1 = Term.symbol("S1")
-        let S2 = Term.symbol("S2")
+        let S = Term.variable(.independent("S"))
+        let P = Term.variable(.independent("P"))
+        let S1 = Term.variable(.independent("S1"))
+        let S2 = Term.variable(.independent("S2"))
 
-        let T1 = Term.symbol("T1")
-        let T2 = Term.symbol("T2")
+        let T1 = Term.variable(.independent("T1"))
+        let T2 = Term.variable(.independent("T2"))
 
         switch self {
         case .inheritance:
@@ -310,7 +310,7 @@ extension Theorems {
         case .equivalence:
             return [
                 (S <-> P) <=> +[(S --> P), (P --> S)],
-                (S <-> P) <=> +[(S --> P), (P --> S)],
+//                (S <-> P) <=> +[(S --> P), (P --> S)],
                 (S <=> P) <=> +[(S  => P), (P  => S)],
                 
                 (S <-> P) <=> (.instance(S) <-> .instance(P)),

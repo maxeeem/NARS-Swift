@@ -3,6 +3,7 @@ import Dispatch
 
 public protocol AbstractBag {
     associatedtype I: Item
+    @discardableResult
     func put(_ item: I) -> I?
     func get() -> I?
     func get(_ identifier: String) -> I?

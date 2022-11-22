@@ -246,6 +246,9 @@ extension Term {
 //            }
 //            return terms.count == 1 ? terms + [.NULL] : terms
 
+            if terms.count == 1, c == .intSet || c == .extSet {
+                return [self] // do not unwrap {}, []
+            }
 //            if terms.count < 3 {
                 return terms
 //            } else {

@@ -427,6 +427,43 @@ class Single_Step: XCTestCase {
     }
     
     func testInf() {
+//    vari: two (#x0() -> animal ∧ robin -> #x0()) robin -> bird
+
+//        let s1 = Statement.compound(.c, [.statement(.variable(.dependent("x0", [])), .inheritance, .symbol("animal")), .statement(.symbol("robin"), .inheritance, .variable(.dependent("x0", [])))])
+//        let s2 = Statement.statement(.symbol("robin"), .inheritance, .symbol("bird"))
+//        
+//        print(s1)
+//        print(s2)
+//        
+//        print("\n", s1.terms.map({ $0.logic() }), "\n")
+//        
+//        print(helper2(t: s1, s: s2))
+//        
+//        func helper2(t: Statement, s: Statement) -> Statement? {
+//            var results = [Term]()
+//            let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
+//            
+//            for sol in solve(goal) {
+//                        print(sol)
+//                let ts = s.terms.flatMap({ $0.terms.map({ $0.logic() }) })
+//
+//                let valid = sol.allSatisfy { (v, _) in
+//                    !ts.contains { $0.equals(v) }
+//                }
+////                print("isValid", valid)
+//                if valid {
+//                    var result = t
+//                    for item in sol {
+//                        result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+//                    }
+//                    if result != t {
+//                        results.append(result)
+//                    }
+//                }
+//            }
+//            
+//            return results.min(by: { $0.complexity < $1.complexity })
+//        }
         nars.perform(
             ("bird" --> "animal")-*, // (1, 0.9)
             ("robin" -->  "bird")-*,
@@ -821,6 +858,10 @@ class Single_Step: XCTestCase {
     
     func testNal3_04() throws {
         /// set operations
+        
+        let x = ç.connect("{A}", .U, "{B}")
+        print("x:", x)
+        
         let t1 = Term.compound(.U, ["{Mars}", "{Pluto}", "{Venus}"])
         let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
         nars.perform(
@@ -925,6 +966,15 @@ class Single_Step: XCTestCase {
             .pause
         ) /// <(#x -> S) => (#x -> P)>. %1.00;0.81%.ded
         outputMustContain("⏱ <(#x -> _S) => (#x -> _P)>. %1.00;0.81%")
+    }
+    
+    func testVari3() {
+        nars.perform(
+            ("_M" --> "_T1")-*,
+            (+[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*,
+            .pause
+        ) /// <_M -> _T2. %1.00;0.42%.ana
+        outputMustContain("⏱ <_M -> _T2>.")
     }
     
     func testVari2() {
