@@ -35,7 +35,7 @@ extension Rules {
     //TODO: should we add intersection, difference and union to the list?
     
     static func immediate(_ j: Judgement) -> [Judgement] {
-        let immediate: [Infer] = [/*negation(j1:),*/ conversion(j1:), contraposition(j1:)]
+        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
         return immediate.compactMap { $0(j) }
     }
 }
@@ -254,6 +254,55 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 // use temporal conclusion
                 return .statement(cs, cc, cp)
             }
+            
+            // TODO: get rid of this dirty trick and determine temporal order of the conclusion properly
+            if case .statement(var cs, var cc, var cp) = t {
+                if case .statement(let j1s, let j1c, let j1p) = j1.statement,
+                   case .statement(let j2s, let j2c, let j2p) = j2.statement {
+                    if j1c == .predictiveImp && j2c == .predictiveImp {
+                        if cc == .implication {
+                            let truthValue = tf(j1.truthValue, j2.truthValue)
+                            if truthValue.rule == .exemplification {
+                                return .statement(cs, .retrospectiveImp, cp)
+                            }
+                            return .statement(cs, .predictiveImp, cp)
+                        } else if cc == .equivalence {
+                            return .statement(cs, .predictiveEq, cp)
+                        }
+                    } else if j1c == .retrospectiveImp && j2c == .retrospectiveImp {
+                        if cc == .implication {
+                            let truthValue = tf(j1.truthValue, j2.truthValue)
+                            if truthValue.rule == .exemplification {
+                                return .statement(cs, .predictiveImp, cp)
+                            }
+                            return .statement(cs, .retrospectiveImp, cp)
+                        } else if cc == .equivalence {
+                            return .statement(cp, .predictiveEq, cs)
+                        }
+                    } else if j1c == .predictiveImp && j2c == .retrospectiveImp {
+                        if cc == .implication {
+//                            let truthValue = tf(j1.truthValue, j2.truthValue)
+//                            if truthValue.rule == .exemplification {
+//                                return .statement(cs, .predictiveImp, cp)
+//                            }
+                            return .statement(cs, .predictiveImp, cp)
+                        } else if cc == .equivalence {
+                            return .statement(cp, .predictiveEq, cs)
+                        }
+                    } else if j1c == .retrospectiveImp && j2c == .predictiveImp {
+                        if cc == .implication {
+//                            let truthValue = tf(j1.truthValue, j2.truthValue)
+//                            if truthValue.rule == .exemplification {
+//                                return .statement(cs, .predictiveImp, cp)
+//                            }
+                            return .statement(cs, .retrospectiveImp, cp)
+                        } else if cc == .equivalence {
+                            return .statement(cp, .predictiveEq, cs)
+                        }
+                    }
+                }
+            }
+
             return t // use original conclusion
         }
         

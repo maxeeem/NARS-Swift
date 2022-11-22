@@ -65,7 +65,7 @@ private func neg(_ s: Statement) -> Statement {
 
 extension Rules {
     public var allRules: [Rule] {
-        let rules = /*local +*/ firstOrder + higherOrder + higherOrderTemporal + compositional + conditionalSyllogistic
+        let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
         var permutations: [Rule] = []
         for r in rules {
             let (p1, p2, c, tf) = r
@@ -93,18 +93,7 @@ extension Rules {
         }
         return rules + permutations
     }
-    //    var local: [Rule] {
-    //        let S = Term.word("S")
-    //        let P = Term.word("P")
-    //        switch self {
-    //        case .similarityFromReversedInheritance:
-    //            return []//(S --> P,     P --> S, S <-> P, tf)]
-    //        case .inheritanceFromSimilarityAndReversedInheritance:
-    //            return []//(S <-> P,     P --> S, S --> P, tf)]
-    //        default:
-    //            return []
-    //        }
-    //    }
+
     var higherOrder: [Rule] {
         return firstOrder.map { (arg) in
             var (p1, p2, c, tf) = arg
@@ -114,30 +103,7 @@ extension Rules {
             return (p1, p2, c, tf)
         }
     }
-    var higherOrderTemporal: [Rule] {
-        let x1 = higherOrder.map { (arg) in
-            var (p1, p2, c, tf) = arg
-            p1 = replaceCopulasTemporal(p1)
-            p2 = replaceCopulasTemporal(p2)
-            c = replaceCopulasTemporal(c)
-            return (p1, p2, c, tf)
-        }
-        let x2 = higherOrder.map { (arg) in
-            var (p1, p2, c, tf) = arg
-            p1 = replaceCopulasTemporal2(p1)
-            p2 = replaceCopulasTemporal2(p2)
-            c = replaceCopulasTemporal2(c)
-            return (p1, p2, c, tf)
-        }
-        let x3 = higherOrder.map { (arg) in
-            var (p1, p2, c, tf) = arg
-            p1 = replaceCopulasTemporal3(p1)
-            p2 = replaceCopulasTemporal3(p2)
-            c = replaceCopulasTemporal3(c)
-            return (p1, p2, c, tf)
-        }
-        return x1 + x2 + x3
-    }
+    
     var firstOrder: [Rule] {
         let S = Term.variable(.independent("S"))
         let P = Term.variable(.independent("P"))
@@ -337,42 +303,6 @@ extension Rules {
             if c == .similarity {
                 statement = .statement(s, .equivalence, p)
             }
-        }
-        return statement
-    }
-    private func replaceCopulasTemporal(_ statement: Statement) -> Statement {
-        var statement = statement
-        if case .statement(let s, let c, let p) = statement {
-            if c == .implication {
-                statement = .statement(s, .concurrentImp, p)
-            }
-//            if c == .similarity {
-//                statement = .statement(s, .equivalence, p)
-//            }
-        }
-        return statement
-    }
-    private func replaceCopulasTemporal2(_ statement: Statement) -> Statement {
-        var statement = statement
-        if case .statement(let s, let c, let p) = statement {
-            if c == .implication {
-                statement = .statement(s, .retrospectiveImp, p)
-            }
-//            if c == .similarity {
-//                statement = .statement(s, .equivalence, p)
-//            }
-        }
-        return statement
-    }
-    private func replaceCopulasTemporal3(_ statement: Statement) -> Statement {
-        var statement = statement
-        if case .statement(let s, let c, let p) = statement {
-            if c == .implication {
-                statement = .statement(s, .predictiveImp, p)
-            }
-//            if c == .similarity {
-//                statement = .statement(s, .equivalence, p)
-//            }
         }
         return statement
     }

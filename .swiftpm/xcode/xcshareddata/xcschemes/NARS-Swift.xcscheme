@@ -44,7 +44,8 @@
       codeCoverageEnabled = "YES">
       <Testables>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "NARS-Tests"
@@ -52,6 +53,41 @@
                BlueprintName = "NARS-Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "Single_Step/test4()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/test5()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/test6()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testInf()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testLogic()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testLogic2()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testLogicRules()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testfoo()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testik()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testlist()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testtest()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

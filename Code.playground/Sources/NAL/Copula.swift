@@ -79,3 +79,22 @@ prefix operator || //  "|=>"  present
 public prefix func >>(_ s: Term) -> Statement { .NULL >>|=> s } /// it will rain
 public prefix func <<(_ s: Term) -> Statement { .NULL <<|=> s } /// it rained
 public prefix func ||(_ s: Term) -> Statement { .NULL   |=> s } /// it's raining
+
+extension Copula {
+    var atemporal: Copula {
+        switch self {
+            
+        case .predictiveImp: fallthrough
+        case .retrospectiveImp: fallthrough
+        case .concurrentImp:
+            return .implication
+            
+        case .predictiveEq: fallthrough
+        case .concurrentEq:
+            return .equivalence
+            
+        default:
+            return self
+        }
+    }
+}
