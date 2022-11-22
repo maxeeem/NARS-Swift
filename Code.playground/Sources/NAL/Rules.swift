@@ -320,15 +320,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 if connector == .x || connector == .i || connector == .e {
                     return term
                 }
-                
-                func compound_helper(_ ts: [Term]) -> Term? {
-                    var ts = ts
-                    if ts.count > 2, let tail = ts.popLast(), let head = compound_helper(ts) {
-                        return ç.connect(head, connector, tail)
-                    }
-                    return ç.connect(ts[0], connector, ts[1])
-                }
-                return compound_helper(terms)
+                return connector.connect(terms)
                 
             case .statement(let subject, let cop, let predicate):
                 if let sub = validate(subject), let pre = validate(predicate) {

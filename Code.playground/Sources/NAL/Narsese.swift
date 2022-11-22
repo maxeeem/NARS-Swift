@@ -119,6 +119,17 @@ extension Connector {
     public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, x_(t1, t2)) }
     public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, x_(t1, t2)) }
 
+    internal func connect(_ ts: [Term]) -> Term! {
+        var ts = ts
+        if ts.count < 2 {
+            return nil // invalid compound
+        }
+        if ts.count > 2, let tail = ts.popLast(), let head = connect(ts) {
+            return ç.connect(head, self, tail)
+        }
+        return ç.connect(ts[0], self, ts[1])
+    }
+    
     internal static func connect(_ t1: Term, _ c: Connector, _ t2: Term) -> Term! {
         var con = c
         let t1t = (c == .c || c == .d) ? Set([Term.symbol(t1.description)]) : Set(t1.terms)

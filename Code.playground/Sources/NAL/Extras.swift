@@ -96,9 +96,9 @@ func * (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.x_(lhs, rhs) }
 func && (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.c_(lhs, rhs) }
 func || (_ lhs: Statement, _ rhs: Statement) -> Statement { ç.d_(lhs, rhs) }
 
-extension Array where Element == Statement { // TODO: use connect(:) method to create compounds
-    static prefix func + (_ s: Array<Statement>) -> Statement { .compound(.c, s)}
-    static prefix func - (_ s: Array<Statement>) -> Statement { .compound(.d, s)}
+extension Array where Element == Statement {
+    static prefix func + (_ s: Array<Statement>) -> Statement { ç.c.connect(s) }
+    static prefix func - (_ s: Array<Statement>) -> Statement { ç.d.connect(s) }
 }
 
 //prefix operator •
