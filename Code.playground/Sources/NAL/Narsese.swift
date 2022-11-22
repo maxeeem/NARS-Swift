@@ -205,17 +205,11 @@ extension Connector {
     }
     
     /// MARK: helpers
-    private static func getTerms(_ t: Term) -> [Term] {
-        if t.terms.count == 1 {
-            return t.terms
-        }
-        return t.terms.flatMap { getTerms($0) }
-    }
     
     private static func validate(_ s: Set<Term>) -> Bool {
         if s.count < 2 { return false }
         // check if terms contain each other
-        let result = s.flatMap { getTerms($0) }
+        let result = s.flatMap { Term.getTerms($0) }
         if result.count != Set(result).count {
             return false 
         }
@@ -257,9 +251,9 @@ extension Term {
 //            }
 //            return terms.count == 1 ? terms + [.NULL] : terms
 
-            if terms.count == 1, c == .intSet || c == .extSet {
-                return [self] // do not unwrap {}, []
-            }
+//            if terms.count == 1, c == .intSet || c == .extSet {
+//                return [self] // do not unwrap {}, []
+//            }
 //            if terms.count < 3 {
                 return terms
 //            } else {
@@ -307,6 +301,12 @@ extension Term {
     
 //    static func instance(_ t: Term) -> Term { Term.instance("\(t)") }
 //    static func property(_ t: Term) -> Term { Term.property("\(t)") }
+    public static func getTerms(_ t: Term) -> [Term] {
+        if t.terms.count == 1 {
+            return t.terms
+        }
+        return t.terms.flatMap { getTerms($0) }
+    }
 }
 
 func pow(_ x: Double, _ y: Int) -> Double {

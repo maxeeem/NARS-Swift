@@ -858,10 +858,6 @@ class Single_Step: XCTestCase {
     
     func testNal3_04() throws {
         /// set operations
-        
-        let x = ç.connect("{A}", .U, "{B}")
-        print("x:", x)
-        
         let t1 = Term.compound(.U, ["{Mars}", "{Pluto}", "{Venus}"])
         let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
         nars.perform(
@@ -979,7 +975,6 @@ class Single_Step: XCTestCase {
     
     func testVari2() {
         nars.perform(
-//            ("_P" --> "_Q")-*,
             ("{Tweety}" --> "_P")-*,
             ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*,
             .pause

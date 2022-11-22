@@ -345,18 +345,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 // MARK: - Variable introduction and elimination
 
 private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
-    var t1 = t1
-    if case .statement(let sub1, let cop1, _) = t1, cop1 == .implication || cop1 == .equivalence {
-        if false == sub1.terms.contains(where: { if case .variable = $0 { return true } ; return false }) {
-            return t1
-        }
-        
-//        if let (rep1, rep2) = helper((sub1, pre1), t2) {
-////            print("vari:", sub1,pre1, "\n", rep1,rep2, "\n")
-//            t1 = .statement(rep1, cop1, rep2)
-//        }
+    if case .statement(_, let cop1, _) = t1, cop1 == .implication || cop1 == .equivalence {
         if let h = Term.solver(t: t1, s: t2) {
-            t1 = h
+            return h
         }
     }
     return t1
