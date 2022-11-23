@@ -53,9 +53,6 @@ extension TruthValue {
         case .difference:      return (r,i)~difference
         
         default:               return (r,i)~{_,_ in .tautology }
-
-//        case .similarityFromReversedInheritance: return (r,i)~intersection
-//        case .inheritanceFromSimilarityAndReversedInheritance: return (r,i)~reduceConjunction
         }
     }
     
@@ -153,29 +150,3 @@ public func and(_ xs: Double...) -> Double {
 public func or(_ xs: Double...) -> Double {
     1 - xs.reduce(1, { $0 * (1 - $1)})
 }
-
-///// single premise
-//extension TruthValue {
-//    static func truthFunction(_ t: Theorems) -> TruthFunction {
-//        return { tv1, _ in
-//            switch t {
-//            case .negation:
-//                return tv1 // TODO: fix this
-//            case .conversion:
-//                let (f, c) = (tv1.f, tv1.c)
-//                let c1 = f * c / (f * c + k)
-//                return TruthValue(1, c1)
-//            case .contraposition:
-//                return tv1 // TODO: fix this
-//            case .inheritance:
-//                return tv1
-//            case .similarity:
-//                return tv1
-//            case .implication:
-//                return deduction(tv1, .tautology)
-//            case .equavalence:
-//                return tv1
-//            }
-//        }
-//    }
-//}

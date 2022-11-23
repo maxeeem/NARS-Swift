@@ -119,15 +119,9 @@ extension Statement {
 postfix operator -!
 extension Statement {
     public static postfix func -!(_ s: Statement) -> Goal { Goal(s) }
-    public static postfix func -!(_ s: Statement) -> Sentence { Sentence(s-?) }
+    public static postfix func -!(_ s: Statement) -> Sentence { Sentence(s-!) }
 }
 
-//postfix operator -!
-//extension Statement {
-//    public static postfix func -!(_ s: Statement) -> Sentence {
-//        Sentence.question(Question(s)) // TODO: goal
-//    }
-//}
 
 // MARK: CustomStringConvertible
 
@@ -168,11 +162,9 @@ extension Sentence: CustomStringConvertible {
 
 extension Bag: CustomStringConvertible {
     public var description: String {
-//        queue.sync {
-            let x = I.self == Concept.self ? "" : ".  "
-            let o = items.values.reduce("", { $0 + "\($1)\n" + x })
-            return String(o.dropLast(x.count))
-//        }
+        let x = I.self == Concept.self ? "" : ".  "
+        let o = items.values.reduce("", { $0 + "\($1)\n" + x })
+        return String(o.dropLast(x.count))
     }
 }
 

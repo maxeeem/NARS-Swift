@@ -76,12 +76,6 @@ extension AbstractBag where I == Concept {
             put(concept)
             return derivedJudgements
         case .statement(let subject, _, let predicate):
-            if case .statement = subject {
-                derivedJudgements.append(contentsOf: consider(subject, derive: derive, f))
-            }
-            if case .statement = predicate {
-                derivedJudgements.append(contentsOf: consider(predicate, derive: derive, f))
-            }
             var subjectConcept = get(subject.description) ?? Concept(term: subject)
             var predicateConcept = get(predicate.description) ?? Concept(term: predicate)
             derivedJudgements.append(contentsOf: f(&subjectConcept))
@@ -93,6 +87,12 @@ extension AbstractBag where I == Concept {
             if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
                 let newPriority = (predicateConcept.priority + maxPriority) / 2
                 predicateConcept.priority = min(newPriority, 0.9)
+            }
+            if case .statement = subject {
+                derivedJudgements.append(contentsOf: consider(subject, derive: derive, f))
+            }
+            if case .statement = predicate {
+                derivedJudgements.append(contentsOf: consider(predicate, derive: derive, f))
             }
             put(subjectConcept)
             put(predicateConcept)

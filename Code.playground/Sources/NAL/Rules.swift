@@ -177,9 +177,13 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
          * MARK: appply logic
          */
         
-        guard let result = logicReasoning(c) else {
+        guard var result = logicReasoning(c) else {
             return nil // no conclusion
         }
+        
+        // TODO: come up with a better way
+        result = determineOrder()
+        result = accountForExemplification()
         
         //        print("here", result)
 
@@ -253,54 +257,6 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                 
                 // use temporal conclusion
                 return .statement(cs, cc, cp)
-            }
-            
-            // TODO: get rid of this dirty trick and determine temporal order of the conclusion properly
-            if case .statement(var cs, var cc, var cp) = t {
-                if case .statement(let j1s, let j1c, let j1p) = j1.statement,
-                   case .statement(let j2s, let j2c, let j2p) = j2.statement {
-                    if j1c == .predictiveImp && j2c == .predictiveImp {
-                        if cc == .implication {
-                            let truthValue = tf(j1.truthValue, j2.truthValue)
-                            if truthValue.rule == .exemplification {
-                                return .statement(cs, .retrospectiveImp, cp)
-                            }
-                            return .statement(cs, .predictiveImp, cp)
-                        } else if cc == .equivalence {
-                            return .statement(cs, .predictiveEq, cp)
-                        }
-                    } else if j1c == .retrospectiveImp && j2c == .retrospectiveImp {
-                        if cc == .implication {
-                            let truthValue = tf(j1.truthValue, j2.truthValue)
-                            if truthValue.rule == .exemplification {
-                                return .statement(cs, .predictiveImp, cp)
-                            }
-                            return .statement(cs, .retrospectiveImp, cp)
-                        } else if cc == .equivalence {
-                            return .statement(cp, .predictiveEq, cs)
-                        }
-                    } else if j1c == .predictiveImp && j2c == .retrospectiveImp {
-                        if cc == .implication {
-//                            let truthValue = tf(j1.truthValue, j2.truthValue)
-//                            if truthValue.rule == .exemplification {
-//                                return .statement(cs, .predictiveImp, cp)
-//                            }
-                            return .statement(cs, .predictiveImp, cp)
-                        } else if cc == .equivalence {
-                            return .statement(cp, .predictiveEq, cs)
-                        }
-                    } else if j1c == .retrospectiveImp && j2c == .predictiveImp {
-                        if cc == .implication {
-//                            let truthValue = tf(j1.truthValue, j2.truthValue)
-//                            if truthValue.rule == .exemplification {
-//                                return .statement(cs, .predictiveImp, cp)
-//                            }
-                            return .statement(cs, .retrospectiveImp, cp)
-                        } else if cc == .equivalence {
-                            return .statement(cp, .predictiveEq, cs)
-                        }
-                    }
-                }
             }
 
             return t // use original conclusion
@@ -385,6 +341,114 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
             default:
                 return term
             }
+        }
+        
+        func determineOrder() -> Term {
+            // TODO: get rid of this dirty trick and determine temporal order of the conclusion properly
+            if case .statement(var cs, var cc, var cp) = result, cc == .equivalence || cc == .implication {
+                if case .statement(let j1s, let j1c, let j1p) = j1.statement,
+                   case .statement(let j2s, let j2c, let j2p) = j2.statement {
+                    
+                    if (j1c.isConcurrent && j2c.isConcurrent) {
+                        // both concurrent
+                        return .statement(cs, cc.concurrent, cp)
+                    }
+                                        
+                    if (j1c.isPredictive && j2c.isPredictive) {
+                        // both predicitve
+                        return .statement(cs, cc.predictive, cp)
+                    }
+                    
+                    if (j1c.isRetrospective && j2c.isRetrospective) {
+                        // both retrospective
+                        if cc == .equivalence {
+                            return .statement(cp, .predictiveEq, cs)
+                        } else {
+                            return .statement(cs, cc.retrospective, cp)
+                        }
+                    }
+                    
+                    if (j1c.isConcurrent && j2c.isPredictive)
+                        || (j2c.isConcurrent && j1c.isPredictive) {
+                        // one is concurrent, another is predictive
+                        return .statement(cs, cc.predictive, cp)
+                    }
+                    
+                    if (j1c.isConcurrent && j2c.isRetrospective)
+                        || (j2c.isConcurrent && j1c.isRetrospective) {
+                        // one is concurrent, another is retrospective
+                        return .statement(cs, cc.retrospective, cp)
+                    }
+                    
+                    // Complex
+                    
+                    if j1c.isPredictive && j2c.isRetrospective {
+                        var list = [j1s, j1p]
+                        if let idx = list.firstIndex(of: j2s) {
+                            list.insert(j2p, at: idx)
+                        }
+                        if let idx = list.firstIndex(of: j2p) {
+                            list.insert(j2s, at: idx+1)
+                        }
+                        if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
+                            if cpi > csi {
+                                // predicate after subject
+                                return .statement(cs, cc.predictive, cp)
+                            } else {
+                                // predicate after subject
+                                if cc == .equivalence {
+                                    return .statement(cp, .predictiveEq, cs)
+                                } else {
+                                    return .statement(cs, cc.retrospective, cp)
+                                }
+                            }
+                        } else {
+                            return result
+                        }
+                    }
+                    
+                    if j2c.isPredictive && j1c.isRetrospective {
+                        var list = [j2s, j2p]
+                        if let idx = list.firstIndex(of: j1s) {
+                            list.insert(j1p, at: idx)
+                        }
+                        if let idx = list.firstIndex(of: j1p) {
+                            list.insert(j1s, at: idx+1)
+                        }
+                        if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
+                            if cpi > csi {
+                                // predicate after subject
+                                return .statement(cs, cc.predictive, cp)
+                            } else {
+                                // predicate after subject
+                                if cc == .equivalence {
+                                    return .statement(cp, .predictiveEq, cs)
+                                } else {
+                                    return .statement(cs, cc.retrospective, cp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return result
+        }
+        
+        func accountForExemplification() -> Term {
+            let rule = tf(j1.truthValue, j2.truthValue).rule
+
+            if rule == .exemplification {
+                if case .statement(let rs, let rc, let rp) = result {
+                    if rc.isPredictive {
+                        return .statement(rs, rc.atemporal.retrospective, rp)
+                    } else if rc.isRetrospective {
+                        return .statement(rs, rc.atemporal.predictive, rp)
+                    }
+                }
+            }
+            
+            return result
         }
     }
 }

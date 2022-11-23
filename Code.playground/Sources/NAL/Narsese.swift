@@ -38,17 +38,6 @@ public struct Question: Hashable, Codable {
     public let tense: Tense?
 }
 
-//public enum Question: Equatable {
-//    case statement(Statement)
-//    case general(Term, Copula)
-//    case special(Copula, Term)
-//}
-
-//public enum Statement: Hashable {
-//    case term(Term)
-//    case statement(Term, Copula, Term)
-//}
-
 public indirect enum Term: Hashable, Codable {
     case symbol(String)
     case compound(Connector, [Term])

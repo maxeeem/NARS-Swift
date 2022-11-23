@@ -108,12 +108,9 @@ extension Rules {
         let S = Term.variable(.independent("S"))
         let P = Term.variable(.independent("P"))
         let M = Term.variable(.independent("M"))
-        /// first unique term is `false`, second and third are `nil`
-        /// if there is no common term term identified by `true`
-        /// then a conclusion could not be derived
+
         switch self {
         case .deduction:
-            ///     true, false, nil, true
             return [(M --> P,     S --> M, S --> P, tf),
                     (P --> M,     M --> S, P --> S, tfi)]
         case .induction:
@@ -135,9 +132,6 @@ extension Rules {
                     (M <-> P,     M --> S, P --> S, tfi)]
         case .resemblance:
             return [(M <-> P,     S <-> M, S <-> P, tf)]
-            //                    (M <-> P,     M <-> S, S <-> P, tf),
-            //                    (P <-> M,     S <-> M, S <-> P, tf),
-            //                    (P <-> M,     M <-> S, S <-> P, tf)]
             
         default:
             return [] // other rules are handled separately
@@ -171,12 +165,12 @@ extension Rules {
                 (      T1,          T2,    ç.d_(T1, T2), tf) // TODO: verify nothing else needs to be checked
             ]
         case .difference:
-            return [//(M --> T1,    M --> T2,    M --> ç.l_(T1, T2), tf),
+            return [
                 (M --> T1,    M --> T2,    M --> (T1 - T2), tf),
                 (M --> T1,    M --> T2,    M --> ç.l_(T2, T1), tfi),
-                //(T1 --> M,    T2 --> M,    ç.ø_(T1, T2) --> M, tf),
                 (T1 --> M,    T2 --> M,    (T1 ~ T2) --> M, tf),
-                (T1 --> M,    T2 --> M,    ç.ø_(T2, T1) --> M, tfi)]
+                (T1 --> M,    T2 --> M,    ç.ø_(T2, T1) --> M, tfi)
+            ]
         default:
             return []
         }
@@ -276,7 +270,6 @@ extension Theorems {
         case .equivalence:
             return [
                 (S <-> P) <=> +[(S --> P), (P --> S)],
-//                (S <-> P) <=> +[(S --> P), (P --> S)],
                 (S <=> P) <=> +[(S  => P), (P  => S)],
                 
                 (S <-> P) <=> (.instance(S) <-> .instance(P)),
