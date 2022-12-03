@@ -17,6 +17,11 @@ public struct Judgement: Hashable, Codable {
     public let derivationPath: [String]
     
     public var timestamp: UInt64 = 0
+    
+    // TODO: need to add desireValue
+    /*
+     “In NARS, a desire-value is not only attached to every goal, but to every event, because an event may become a goal in the future (if it is not already a goal).
+ */
 }
 
 public typealias DesireValue = TruthValue

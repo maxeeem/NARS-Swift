@@ -18,7 +18,7 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
     :
         (and(j1.truthValue.e, j1.statement.simplicity) 
             > 
-            and(j2.truthValue.e, j1.statement.simplicity)) ? j1 : j2
+            and(j2.truthValue.e, j2.statement.simplicity)) ? j1 : j2
 }
 
 /// Immediate

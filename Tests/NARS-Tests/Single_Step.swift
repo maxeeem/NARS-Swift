@@ -194,6 +194,38 @@ class Single_Step: XCTestCase {
         outputMustContain("⏱ <(John ⨯ room_101) -> enter>. %1.00;0.81%")
     }
    
+    func testNal7_X() {
+        nars.perform(
+            ((("John" * "key_101") --> "hold") >>|=> (("John" * "door_101") --> "open"))-*,
+            ((("John" * "key_101") --> "hold") >>|=> (("John" * "room_101") --> "enter"))-*,
+            .pause,
+            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9),
+//            ((("John" * "room_101") --> "enter") <<|=> (("John" * "door_101") --> "open"))-*,
+            .pause,
+            ||(("John" * "door_101") --> "open")-*,
+//            ||(("John" * "room_101") --> "enter")-*,
+            .pause
+        )
+        /*
+         
+         M =/> P
+         M =/> S
+         
+         P =/> S ?
+         S =/> P ?
+         
+         <<(*,John,key_101) --> hold> =/> <(*,John,door_101) --> open>>.
+         <<(*,John,key_101) --> hold> =/> <(*,John,room_101) --> enter>>.
+         10
+         <(*,John,door_101) --> open>. :|:
+         
+         <M =/> P>. :|:
+         <M =/> S>. :|:
+         
+         */
+//        outputMustContain("⏱ <(John ⨯ room_101) -> enter>. %1.00;0.81%")
+    }
+    
     func testMultiStep() {
         nars.perform(
             ("a" --> "b")-*,

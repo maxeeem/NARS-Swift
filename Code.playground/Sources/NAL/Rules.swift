@@ -58,18 +58,16 @@ extension Rules {
     //        print("=", commonTerms)
     //        return nil
             
-            var x: [Judgement?] = []
-            
             if case .compound(let conn, let ts1) = t1, conn == .n {
 //                print("1.", t1, t2)
                 if ts1[0] == t2 { // TODO: use similarity helper to account for symmetrical connectors and copulas
-                    return x // no conclusion can be reached if premises are just opposite of each other
+                    return [] // no conclusion can be reached if premises are just opposite of each other
                 }
             }
             if case .compound(let conn, let ts2) = t2, conn == .n {
 //                print("2.", t1, t2)
                 if ts2[0] == t1 { // TODO: use similarity helper to account for symmetrical connectors and copulas
-                    return x // no conclusion can be reached if premises are just opposite of each other
+                    return [] // no conclusion can be reached if premises are just opposite of each other
                 }
             }
              
@@ -102,7 +100,10 @@ extension Rules {
             
             j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
             j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-            
+           
+            var x: [Judgement?] = []
+                        
+            // apply rules
             x.append(contentsOf: self.allRules.flatMap { r in
                 [rule_generator(r)((j1, j2)),
                  rule_generator(r)((j2, j1))] // switch order of premises
@@ -395,15 +396,13 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                                 // predicate after subject
                                 return .statement(cs, cc.predictive, cp)
                             } else {
-                                // predicate after subject
+                                // predicate before subject
                                 if cc == .equivalence {
                                     return .statement(cp, .predictiveEq, cs)
                                 } else {
                                     return .statement(cs, cc.retrospective, cp)
                                 }
                             }
-                        } else {
-                            return result
                         }
                     }
                     
@@ -420,7 +419,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                                 // predicate after subject
                                 return .statement(cs, cc.predictive, cp)
                             } else {
-                                // predicate after subject
+                                // predicate before subject
                                 if cc == .equivalence {
                                     return .statement(cp, .predictiveEq, cs)
                                 } else {
@@ -431,7 +430,9 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
                     }
                 }
             }
-            
+//            if result == (("John" * "key_101") --> "hold") {
+//                // set tense for the conclusion
+//            }
             return result
         }
         
@@ -459,9 +460,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 
 private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
     if case .statement(_, let cop1, _) = t1, cop1 == .implication || cop1 == .equivalence {
-        if let h = Term.solver(t: t1, s: t2) {
-            return h
-        }
+        return Term.solver(t: t1, s: t2) ?? t1
     }
     return t1
 }
@@ -471,11 +470,11 @@ private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1
         var x: [Judgement?] = []
         
         if let h = Term.solver(t: t1, s: t2) {
-            let tv = TruthValue.deduction(j1.truthValue, TruthValue(1, 1))
+            let tv = TruthValue.deduction(j1.truthValue, TruthValue(1, reliance))
 
             let res = r.allRules.flatMap { r in
                 h.terms.flatMap {
-                    let j = Judgement($0, tv, j1.derivationPath)
+                    let j = Judgement($0, tv, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
                     return [rule_generator(r)((j, j2)),
                             rule_generator(r)((j2, j))]
                 }
