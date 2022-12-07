@@ -513,17 +513,6 @@ extension Term {
 }
 
 
-extension Sequence where Element == Term {
-    func toList() -> List {
-        var list: List = .empty
-        for term in self.reversed() {
-            list = List.cons(term.logic(), list)
-        }
-        return list
-    }
-}
-
-
 extension Variable {
     init?(_ string: String) {
         if string.hasPrefix("?") {
@@ -548,6 +537,86 @@ extension Variable {
             }
         }
         return nil
+    }
+}
+
+
+
+// MARK: ExpressibleByStringLiteral
+
+extension Term: ExpressibleByStringLiteral {
+    /// handles simple cases for use in testing and playgrounds
+    public init(stringLiteral value: String) {
+        self = {
+            if value.first == "{" {
+                return .instance(.symbol(value.word))
+            }
+
+            if value.first == "[" {
+                return .property(.symbol(value.word))
+            }
+
+            if value.first == "?" {
+                let word = value.dropFirst()
+                let name = (word.count == 0) ? nil : String(word)
+                return .variable(.query(name))
+            }
+
+            let words = value.words
+
+            if words.count == 1 {
+                return .symbol(words[0])
+            }
+
+            return .NULL
+        }()
+    }
+}
+
+// Replacements for Foundation methods
+
+extension String {
+    var word: String {
+        var word: String = ""
+        for c in self {
+            if !["{", "}", "[", "]"].contains(c) {
+                word.append(c)
+            }
+        }
+        return word
+    }
+    
+    var words: [String] {
+        var words: [String] = []
+        var word: String = ""
+        for c in self {
+            if c == " " {
+                if !word.isEmpty {
+                    words.append(word)
+                    word = ""
+                }
+            } else {
+                word.append(c)
+            }
+        }
+        if !word.isEmpty {
+            words.append(word)
+        }
+        return words
+    }
+}
+
+
+
+// MARK: Logic terms
+
+extension Sequence where Element == Term {
+    func toList() -> List {
+        var list: List = .empty
+        for term in self.reversed() {
+            list = List.cons(term.logic(), list)
+        }
+        return list
     }
 }
 

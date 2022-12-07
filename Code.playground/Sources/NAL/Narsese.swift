@@ -211,35 +211,17 @@ extension Connector {
     }
 }
 
-
-
-//extension Term: ExpressibleByArrayLiteral {
-//    public init(arrayLiteral elements: String...) {
-//        if elements.count == 3,
-//           let c = Connector(rawValue: elements[0]) {
-//            let t1 = Term(stringLiteral: elements[1])
-//            let t2 = Term(stringLiteral: elements[2])
-//            self = Connector.connect(t1, c, t2)
-//        }
-//        self = "NULL"•
-//    }
-//}
-
-//public protocol a: CustomStringConvertible {
-//    func word(_ s: String) -> a
-//    func compound(_ t: a, _ ts: [a]) -> a
-//}
-
 extension Term {
     public static func word(_ w: String) -> Term { .symbol(w) }
     public static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
     public static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
+    public static func variable(_ s: String) -> Term { .variable(.independent(s)) }
     
     var terms: [Term] {
         switch self {
         case .symbol:
             return [self]
-        case .compound(let c, let terms):
+        case .compound(_, let terms):
 //            if conn == .n, terms.count == 1, case .statement = terms[0] {
 //                return terms[0].terms
 //            }
@@ -318,92 +300,3 @@ public extension Term {
     static postfix func •->(_ t: Term) -> Term { instance(t) }
     static prefix  func ->•(_ t: Term) -> Term { property(t) }
 }
-
-postfix operator •
-prefix  operator •
-public extension String { // turn string into a .word
-    static postfix func •(_ s: String) -> Term { Term(stringLiteral: s) }
-    static prefix  func •(_ s: String) -> Term { Term(stringLiteral: s) }
-}
-
-extension Term: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
-        self = {
-            if value.first == "{" {
-                return .instance(.symbol(value.word))
-            }
-
-            if value.first == "[" {
-                return .property(.symbol(value.word))
-            }
-
-            if value.first == "?" {
-                let word = value.dropFirst()
-                let name = (word.count == 0) ? nil : String(word)
-                return .variable(.query(name))
-            }
-
-            // TODO: handle sentences as terms
-            let words = value.words
-
-            if words.count == 3,
-               let c = ç(rawValue: words[0]) {
-                let t1 = Term(stringLiteral: words[1])
-                let t2 = Term(stringLiteral: words[2])
-                return ç.connect(t1, c, t2)
-            }
-
-            if words.count == 1 {
-                return .symbol(words[0])
-            }
-
-            return .NULL
-        }()
-    }
-}
-
-// Replacements for Foundation methods
-
-extension String {
-    var word: String {
-        var word: String = ""
-        for c in self {
-            if !["{", "}", "[", "]"].contains(c) {
-                word.append(c)
-            }
-        }
-        return word
-    }
-    
-    var words: [String] {
-        var words: [String] = []
-        var word: String = ""
-        for c in self {
-            if c == " " {
-                if !word.isEmpty {
-                    words.append(word)
-                    word = ""
-                }
-            } else {
-                word.append(c)
-            }
-        }
-        if !word.isEmpty {
-            words.append(word)
-        }
-        return words
-    }
-}
-
-//    ("Goofy"•)•->
-//    Term("Pluto")•->
-//    ->•Term("yellow")
-
-//extension Term: a {
-//    public func word(_ s: String) -> a {
-//        Term.word(s)
-//    }
-//    public func compound(_ t: a, _ ts: [a]) -> a {
-//        Term.compound(t, ts)
-//    }
-//}

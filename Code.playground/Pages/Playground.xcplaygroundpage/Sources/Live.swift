@@ -103,8 +103,8 @@ final class DetailViewController: UIViewController {
             if s == p { // tautology 
                 truth = (1.0, 1.0)
             }
-            let sentence: Sentence = (s-->p)-*truth
-            callback(sentence)
+//            let sentence: Sentence = (s-->p)-*truth
+//            callback(sentence)
         }
         //dismiss(animated: true, completion: nil)
     }

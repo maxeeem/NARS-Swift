@@ -105,9 +105,9 @@ extension Rules {
     }
     
     var firstOrder: [Rule] {
-        let S = Term.variable(.independent("S"))
-        let P = Term.variable(.independent("P"))
-        let M = Term.variable(.independent("M"))
+        let S = Term.variable("S")
+        let P = Term.variable("P")
+        let M = Term.variable("M")
 
         switch self {
         case .deduction:
@@ -139,9 +139,9 @@ extension Rules {
     }
     
     var compositional: [Rule] {
-        let M = Term.variable(.independent("M"))
-        let T1 = Term.variable(.independent("T1"))
-        let T2 = Term.variable(.independent("T2"))
+        let M = Term.variable("M")
+        let T1 = Term.variable("T1")
+        let T2 = Term.variable("T2")
         
         switch self {
         case .intersection:
@@ -177,8 +177,8 @@ extension Rules {
     }
     
     var conditionalSyllogistic: [Rule] {
-        let S = Term.variable(.independent("S"))
-        let P = Term.variable(.independent("P"))
+        let S = Term.variable("S")
+        let P = Term.variable("P")
         switch self {
         case .deduction:
             return [(S  => P,           S,       P, tf)]
@@ -195,12 +195,12 @@ extension Rules {
     /// premises must be seen as based on the same implicit condition
     
     var conditional: [Rule] {
-        let S = Term.variable(.independent("S"))
-        let P = Term.variable(.independent("P"))
-        let M = Term.variable(.independent("M"))
-        let C = Term.variable(.independent("C"))
-        let T1 = Term.variable(.independent("T1"))
-        let T2 = Term.variable(.independent("T2"))
+        let S = Term.variable("S")
+        let P = Term.variable("P")
+        let M = Term.variable("M")
+        let C = Term.variable("C")
+        let T1 = Term.variable("T1")
+        let T2 = Term.variable("T2")
         switch self {
         case .deduction:
             return [
@@ -227,8 +227,8 @@ extension Rules {
     }
     
     var variable_and_temporal: [Rule] {
-        let S = Term.variable(.independent("S"))
-        let P = Term.variable(.independent("P"))
+        let S = Term.variable("S")
+        let P = Term.variable("P")
         switch self {
         case .induction:
             return [(P,  S,  S  => P, tf)]
@@ -243,13 +243,13 @@ extension Rules {
 
 extension Theorems {
     public var rules: [Statement] {
-        let S = Term.variable(.independent("S"))
-        let P = Term.variable(.independent("P"))
-        let S1 = Term.variable(.independent("S1"))
-        let S2 = Term.variable(.independent("S2"))
+        let S = Term.variable("S")
+        let P = Term.variable("P")
+        let S1 = Term.variable("S1")
+        let S2 = Term.variable("S2")
 
-        let T1 = Term.variable(.independent("T1"))
-        let T2 = Term.variable(.independent("T2"))
+        let T1 = Term.variable("T1")
+        let T2 = Term.variable("T2")
 
         switch self {
         case .inheritance:

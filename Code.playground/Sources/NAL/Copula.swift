@@ -43,34 +43,13 @@ public func <->  (_ s: Term, p: Term) -> Statement { .statement( s    , .similar
 public func •->  (_ s: Term, p: Term) -> Statement { .statement( s•-> , .inheritance ,    p ) }
 public func ->•  (_ s: Term, p: Term) -> Statement { .statement( s    , .inheritance , ->•p ) }
 public func •->• (_ s: Term, p: Term) -> Statement { .statement( s•-> , .inheritance , ->•p ) }
-
+// NAL-5
 public func =>   (_ s: Term, p: Term) -> Statement { .statement( s    , .implication ,    p ) }
 public func <=>  (_ s: Term, p: Term) -> Statement { .statement( s    , .equivalence ,    p ) }
-
+// NAL-7
 public func >>|=>   (_ s: Term, p: Term) -> Statement { .statement( s    , .predictiveImp    ,    p ) }
 public func <<|=>   (_ s: Term, p: Term) -> Statement { .statement( s    , .retrospectiveImp ,    p ) }
 public func   |=>   (_ s: Term, p: Term) -> Statement { .statement( s    , .concurrentImp    ,    p ) }
-
-// Convenience overrides
-public func -->  (_ s: String, p: Term  ) -> Statement { s• -->  p }
-public func -->  (_ s: Term,   p: String) -> Statement { s  --> •p }
-public func -->  (_ s: String, p: String) -> Statement { s• --> •p }
-
-public func <->  (_ s: String, p: Term  ) -> Statement { s• <->  p }
-public func <->  (_ s: Term,   p: String) -> Statement { s  <-> •p }
-public func <->  (_ s: String, p: String) -> Statement { s• <-> •p }
-
-public func •->  (_ s: String, p: Term  ) -> Statement { s• •->  p }
-public func •->  (_ s: Term,   p: String) -> Statement { s  •-> •p }
-public func •->  (_ s: String, p: String) -> Statement { s• •-> •p }
-
-public func  ->• (_ s: String, p: Term  ) -> Statement { s• ->•  p }
-public func  ->• (_ s: Term,   p: String) -> Statement { s  ->• •p }
-public func  ->• (_ s: String, p: String) -> Statement { s• ->• •p }
-
-public func •->• (_ s: String, p: Term  ) -> Statement { s• •->•  p }
-public func •->• (_ s: Term,   p: String) -> Statement { s  •->• •p }
-public func •->• (_ s: String, p: String) -> Statement { s• •->• •p }
 
 prefix operator >> //  "/=>"  future
 prefix operator << //  "\=>"   past

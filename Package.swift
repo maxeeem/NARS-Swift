@@ -10,6 +10,9 @@ let package = Package(
         .library(
             name: "NARS",
             targets: ["NARS"]),
+        .executable(
+            name: "nar",
+            targets: ["nar"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -22,6 +25,9 @@ let package = Package(
             name: "NARS", path: "Code.playground/Sources"),
         .testTarget(
             name: "NARS-Tests",
+            dependencies: ["NARS"]),
+        .target(
+            name: "nar",
             dependencies: ["NARS"]),
     ]
 )

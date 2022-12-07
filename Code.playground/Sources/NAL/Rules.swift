@@ -1,8 +1,3 @@
-
-/// Swift Tuple is a basic primitive
-//typealias Triple = (Bool?, Bool?, Bool?)
-typealias Quad<T: Equatable> = (T, T, T, T)
-
 /// Statement is a fundamental type
 public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
@@ -35,7 +30,7 @@ extension Rules {
     //TODO: should we add intersection, difference and union to the list?
     
     static func immediate(_ j: Judgement) -> [Judgement] {
-        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
+        let immediate: [Infer] = [/*negation(j1:),*/ conversion(j1:), contraposition(j1:)]
         return immediate.compactMap { $0(j) }
     }
 }
