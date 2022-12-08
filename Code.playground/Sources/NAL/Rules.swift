@@ -2,7 +2,7 @@
 public typealias Rule = (Statement, Statement, Statement, TruthFunction)
 public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
 
-public typealias Infer = (Judgement) -> Judgement?
+public typealias Infer = (Judgement) -> Judgement? /// Single-premise rules
 
 public enum Rules: String, CaseIterable, Codable {
     // NAL-1
@@ -455,7 +455,7 @@ let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)
 
 private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
     if case .statement(_, let cop1, _) = t1, cop1 == .implication || cop1 == .equivalence {
-        return Term.solver(t: t1, s: t2) ?? t1
+        return Term.match(t: t1, s: t2) ?? t1
     }
     return t1
 }
@@ -464,7 +464,7 @@ private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1
     if case .compound(let conn, _) = t1, conn == .c || conn == .U || conn == .Ω {
         var x: [Judgement?] = []
         
-        if let h = Term.solver(t: t1, s: t2) {
+        if let h = Term.match(t: t1, s: t2) {
             let tv = TruthValue.deduction(j1.truthValue, TruthValue(1, reliance))
 
             let res = r.allRules.flatMap { r in

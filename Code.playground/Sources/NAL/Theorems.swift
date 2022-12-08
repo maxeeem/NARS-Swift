@@ -1,5 +1,4 @@
 
-
 public typealias Theorem = (Statement) -> Statement?
 
 public enum Theorems: CaseIterable {
@@ -9,17 +8,16 @@ public enum Theorems: CaseIterable {
     case equivalence
 }
 
-
 extension Theorems {
     public static func apply(_ j: Judgement) -> [Judgement] {
         let res: [[Statement]] = self.allCases.map {
-            var results = $0.rules.compactMap { Term.solver(t: $0, s: j.statement) }
+            var results = $0.rules.compactMap { Term.match(t: $0, s: j.statement) }
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-                results.append(contentsOf: $0.rules.compactMap { Term.solver(t: $0, s: .statement(p, c, s)) })
+                results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .statement(p, c, s)) })
             }
             if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
                 if terms.count == 2 { // TODO: handle compounds with multiple terms
-                    results.append(contentsOf: $0.rules.compactMap { Term.solver(t: $0, s: .compound(conn, terms.reversed())) })
+                    results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .compound(conn, terms.reversed())) })
                 }
             }
             return results
@@ -70,7 +68,7 @@ extension Theorems {
 // MARK: - Helper
 
 extension Term {
-    static func solver(t: Statement, s: Statement) -> Statement? {
+    static func match(t: Statement, s: Statement) -> Statement? {
         var results = [Term]()
         let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
         
