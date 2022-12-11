@@ -4,17 +4,8 @@ public typealias ç = Connector /// shorthand
 extension Connector {
     var term: Term { Term.symbol(rawValue) }
     
-    public static func Ω_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .Ω, t2) }
-    public static func U_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .U, t2) }
-    public static func l_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .l, t2) }
-    public static func ø_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .ø, t2) }
-    public static func x_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .x, t2) }
-
-    public static func c_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .c, t2) }
-    public static func d_(_ t1: Term, _ t2: Term) -> Term { connect(t1, .d, t2) }
-
-    public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, x_(t1, t2)) }
-    public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, x_(t1, t2)) }
+    public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, (t1 * t2)) }
+    public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, (t1 * t2)) }
 
     internal func connect(_ ts: [Term]) -> Term! {
         var ts = ts

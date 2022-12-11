@@ -23,9 +23,9 @@ extension Term {
     public static let SELF = Term.symbol("SELF")
     
     public static func word(_ w: String) -> Term { .symbol(w) }
+    public static func `var`(_ s: String) -> Term { .variable(.independent(s)) }
     public static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
     public static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
-    public static func variable(_ s: String) -> Term { .variable(.independent(s)) }
     
     var terms: [Term] {
         switch self {

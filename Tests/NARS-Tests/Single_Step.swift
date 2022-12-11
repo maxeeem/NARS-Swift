@@ -712,7 +712,7 @@ class Single_Step: XCTestCase {
     func testVari3() {
         nars.perform(
             ("_M" --> "_T1")-*,
-            (+[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*,
+            (&&[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*,
             .pause
         ) /// <_M -> _T2. %1.00;0.42%.ana
         outputMustContain("⏱ <_M -> _T2>.")

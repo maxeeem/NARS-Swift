@@ -13,7 +13,7 @@ extension Variable {
 }
 
 extension Variable {
-    init?(_ string: String) {
+    public init?(_ string: String) {
         if string.hasPrefix("?") {
             let name = string.suffix(from: string.index(string.startIndex, offsetBy: 1))
             self = .query(name.isEmpty ? nil : String(name))

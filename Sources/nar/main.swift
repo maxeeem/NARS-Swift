@@ -24,14 +24,47 @@ func main() {
     let nars = NARS(cycle: cycle)
     
     print("NARS started. Type 'q' to exit.\n")
+    print("<task>          \n    execute narsese  - <bird -> animal>.")
+    print(":alias <task>   \n    create new alias - :bird <bird -> animal>.")
+    print("$alias          \n    execute an alias - $bird [will execute] <bird -> animal>.")
+    print("reset           \n    perform system reset")
+    print("10              \n    perform 10 cycles\n")
+    print("Ready for input \n")
+
+    var aliases: [String: Sentence] = [:]
     
     while let input = readInput() {
         if input == "q" {
             print("Done.")
             exit(0)
         }
+        if input == "reset" {
+            nars.reset()
+            print("Ready for input \n")
+            continue
+        }
         if input.isEmpty {
             continue // return key pressed
+        }
+        if input.hasPrefix(":") {
+            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
+            let task = input.suffix(from: input.index(after: alias.endIndex))
+            if !alias.isEmpty, !task.isEmpty, let s = Sentence(String(task)) {
+                aliases[String(alias)] = s
+                print("\(alias) := \(task)")
+            } else {
+                print("invalid action: \(task)")
+            }
+            continue // new alias
+        }
+        if input.hasPrefix("$") {
+            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
+            if let task = aliases[String(alias)] {
+                nars.perform(task)
+            } else {
+                print("invalid alias: \(alias)")
+            }
+            continue // run alias
         }
         guard let s = Sentence(input) else {
             print("invalid query: \(input)")
@@ -58,106 +91,4 @@ func readInput() -> String? {
         }
     }
     return stripped
-}
-
-func contents(_ s: String) -> String {
-    // TODO: parse :|: and %0.9% etc
-    let start = s.index(s.startIndex, offsetBy: 0)
-    let end = s.index(s.endIndex, offsetBy: -1)
-    let contents = String(s[start..<end])
-    return contents
-}
-
-
-// MARK: parse narsese string
-
-extension Sentence {
-    init?(_ s: String) {
-        if let duration = Int(s) {
-            self = .cycle(duration)
-            return
-        }
-        
-        let contents = contents(s)
-
-        do {
-            let term = try Term(contents)
-
-            if s.hasSuffix(">.") {
-                self = .judgement(term-*)
-                return
-            }
-            
-            if s.hasSuffix(">?") {
-                self = .question(term-?)
-                return
-            }
-        } catch {
-            print(error)
-        }
-        
-        return nil
-    }
-}
-
-
-extension Term {
-    init(_ s: String) throws {
-        
-        // MARK: Narsese grammar
-
-        let grammarString = """
-        exp              = '<', (statement | term), '>';
-
-        statement        = term, space, copula, space, term;
-        copula           = '->' | '=>';
-        term             = word | exp | statement;
-
-        word             = {letter|digit|_|-};
-
-        space            = [{' '}];
-
-        digit            = '0' ... '9';
-        letter           = 'A' ... 'Z' | 'a' ... 'z';
-        """
-
-        let grammar = try Grammar(ebnf: grammarString, start: "exp")
-
-        let parser = EarleyParser(grammar: grammar)
-        
-        let ast = try parser.syntaxTree(for: s)
-        
-        func convert(tree: SyntaxTree<NonTerminal, Range<String.Index>>) throws -> Term {
-            switch tree {
-            case .node(key: let key, children: let children):
-        //        print(">", key.name)
-                switch key.name {
-                case "exp":
-                    return try convert(tree: children[1])
-                case "statement":
-                    let sub = try convert(tree: children[0])
-                    let cop = try convert(tree: children[2])
-                    let pre = try convert(tree: children[4])
-                    let copula = Copula(rawValue: cop.description)!
-                    return .statement(sub, copula, pre)
-                    
-                case "term":
-                    return try convert(tree: children.first!)
-                case "copula":
-                    let word = String(s[tree.leafs.first!.lowerBound ..< tree.leafs.last!.upperBound])
-                    return .symbol(word)
-                case "word":
-                    let word = String(s[tree.leafs.first!.lowerBound ..< tree.leafs.last!.upperBound])
-                    return .symbol(word)
-                default:
-                    return .NULL
-                }
-            default:
-                return .NULL
-            }
-        }
-        
-        self = try convert(tree: ast)
-        return
-    }
 }

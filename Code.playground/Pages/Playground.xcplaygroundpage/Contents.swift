@@ -128,10 +128,10 @@ DispatchQueue.global().async {
     
         print("\n", t1, "\n", t2, "\n")
     
-    let c1 = ç.U_(t1, t2) // {Mars, Pluto, Saturn, Venus}
-    let c2 = ç.Ω_(t1, t2) // {Pluto}
-    let c3 = ç.l_(t1, t2) // {Mars, Venus}
-    let c4 = ç.ø_(t2, t1) // {Saturn}
+    let c1: Term = (t1 | t2) // {Mars, Pluto, Saturn, Venus}
+    let c2: Term = (t1 & t2) // {Pluto}
+    let c3: Term = (t1 - t2) // {Mars, Venus}
+    let c4: Term = (t2 ~ t1) // {Saturn}
     
     print(c1, c1.complexity, "\n", 
           c2, c2.complexity, "\n", 

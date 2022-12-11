@@ -105,9 +105,9 @@ extension Rules {
     }
     
     var firstOrder: [Rule] {
-        let S = Term.variable("S")
-        let P = Term.variable("P")
-        let M = Term.variable("M")
+        let S = Term.var("S")
+        let P = Term.var("P")
+        let M = Term.var("M")
 
         switch self {
         case .deduction:
@@ -139,9 +139,9 @@ extension Rules {
     }
     
     var compositional: [Rule] {
-        let M = Term.variable("M")
-        let T1 = Term.variable("T1")
-        let T2 = Term.variable("T2")
+        let M = Term.var("M")
+        let T1 = Term.var("T1")
+        let T2 = Term.var("T2")
         
         switch self {
         case .intersection:
@@ -156,20 +156,20 @@ extension Rules {
             ]
         case .union:
             return [ /// first order
-                (M --> T1,    M --> T2,    M --> ç.U_(T1, T2), tf),
-                (T1 --> M,    T2 --> M,    ç.Ω_(T1, T2) --> M, tf),
+                (M --> T1,    M --> T2,    M --> (T1 | T2), tf),
+                (T1 --> M,    T2 --> M,    (T1 & T2) --> M, tf),
                 /// higher order
-                ( M => T1,    M => T2 ,    M => ç.d_(T1, T2), tf),
-                ( T1 => M,    T2 => M ,    ç.c_(T1, T2) --> M, tf),
+                ( M => T1,    M => T2 ,    M => (T1 || T2), tf),
+                ( T1 => M,    T2 => M ,    (T1 && T2) --> M, tf),
                 /// conditional
-                (      T1,          T2,    ç.d_(T1, T2), tf) // TODO: verify nothing else needs to be checked
+                (      T1,          T2,    (T1 || T2), tf) // TODO: verify nothing else needs to be checked
             ]
         case .difference:
             return [
                 (M --> T1,    M --> T2,    M --> (T1 - T2), tf),
-                (M --> T1,    M --> T2,    M --> ç.l_(T2, T1), tfi),
+                (M --> T1,    M --> T2,    M --> (T2 - T1), tfi),
                 (T1 --> M,    T2 --> M,    (T1 ~ T2) --> M, tf),
-                (T1 --> M,    T2 --> M,    ç.ø_(T2, T1) --> M, tfi)
+                (T1 --> M,    T2 --> M,    (T2 ~ T1) --> M, tfi)
             ]
         default:
             return []
@@ -177,8 +177,8 @@ extension Rules {
     }
     
     var conditionalSyllogistic: [Rule] {
-        let S = Term.variable("S")
-        let P = Term.variable("P")
+        let S = Term.var("S")
+        let P = Term.var("P")
         switch self {
         case .deduction:
             return [(S  => P,           S,       P, tf)]
@@ -195,12 +195,12 @@ extension Rules {
     /// premises must be seen as based on the same implicit condition
     
     var conditional: [Rule] {
-        let S = Term.variable("S")
-        let P = Term.variable("P")
-        let M = Term.variable("M")
-        let C = Term.variable("C")
-        let T1 = Term.variable("T1")
-        let T2 = Term.variable("T2")
+        let S = Term.var("S")
+        let P = Term.var("P")
+        let M = Term.var("M")
+        let C = Term.var("C")
+        let T1 = Term.var("T1")
+        let T2 = Term.var("T2")
         switch self {
         case .deduction:
             return [
@@ -209,17 +209,17 @@ extension Rules {
             ]
         case .abduction:
             return [
-                (ç.c_(C, S) => P,            C => P,                   S, tf),
-                (ç.c_(C, S) => P,   ç.c_(C, M) => P,              M => S, tf)
+                ((C && S) => P,            C => P,                   S, tf),
+                ((C && S) => P,     (C && M) => P,              M => S, tf)
             ]
         case .induction:
             return [
-                (         C => P,                 S,     ç.c_(C, S) => P, tf),
-                (ç.c_(C, M) => P,            M => S,     ç.c_(C, S) => P, tf)
+                (       C => P,                 S,     (C && S) => P, tf),
+                ((C && M) => P,            M => S,     (C && S) => P, tf)
             ]
         case .intersection:
             return [
-                (             T1,                T2,        ç.c_(T1, T2), tf) // TODO: verify nothing else needs to be checked
+                (             T1,                T2,        (T1 && T2), tf) // TODO: verify nothing else needs to be checked
             ]
         default:
             return []
@@ -227,8 +227,8 @@ extension Rules {
     }
     
     var variable_and_temporal: [Rule] {
-        let S = Term.variable("S")
-        let P = Term.variable("P")
+        let S = Term.var("S")
+        let P = Term.var("P")
         switch self {
         case .induction:
             return [(P,  S,  S  => P, tf)]
@@ -243,13 +243,13 @@ extension Rules {
 
 extension Theorems {
     public var rules: [Statement] {
-        let S = Term.variable("S")
-        let P = Term.variable("P")
-        let S1 = Term.variable("S1")
-        let S2 = Term.variable("S2")
+        let S = Term.var("S")
+        let P = Term.var("P")
+        let S1 = Term.var("S1")
+        let S2 = Term.var("S2")
 
-        let T1 = Term.variable("T1")
-        let T2 = Term.variable("T2")
+        let T1 = Term.var("T1")
+        let T2 = Term.var("T2")
 
         switch self {
         case .inheritance:
@@ -265,12 +265,12 @@ extension Theorems {
             return [
                 (S <-> P) => (S --> P),
                 (S <=> P) => (S => P),
-                +[S1, S2] => (S1)
+                (S1 && S2) => (S1)
             ]
         case .equivalence:
             return [
-                (S <-> P) <=> +[(S --> P), (P --> S)],
-                (S <=> P) <=> +[(S  => P), (P  => S)],
+                (S <-> P) <=> &&[(S --> P), (P --> S)],
+                (S <=> P) <=> &&[(S  => P), (P  => S)],
                 
                 (S <-> P) <=> (.instance(S) <-> .instance(P)),
                 (S <-> P) <=> (.property(S) <-> .property(P)),
