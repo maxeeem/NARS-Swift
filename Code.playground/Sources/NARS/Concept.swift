@@ -217,10 +217,8 @@ extension Concept {
             el.identifier
         }
 //        print("---", dict)
-        let r = dict.values.flatMap { judgements in
-            let js = judgements
-            let maxj =
-            judgements.max { j1, j2 in
+        let r = dict.values.flatMap { (js: [Judgement]) -> Judgement? in
+            let maxj = js.max { j1, j2 in
                 let c = choice(j1: j1, j2: j2)
 //                if c.statement == ("robin"• --> "animal"•) {
 //                    print("00000")

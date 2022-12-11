@@ -12,10 +12,10 @@ public indirect enum Term: Hashable, Codable {
 }
 
 public enum Connector: String, CaseIterable, Codable {
-    /// intensional set
-    case intSet = "[]"  /// Ω 
-    /// extensional set
-    case extSet = "{}"  /// U
+    /// intensional set  Ω
+    case intSet = "[]"
+    /// extensional set U
+    case extSet = "{}"
     
     /// extensional intersection
     case Ω = "⋂" /// intensional set

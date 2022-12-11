@@ -31,7 +31,10 @@ extension Term {
         switch self {
         case .symbol:
             return [self]
-        case .compound(_, let terms):
+        case .compound(let c, let terms):
+//            if terms.count == 1, c == .intSet || c == .extSet {
+//                return [self]
+//            }
             return terms
         case .statement(let subject, _, let predicate):
             return [subject, predicate]

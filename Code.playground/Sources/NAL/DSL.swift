@@ -63,13 +63,13 @@ extension Statement {
     static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
 }
 
-func  & (_ lhs: Statement, _ rhs: Statement) -> Statement {  +[lhs, rhs] }
-func  | (_ lhs: Statement, _ rhs: Statement) -> Statement {  %[lhs, rhs] }
-func  - (_ lhs: Statement, _ rhs: Statement) -> Statement {  -[lhs, rhs] }
-func  ~ (_ lhs: Statement, _ rhs: Statement) -> Statement {  ~[lhs, rhs] }
-func  * (_ lhs: Statement, _ rhs: Statement) -> Statement {  *[lhs, rhs] }
-func && (_ lhs: Statement, _ rhs: Statement) -> Statement { &&[lhs, rhs] }
-func || (_ lhs: Statement, _ rhs: Statement) -> Statement { ||[lhs, rhs] }
+public func  & (_ lhs: Statement, _ rhs: Statement) -> Statement {  +[lhs, rhs] }
+public func  | (_ lhs: Statement, _ rhs: Statement) -> Statement {  %[lhs, rhs] }
+public func  - (_ lhs: Statement, _ rhs: Statement) -> Statement {  -[lhs, rhs] }
+public func  ~ (_ lhs: Statement, _ rhs: Statement) -> Statement {  ~[lhs, rhs] }
+public func  * (_ lhs: Statement, _ rhs: Statement) -> Statement {  *[lhs, rhs] }
+public func && (_ lhs: Statement, _ rhs: Statement) -> Statement { &&[lhs, rhs] }
+public func || (_ lhs: Statement, _ rhs: Statement) -> Statement { ||[lhs, rhs] }
 
 prefix operator  * // product
 prefix operator && // conjunction
@@ -82,11 +82,11 @@ prefix operator || disjunction
 -- already declared elsewhere -- */
 
 extension Array where Element == Statement {
-    static prefix func  + (_ s: Array<Statement>) -> Statement { ç.Ω.connect(s) }
-    static prefix func  % (_ s: Array<Statement>) -> Statement { ç.U.connect(s) }
-    static prefix func  - (_ s: Array<Statement>) -> Statement { ç.l.connect(s) }
-    static prefix func  ~ (_ s: Array<Statement>) -> Statement { ç.ø.connect(s) }
-    static prefix func  * (_ s: Array<Statement>) -> Statement { ç.x.connect(s) }
-    static prefix func && (_ s: Array<Statement>) -> Statement { ç.c.connect(s) }
-    static prefix func || (_ s: Array<Statement>) -> Statement { ç.d.connect(s) }
+    public static prefix func  + (_ s: Array<Statement>) -> Statement { ç.Ω.connect(s) }
+    public static prefix func  % (_ s: Array<Statement>) -> Statement { ç.U.connect(s) }
+    public static prefix func  - (_ s: Array<Statement>) -> Statement { ç.l.connect(s) }
+    public static prefix func  ~ (_ s: Array<Statement>) -> Statement { ç.ø.connect(s) }
+    public static prefix func  * (_ s: Array<Statement>) -> Statement { ç.x.connect(s) }
+    public static prefix func && (_ s: Array<Statement>) -> Statement { ç.c.connect(s) }
+    public static prefix func || (_ s: Array<Statement>) -> Statement { ç.d.connect(s) }
 }

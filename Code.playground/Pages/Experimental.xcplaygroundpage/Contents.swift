@@ -19,10 +19,10 @@ actor SELF {
     }
 }
 
-let tweety = "Tweety"
-let cartoon_bird = "cartoon_bird"
-let yellow = "yellow"
-print(tweety•->cartoon_bird)
+//let tweety = "Tweety"
+//let cartoon_bird = "cartoon_bird"
+//let yellow = "yellow"
+//print(tweety•->cartoon_bird)
 
 var statement = "Bart Simpson" •-> "cartoon_character"
 print(statement)

@@ -3,9 +3,9 @@ import PlaygroundSupport
 
 var verbose = true
 
-let output = Output()
-output.isVerbose = verbose
-output.onVerbose = { verbose = $0 }
+//let output = Output()
+//output.isVerbose = verbose
+//output.onVerbose = { verbose = $0 }
 
 // set the view and indefinite execution
 PlaygroundPage.current.needsIndefiniteExecution = true
@@ -22,26 +22,26 @@ let nars = NARS(cycle: false) { s in
     if !verbose && (s.contains("⏱") || s.contains("💤")) { return }
     history.append(s); print(s)
     //usleep(100000) // 1/100th second
-    output.text = "...\(output.text.suffix(600))\n" + s
+//    output.text = "...\(output.text.suffix(600))\n" + s
 }
 
-output.callback = { s in
-    nars.perform(s, .pause)
-}
+//output.callback = { s in
+//    nars.perform(s, .pause)
+//}
 
-output.reset = {
-    nars.reset()
-    sleep(1)
-    nars.reset()
-    sleep(1)
-    nars.reset()
-    sleep(1)
-    nars.reset()
-    sleep(1)
-    nars.reset()
-    sleep(5)
-    output.text += "\n/// memory reset"
-}
+//output.reset = {
+//    nars.reset()
+//    sleep(1)
+//    nars.reset()
+//    sleep(1)
+//    nars.reset()
+//    sleep(1)
+//    nars.reset()
+//    sleep(1)
+//    nars.reset()
+//    sleep(5)
+//    output.text += "\n/// memory reset"
+//}
 
 Sentence.defaultPause = 1000 // set default pause duration (ms)
 
@@ -100,7 +100,7 @@ DispatchQueue.global().async {
     //debugPrint(nars.memory)
     //print(nars.pendingTasks)
 
-        
+/*
     output.reset()
  
     nars.perform(
@@ -122,30 +122,30 @@ DispatchQueue.global().async {
     
     output.text += "\ndone\n..."
  
-    let t1 = Term.compound(.U, ["{Mars}", "{Pluto}", "{Venus}"])
+    let t1 = %["{Mars}", "{Pluto}", "{Venus}"]
     
-    let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
+    let t2 = %["{Pluto}", "{Saturn}"]
     
         print("\n", t1, "\n", t2, "\n")
     
-    let c1: Term = (t1 | t2) // {Mars, Pluto, Saturn, Venus}
-    let c2: Term = (t1 & t2) // {Pluto}
-    let c3: Term = (t1 - t2) // {Mars, Venus}
-    let c4: Term = (t2 ~ t1) // {Saturn}
+    let c1 = (t1 | t2) // {Mars, Pluto, Saturn, Venus}
+    let c2 = (t1 & t2) // {Pluto}
+    let c3 = (t1 - t2) // {Mars, Venus}
+    let c4 = (t2 ~ t1) // {Saturn}
     
     print(c1, c1.complexity, "\n", 
           c2, c2.complexity, "\n", 
           c3, c3.complexity, "\n", 
           c4, c4.complexity, "\n")
     
-    let c5 = ç.U_("{Earth}", t2)
+    let c5 = ("{Earth}" | t2)
     print(c5, c5.complexity)
     
-    let x = ç.U_("[yellow]", "bird")
+    let x = ("[yellow]" | "bird")
     print(x, x.complexity)
-    let y = ç.Ω_("dog", "cat")
+    let y = ("dog" & "cat")
     print(y, y.complexity)
-    let z = ç.l_("[yellow]", "bird")
+    let z = ("[yellow]" - "bird")
     print(z, z.complexity)
     print(z.simplicity)
     
@@ -154,7 +154,7 @@ DispatchQueue.global().async {
     
     output.reset()
     
-    let relation = ç.x_("water", "salt") --> "dissolve"
+    let relation = ("water" * "salt") --> "dissolve"
     let knowledge = "rain" --> "water"
     
     nars.perform(
@@ -164,7 +164,8 @@ DispatchQueue.global().async {
     )
     
     output.reset()
-    
+*/
+/*
     let image = "water" --> ç.e_("dissolve", "º", "salt")
     nars.perform(
         image-*,
@@ -382,6 +383,7 @@ DispatchQueue.global().async {
     
     let result = Theorems.apply(test-*)
     print("2.", result)
+ */
 }
 
 // MARK: Tests

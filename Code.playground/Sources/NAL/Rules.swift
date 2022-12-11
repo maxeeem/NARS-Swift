@@ -468,8 +468,8 @@ private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1
             let tv = TruthValue.deduction(j1.truthValue, TruthValue(1, reliance))
 
             let res = r.allRules.flatMap { r in
-                h.terms.flatMap {
-                    let j = Judgement($0, tv, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
+                h.terms.flatMap { (t: Term) -> [Judgement?] in
+                    let j = Judgement(t, tv, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
                     return [rule_generator(r)((j, j2)),
                             rule_generator(r)((j2, j))]
                 }
