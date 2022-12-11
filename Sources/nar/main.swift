@@ -28,7 +28,7 @@ func main() {
     print(":alias <task>   \n    create new alias - :bird <bird -> animal>.")
     print("$alias          \n    execute an alias - $bird [will execute] <bird -> animal>.")
     print("reset           \n    perform system reset")
-    print("10              \n    perform 10 cycles\n")
+    print("10              \n    cycle for 10 seconds\n")
     print("Ready for input \n")
 
     var aliases: [String: Sentence] = [:]

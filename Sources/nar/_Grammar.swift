@@ -40,9 +40,12 @@ enum Narsese {
         
         connector-diff   = \([ç.l, .ø].map(\.all).joined(separator: "|"));
 
-        terms            = term, [{term|seq}];
-        seq              = space, [','], space;
+        terms            = term, [{seq-comma, term}|{seq-space, term}];
         
+        seq              = seq-comma | seq-space;
+        seq-comma        = space, ',', space;
+        seq-space        = space, ' ', space;
+
         term             = word | variable | exp | statement | compound;
 
         variable         = indep-var | dep-var | query-var;
