@@ -1,4 +1,3 @@
-import NAL
 import NARS
 import Narsese
 

@@ -31,17 +31,18 @@ let package = Package(
             name: "NAL",
             path: "Code.playground/Sources/NAL"),
         .target(
-            name: "Narsese",
-            dependencies: ["NAL"]),
-        .target(
             name: "NARS",
             dependencies: ["NAL"],
             path: "Code.playground/Sources/NARS"),
-        .testTarget(
-            name: "NARS-Tests",
-            dependencies: ["NARS", "Narsese"]),
+        .target(
+            name: "Narsese",
+            dependencies: ["NAL"]),
         .target(
             name: "nar",
+            dependencies: ["NARS", "Narsese"]),
+        
+        .testTarget(
+            name: "NARS-Tests",
             dependencies: ["NARS", "Narsese"]),
     ]
 )
