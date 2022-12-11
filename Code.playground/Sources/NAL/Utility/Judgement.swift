@@ -61,7 +61,7 @@ extension Judgement {
         }
     }
     
-    func evidenceOverlap(_ j2: Judgement) -> Bool {
+    public func evidenceOverlap(_ j2: Judgement) -> Bool {
         let sameRoot = derivationPath.first == j2.derivationPath.first
         let p1 = sameRoot ? Array(derivationPath.dropFirst()) : derivationPath
         let p2 = sameRoot ? Array(j2.derivationPath.dropFirst()) : j2.derivationPath

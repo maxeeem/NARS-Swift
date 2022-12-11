@@ -1,3 +1,4 @@
+import NAL
 
 public func debugPrint(_ item: Any, _ separator: String = "-------") {
     print("\n"+separator+"\(type(of: item))"+separator+"\n")
@@ -6,9 +7,7 @@ public func debugPrint(_ item: Any, _ separator: String = "-------") {
 
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
-        statement = f()
-        type = .truth
-        tense = nil
+        self.init(f(), Quest.truth, nil)
     }
     public var variableTerm: Term! {
         if case .statement(let s, _ , let p) = statement {
@@ -26,8 +25,8 @@ extension Question {
 
 extension Goal {
     public init(_ f: @autoclosure () -> Statement) {
-        statement = f()
-        desireValue = DesireValue(1.0, 0.9) // TODO: what is the correct default?
+        let desireValue = DesireValue(1.0, 0.9) // TODO: what is the correct default?
+        self.init(f(), desireValue)
     }
 }
 
@@ -79,7 +78,6 @@ public func -*(_ s: Statement, _ t: UInt64) -> Sentence {
     Sentence(s -* (1, 0.9, t))
 }
 
-postfix operator -*
 extension Statement {
     public static postfix func -*(_ s: Statement) -> Sentence {
         Sentence(s-*)
@@ -103,7 +101,7 @@ extension Sentence {
         case .judgement(let j):
             return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath, tense: tense, timestamp: j.timestamp))
         case .question(let q):
-            return .question(Question(statement: q.statement, type: q.type, tense: tense))
+            return .question(Question(q.statement, q.type, tense))
         default:
             return self
         }

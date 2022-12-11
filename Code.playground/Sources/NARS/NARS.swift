@@ -1,3 +1,4 @@
+import NAL
 import Dispatch
 
 public enum Sentence: Codable {

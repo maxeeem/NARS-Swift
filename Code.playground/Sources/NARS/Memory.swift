@@ -1,3 +1,4 @@
+import NAL
 
 extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {

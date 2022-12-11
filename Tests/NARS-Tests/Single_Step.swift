@@ -7,6 +7,7 @@
 
 import XCTest
 
+@testable import NAL
 @testable import NARS
 
 var lastCycle: [(UInt64, String)] = []

@@ -1,4 +1,5 @@
 import XCTest
+@testable import NAL
 @testable import NARS
 
 // Experimental
@@ -154,5 +155,21 @@ final class NARS_Tests: XCTestCase {
         
         print("K", result)
         
+    }
+    
+    func testCompounds() {
+        let t1 = %["{Mars}", "{Pluto}", "{Venus}"]
+        
+        let t2 = %["{Pluto}", "{Saturn}"]
+        
+        let c1 = (t1 | t2) // {Mars, Pluto, Saturn, Venus}
+        let c2 = (t1 & t2) // {Pluto}
+        let c3 = (t1 - t2) // {Mars, Venus}
+        let c4 = (t2 ~ t1) // {Saturn}
+        // TODO: finish test.
+        // it relates to .terms extension where
+        // for single component intSet and extSet
+        // we return the term itself not its terms
+        XCTAssert(c2.description == "(⋂ {Pluto})")
     }
 }

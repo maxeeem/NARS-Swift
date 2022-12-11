@@ -1,5 +1,5 @@
+import NAL
 import Dispatch
-
 
 public protocol AbstractBag {
     associatedtype I: Item

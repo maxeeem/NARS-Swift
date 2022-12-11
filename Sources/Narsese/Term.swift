@@ -1,51 +1,8 @@
+import NAL
 
-import NARS
-
-// MARK: Helpers
-
-func contents(_ s: String) -> String {
-    // TODO: parse :|: and %0.9% etc
-    let start = s.index(s.startIndex, offsetBy: 0)
-    let end = s.index(s.endIndex, offsetBy: -1)
-    let contents = String(s[start..<end])
-    return contents
-}
-
-
-extension Sentence {
-    init?(_ s: String) {
-        if let duration = Int(s) {
-            self = .cycle(duration)
-            return
-        }
-        
-        let contents = contents(s)
-
-        do {
-            let term = try Term(contents)
-
-            if s.hasSuffix(">.") {
-                self = .judgement(term-*)
-                return
-            }
-            
-            if s.hasSuffix(">?") {
-                self = .question(term-?)
-                return
-            }
-        } catch {
-            print(error)
-        }
-        
-        return nil
-    }
-}
-
-extension Term {
-    init(_ s: String) throws {
-        let grammar = try Grammar(ebnf: Narsese.grammar, start: "exp")
-        let parser = EarleyParser(grammar: grammar)
-        let ast = try parser.syntaxTree(for: s)
+public extension Term {
+    init(_ s: String, parser: Narsese) throws {
+        let ast = try parser.parse(s)
         
         func convert(tree: SyntaxTree<NonTerminal, Range<String.Index>>) throws -> Term {
             switch tree {

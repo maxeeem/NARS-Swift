@@ -4,8 +4,9 @@ public func + (_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
     Judgement(s, TruthValue(fc.0, fc.1), timestamp: fc.2)
 }
 
-extension Statement {
-    public static postfix func -* (_ s: Statement) -> Judgement {
+postfix operator -*
+public extension Statement {
+    static postfix func -* (_ s: Statement) -> Judgement {
         switch s {
         case .symbol:
             return s + (1.0, 0.9, ETERNAL)

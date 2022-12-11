@@ -1,5 +1,4 @@
-
-import NARS
+import NAL
 
 extension Connector {
     var dialects: [String] {

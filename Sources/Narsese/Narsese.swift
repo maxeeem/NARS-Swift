@@ -1,8 +1,17 @@
+import NAL
 
-import NARS
-
-enum Narsese {
-    static let grammar = """
+public struct Narsese {
+    public let parser: Parser
+    public init() throws {
+        let grammar = try Grammar(ebnf: grammar, start: "exp")
+        parser = EarleyParser(grammar: grammar)
+    }
+    
+    public func parse(_ s: String) throws -> ParseTree {
+        try parser.syntaxTree(for: s)
+    }
+    
+    public let grammar = """
         exp              = '<', (statement | term), '>';
 
         statement        = term, space, copula, space, term;

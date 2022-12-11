@@ -1,4 +1,19 @@
 
+extension Question {
+    public init(_ statement: Statement, _ type: Quest, _ tense: Tense? = nil) {
+        self.statement = statement
+        self.type = type
+        self.tense = tense
+    }
+}
+
+extension Goal {
+    public init(_ statement: Statement, _ desireValue: DesireValue) {
+        self.statement = statement
+        self.desireValue = desireValue
+    }
+}
+
 extension TruthValue: Equatable {
     public static func ==(_ lhs: TruthValue, _ rhs: TruthValue) -> Bool {
         lhs.f == rhs.f && lhs.c == rhs.c // ignore rule

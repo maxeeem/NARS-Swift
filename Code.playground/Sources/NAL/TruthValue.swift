@@ -1,12 +1,12 @@
 
 public struct TruthValue: Hashable, Codable {
-    let frequency: Double
-    let confidence: Double
+    public let frequency: Double
+    public let confidence: Double
     
-    let rule: Rules! // for derived values
+    public let rule: Rules! // for derived values
 }
 
-extension TruthValue {
+public extension TruthValue {
     var f: Double {frequency}
     var c: Double {confidence}
     var l: Double {lowerFrequency}

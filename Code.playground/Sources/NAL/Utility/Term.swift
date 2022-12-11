@@ -1,6 +1,6 @@
 
 extension Term {
-    var isTautology: Bool {
+    public var isTautology: Bool {
         switch self {
         case .symbol:
             return false
@@ -27,14 +27,14 @@ extension Term {
     public static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
     public static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
     
-    var terms: [Term] {
+    public var terms: [Term] {
         switch self {
         case .symbol:
             return [self]
         case .compound(let c, let terms):
-//            if terms.count == 1, c == .intSet || c == .extSet {
-//                return [self]
-//            }
+            if terms.count == 1, c == .intSet || c == .extSet {
+                return [self]
+            }
             return terms
         case .statement(let subject, _, let predicate):
             return [subject, predicate]

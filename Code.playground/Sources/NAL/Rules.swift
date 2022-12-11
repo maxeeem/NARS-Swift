@@ -25,7 +25,7 @@ public enum Rules: String, CaseIterable, Codable {
     case revision
 }
 
-extension Rules {
+public extension Rules {
     static let strong: [Rules] = [.deduction, .analogy, .resemblance]
     //TODO: should we add intersection, difference and union to the list?
     
@@ -146,7 +146,7 @@ extension Rules {
 
 private var checkOverlap = false // TODO: dirty trick to get dependent-variable introduction to work
 
-let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
+public let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
     // premise (p1) premise (p2) conclusion (c) truth-function (tf)
     var (p1, p2, c, tf) = arg
 

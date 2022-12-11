@@ -63,8 +63,8 @@ private func neg(_ s: Statement) -> Statement {
     }
 }
 
-extension Rules {
-    public var allRules: [Rule] {
+public extension Rules {
+    var allRules: [Rule] {
         let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
         var permutations: [Rule] = []
         for r in rules {
