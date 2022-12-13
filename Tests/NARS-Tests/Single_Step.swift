@@ -15,26 +15,20 @@ class Single_Step: XCTestCase {
 
     var output: [String] = []
     
-    lazy var nars = NARS(cycle: false) { self.output.append($0); print($0) }
-    
-    let queue = DispatchQueue(label: "reset")
-    
+    var nars: NARS!
+        
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
         Sentence.defaultPause = 1000 // in milliseconds
+        nars = NARS(cycle: false) { self.output.append($0); print($0) }
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
 //        lastCycle.append(contentsOf: nars.lastCycle)
 //        for interval in lastCycle {
 //            print(interval.1, "@", interval.0)
 //        }
 //        nars.lastCycle.removeAll()
         output.removeAll()
-        queue.async {
-            self.nars.reset()
-        }
     }
     
     private func outputMustContain(_ expectation: String) {
