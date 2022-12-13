@@ -1,9 +1,3 @@
-import NAL
-
-public func debugPrint(_ item: Any, _ separator: String = "-------") {
-    print("\n"+separator+"\(type(of: item))"+separator+"\n")
-    print("\(item)"+separator+"\n")
-}
 
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
@@ -56,70 +50,48 @@ extension Belief {
     }
 }
 
-// convenience initializer for Belief
-public func +(_ j: Judgement, p: Double) -> Belief {
-    Belief(j, p)
+// MARK: Equatable
+
+extension Bag: Equatable {
+    public static func == (lhs: Bag<I>, rhs: Bag<I>) -> Bool {
+        Set(lhs.items.keys) == Set(rhs.items.keys)
+    }
 }
 
-
-public func -*(_ s: Statement, _ fc: (Double, Double)) -> Judgement {
-    s -* (fc.0, fc.1, ETERNAL)
-}
-public func -*(_ s: Statement, _ fc: (Double, Double)) -> Sentence {
-    Sentence(s -* fc)
-}
-public func -*(_ s: Statement, _ fct: (Double, Double, UInt64)) -> Sentence {
-    Sentence(s -* fct)
-}
-public func -*(_ s: Statement, _ f: Double) -> Sentence {
-    Sentence(s -* (f, 0.9))
-}
-public func -*(_ s: Statement, _ t: UInt64) -> Sentence {
-    Sentence(s -* (1, 0.9, t))
+extension WrappedBag: Equatable {
+    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
+        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
+    }
 }
 
-extension Statement {
-    public static postfix func -*(_ s: Statement) -> Sentence {
-        Sentence(s-*)
+extension Concept: Equatable {
+    public static func == (lhs: Concept, rhs: Concept) -> Bool {
+        lhs.term == rhs.term
+        && lhs.termLinks == rhs.termLinks
+        && lhs.beliefs == rhs.beliefs
+    }
+}
+
+extension NARS: Equatable {
+    public static func == (lhs: NARS, rhs: NARS) -> Bool {
+        lhs.name == rhs.name
     }
 }
 
 
-extension Sentence {
-    public static prefix func <<(_ s: Sentence) -> Sentence {
-        s.addTense(.past)
-    }
-    public static prefix func ||(_ s: Sentence) -> Sentence {
-        s.addTense(.present)
-    }
-    public static prefix func >>(_ s: Sentence) -> Sentence {
-        s.addTense(.future)
-    }
-    
-    private func addTense(_ tense: Tense) -> Sentence {
-        switch self {
-        case .judgement(let j):
-            return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath, tense: tense, timestamp: j.timestamp))
-        case .question(let q):
-            return .question(Question(q.statement, q.type, tense))
-        default:
-            return self
-        }
-    }
+/// Convenience
+
+extension WrappedBag where I == Belief {
+    /// convenience for iterating over both dictionaries
+    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
 }
 
-postfix operator -?
-extension Statement {
-    public static postfix func -?(_ s: Statement) -> Question { Question(s) }
-    public static postfix func -?(_ s: Statement) -> Sentence { Sentence(s-?) }
+extension Belief: Comparable {
+    public static func < (lhs: Belief, rhs: Belief) -> Bool {
+        let c = choice(j1: lhs.judgement, j2: rhs.judgement)
+        return c.statement == rhs.judgement.statement
+    }
 }
-
-postfix operator -!
-extension Statement {
-    public static postfix func -!(_ s: Statement) -> Goal { Goal(s) }
-    public static postfix func -!(_ s: Statement) -> Sentence { Sentence(s-!) }
-}
-
 
 // MARK: CustomStringConvertible
 

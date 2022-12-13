@@ -1,49 +1,23 @@
 import Dispatch
 import PlaygroundSupport
 
-var verbose = true
-
-//let output = Output()
-//output.isVerbose = verbose
-//output.onVerbose = { verbose = $0 }
-
-// set the view and indefinite execution
 PlaygroundPage.current.needsIndefiniteExecution = true
-//PlaygroundPage.current.liveView = output
 
-let robin = Term.word("robin")
-let bird = Term.word("bird")
-let animal = Term.word("animal")
-let mammal = Term.word("mammal")
-
+var verbose = true
 var history = [String]()
 
 let nars = NARS(cycle: false) { s in
     if !verbose && (s.contains("⏱") || s.contains("💤")) { return }
     history.append(s); print(s)
-    //usleep(100000) // 1/100th second
-//    output.text = "...\(output.text.suffix(600))\n" + s
 }
 
-//output.callback = { s in
-//    nars.perform(s, .pause)
-//}
-
-//output.reset = {
-//    nars.reset()
-//    sleep(1)
-//    nars.reset()
-//    sleep(1)
-//    nars.reset()
-//    sleep(1)
-//    nars.reset()
-//    sleep(1)
-//    nars.reset()
-//    sleep(5)
-//    output.text += "\n/// memory reset"
-//}
-
 Sentence.defaultPause = 1000 // set default pause duration (ms)
+
+
+let robin = Term.word("robin")
+let bird = Term.word("bird")
+let animal = Term.word("animal")
+let mammal = Term.word("mammal")
 
 let defaultScript = [
     ("bird" --> "animal")-*, // (1, 0.9)

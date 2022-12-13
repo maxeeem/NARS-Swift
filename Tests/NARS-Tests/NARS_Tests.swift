@@ -1,5 +1,4 @@
 import XCTest
-@testable import NAL
 @testable import NARS
 
 // Experimental

@@ -1,4 +1,3 @@
-import NAL
 
 public protocol Item: Equatable {
     var identifier: String { get }
@@ -34,8 +33,8 @@ public struct Concept: Item {
     private var _termLinks = Bag<TermLink>()
     internal var termLinks: WrappedBag<TermLink>
     //let tasks = Bag<TermLink>() // sentences
-    private var _beliefs = Bag<Belief>() // judgements
-    internal var beliefs: WrappedBag<Belief>// = Bag<Belief>() // judgements
+    private var _beliefs = Bag<Belief>()
+    internal var beliefs: WrappedBag<Belief>
 
     init(term: Term) {
         self.term = term
@@ -55,26 +54,6 @@ public struct Concept: Item {
 //    internal var lastAnswered: Set<Judgement> = []
 }
 
-extension Bag: Equatable {
-    public static func == (lhs: Bag<I>, rhs: Bag<I>) -> Bool {
-        Set(lhs.items.keys) == Set(rhs.items.keys)
-    }
-}
-
-extension WrappedBag: Equatable {
-    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
-        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
-    }
-}
-
-extension Concept: Equatable {
-    public static func == (lhs: Concept, rhs: Concept) -> Bool {
-        lhs.term == rhs.term
-        && lhs.termLinks == rhs.termLinks
-        && lhs.beliefs == rhs.beliefs
-    }
-}
-
 extension Concept {
     // returns derived judgements if any
     func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
@@ -92,7 +71,6 @@ extension Concept {
             originalPriority = b.priority
             var judgement: Judgement
             if j.evidenceOverlap(b.judgement) {
-//                print("Overlap:", j.derivationPath, b.judgement.derivationPath)
                 judgement = choice(j1: j, j2: b.judgement)
             } else {
                 if j.truthValue.rule == .conversion {
@@ -101,10 +79,6 @@ extension Concept {
                     judgement = j
                 } else {
                     judgement = revision(j1: j, j2: b.judgement)
-//                    print("-", j)
-//                    print("-", b.judgement)
-//                    print("j", j.derivationPath)
-//                    print("b", b.judgement.derivationPath)
                 }
             }
             // wait to put back original belief to process another one
@@ -154,15 +128,10 @@ extension Concept {
                 break // TODO: is this accurate?
             }
 
-            let newPriority: Double // TODO: this needs to be handled properly
-            if let maxPriority = derived.map({$0.truthValue.confidence}).max() {
-                newPriority = ((originalPriority ?? 0.9) + maxPriority) / 2
-            } else {
-                newPriority = originalPriority ?? 0.9
-            }
-//            print(">>>", newPriority)
+            var b = j + (originalPriority ?? 0.9)
+            b.adjustPriority(derived)
 //            if j.truthValue.rule != .conversion {
-                beliefs.put(j + min(newPriority, 0.9)) // store new belief
+                beliefs.put(b) // store new belief
 //            }
         }
         
@@ -182,7 +151,6 @@ extension Concept {
                     break twoPremiseRules
                 }
             }
-//            print("--", b, j)
             
             // apply rules
             let results = Rules.allCases
@@ -195,14 +163,8 @@ extension Concept {
             
             // TODO: wait to put back
             // modify its "usefullness" value
-            if let maxPriority = results.map({$0.truthValue.confidence}).max() {
-                let newPriority = (b.priority + maxPriority) / 2
-                b.priority = min(newPriority, 0.9)
-            }
+            b.adjustPriority(results)
             beliefs.put(b) // put back another belief
-            
-//            derived = derived
-//                .filter { beliefs.items[$0.statement.description] == nil && $0.statement != j.statement }
 
 //            lastAccepted = Set(derived)
             if !derived.isEmpty {
@@ -211,37 +173,14 @@ extension Concept {
 //                print("it follows...")
             }
         }
-//            print("\n\n=========\n\n")
-//            derived.forEach { print($0) }
-//        derived = derived.filter { $0.truthValue.rule != nil }
-        let dict = Dictionary(grouping: derived) { el in
-            el.identifier
-        }
-//        print("---", dict)
-        let r = dict.values.flatMap { (js: [Judgement]) -> Judgement? in
-            let maxj = js.max { j1, j2 in
-                let c = choice(j1: j1, j2: j2)
-//                if c.statement == ("robin"• --> "animal"•) {
-//                    print("00000")
-//                    print(j1, j2, c)
-//                }
-                return c.statement == j2.statement
-            }
-//            print("<|>", maxj, js)
-            return maxj
-        }
-            .filter { beliefs.peek($0.identifier) == nil
-            }//&& $0.statement != j.statement }
-//        print("\n\n\n", j)
-//        print(beliefs)
-//        print("+++", r)
-//        print("\n\n")
         
-        derived = r
-        
-            // TODO: process `values`
-            // like rules but modifiable by the system
-            // statements using variables
+        derived = derived.removeDuplicates().filter {
+            beliefs.peek($0.identifier) == nil
+        }//&& $0.statement != j.statement }
+
+        // TODO: process `values`
+        // like rules but modifiable by the system
+        // statements using variables
         
         return derived
     }
@@ -293,19 +232,7 @@ extension Concept {
                 }
             } else { // TODO: handle other cases 
                 result = answer(q.statement)
-                let dict = Dictionary(grouping: result) { el in
-                    el.identifier
-                }
-//                print("---", dict)
-                let r = dict.values.flatMap { judgements in
-                    judgements.max { j1, j2 in
-                        let c = choice(j1: j1, j2: j2)
-                        return c.statement == j2.statement
-                    }
-                }
-                result = r
-//                print("\(self.identifier.uppercased())")
-//                result.forEach { print("+ \($0)") }
+                result = result.removeDuplicates()
             }
         default:
             return [] // TODO: handle other cases
@@ -334,13 +261,9 @@ extension Concept {
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
-//            print("---picked out", b)
             
             let r = Theorems.apply(b.judgement)
                 .filter { beliefs.peek($0.description) == nil }
-
-//            print("+++", r)
-//            print(">>>", b, results)
 
             if let answer = r.first(where: { $0.statement == s }) {
                 return [answer]

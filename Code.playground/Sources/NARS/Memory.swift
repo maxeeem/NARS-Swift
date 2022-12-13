@@ -1,4 +1,3 @@
-import NAL
 
 extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
@@ -28,7 +27,7 @@ extension AbstractBag where I == Concept {
         if case .statement = q.statement {
             return consider(q.statement, derive: derive) { c in c.answer(q) }
         } else {
-            return considerT(q.variableTerm, derive: derive) { c in c.answer(q) }
+            return considerVar(q.variableTerm, derive: derive) { c in c.answer(q) }
         }
     }
 }
@@ -44,25 +43,19 @@ extension AbstractBag where I == Concept {
         case .symbol: // TODO: is this accurate?
             var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
-            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
-                let newPriority = (concept.priority + maxPriority) / 2
-                concept.priority = min(newPriority, 0.9)
-            }
+            concept.adjustPriority(derivedJudgements)
             put(concept)
             return derivedJudgements
         case .compound(let c, let ts):
-            if c == .n, ts.count == 1 {
-                return consider(ts[0], derive: derive, f)
-            }
+//            if c == .n, ts.count == 1 { // TODO: is this correct?
+//                return consider(ts[0], derive: derive, f)
+//            }
             if [.c, .d].contains(c) {
                 let terms = Set(ts.flatMap{$0.terms})
                 for t in terms {
                     if var concept = get(t.description) {
                         derivedJudgements.append(contentsOf: f(&concept))
-                        if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
-                            let newPriority = (concept.priority + maxPriority) / 2
-                            concept.priority = min(newPriority, 0.9)
-                        }
+                        concept.adjustPriority(derivedJudgements)
                         put(concept)
                     }
                 }
@@ -70,25 +63,16 @@ extension AbstractBag where I == Concept {
             }
             var concept = get(s.description) ?? Concept(term: s)
             derivedJudgements.append(contentsOf: f(&concept))
-            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
-                let newPriority = (concept.priority + maxPriority) / 2
-                concept.priority = min(newPriority, 0.9)
-            }
+            concept.adjustPriority(derivedJudgements)
             put(concept)
             return derivedJudgements
         case .statement(let subject, _, let predicate):
             var subjectConcept = get(subject.description) ?? Concept(term: subject)
             var predicateConcept = get(predicate.description) ?? Concept(term: predicate)
             derivedJudgements.append(contentsOf: f(&subjectConcept))
-            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
-                let newPriority = (subjectConcept.priority + maxPriority) / 2
-                subjectConcept.priority = min(newPriority, 0.9)
-            }
+            subjectConcept.adjustPriority(derivedJudgements)
             derivedJudgements.append(contentsOf: f(&predicateConcept))
-            if let maxPriority = derivedJudgements.map({$0.truthValue.confidence}).max() {
-                let newPriority = (predicateConcept.priority + maxPriority) / 2
-                predicateConcept.priority = min(newPriority, 0.9)
-            }
+            predicateConcept.adjustPriority(derivedJudgements)
             if case .statement = subject {
                 derivedJudgements.append(contentsOf: consider(subject, derive: derive, f))
             }
@@ -104,8 +88,8 @@ extension AbstractBag where I == Concept {
             return [] // TODO: is this accurate?
         }
     }
-    // TODO: rename
-    private func considerT(_ t: Term, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
+
+    private func considerVar(_ t: Term, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         guard var concept = get(t.description) else { return [] }
         defer { put(concept) } // put back
         return f(&concept)

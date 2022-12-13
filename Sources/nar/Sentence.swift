@@ -11,7 +11,7 @@ func contents(_ s: String) -> String {
 }
 
 
-public extension Sentence {
+extension Sentence {
     init?(_ s: String, parser: Narsese) {
         if let duration = Int(s) {
             self = .cycle(duration)

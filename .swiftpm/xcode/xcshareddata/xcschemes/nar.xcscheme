@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1320"
+   LastUpgradeVersion = "1410"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NARS"
-               BuildableName = "NARS"
-               BlueprintName = "NARS"
+               BlueprintIdentifier = "nar"
+               BuildableName = "nar"
+               BlueprintName = "nar"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -40,8 +40,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
          <TestableReference
             skipped = "NO">
@@ -52,41 +51,6 @@
                BlueprintName = "NARS-Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "Single_Step/test4()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/test5()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/test6()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testInf()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testLogic()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testLogic2()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testLogicRules()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testfoo()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testik()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testlist()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testtest()">
-               </Test>
-            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
@@ -99,7 +63,18 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
-      allowLocationSimulation = "YES">
+      allowLocationSimulation = "YES"
+      viewDebuggingEnabled = "No">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "nar"
+            BuildableName = "nar"
+            BlueprintName = "nar"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -107,15 +82,16 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "NARS"
-            BuildableName = "NARS"
-            BlueprintName = "NARS"
+            BlueprintIdentifier = "nar"
+            BuildableName = "nar"
+            BlueprintName = "nar"
             ReferencedContainer = "container:">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

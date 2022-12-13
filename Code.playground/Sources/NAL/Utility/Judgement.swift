@@ -1,4 +1,18 @@
 
+public extension Array where Element == Judgement {
+    func removeDuplicates() -> [Judgement] {
+        let unique = Dictionary(grouping: self) {
+            $0.identifier
+        }.values.compactMap {
+            $0.max { j1, j2 in
+                let j = choice(j1: j1, j2: j2)
+                return j.statement == j2.statement
+            }
+        }
+        return unique
+    }
+}
+
 extension Judgement {
     public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String] = [], tense: Tense? = nil, timestamp: UInt64 = 0) {
         self.statement = statement

@@ -1,4 +1,3 @@
-import NAL
 import Dispatch
 
 public protocol AbstractBag {
@@ -182,20 +181,5 @@ public final class WrappedBag<I: Item>: AbstractBag {
         queue.sync {
             bag.peek(identifier) ?? wrapped?.peek(identifier)
         }
-    }
-}
-
-
-/// Convenience
-
-extension WrappedBag where I == Belief {
-    /// convenience for iterating over both dictionaries
-    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
-}
-
-extension Belief: Comparable {
-    public static func < (lhs: Belief, rhs: Belief) -> Bool {
-        let c = choice(j1: lhs.judgement, j2: rhs.judgement)
-        return c.statement == rhs.judgement.statement
     }
 }

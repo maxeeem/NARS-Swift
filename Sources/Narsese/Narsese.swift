@@ -1,4 +1,3 @@
-import NAL
 
 public struct Narsese {
     public let parser: Parser

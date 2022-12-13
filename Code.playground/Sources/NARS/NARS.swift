@@ -1,4 +1,3 @@
-import NAL
 import Dispatch
 
 public enum Sentence: Codable {
@@ -115,16 +114,10 @@ public final class NARS: Item {
 //                var recent: [Judgement] = []
                 
                 /// JUDGEMENT
-                if case .judgement(var j) = s {
+                if case .judgement(let j) = s {
                     // set time stamp if not yet set
                     if j.timestamp == 0 {
-                        let now = DispatchWallTime.now()
-                        if j.derivationPath.count == 1 { // also update derivationPath
-                            j = Judgement(j.statement, j.truthValue, tense: j.tense, timestamp: now.rawValue)
-                        } else {
-                            j.timestamp = now.rawValue
-                        }
-                        s = .judgement(j) // update original sentence
+                        s = .judgement(.updateTimestamp(j))
                     }
                     // process in recent memory
                     DispatchQueue.global().async {
@@ -152,18 +145,12 @@ public final class NARS: Item {
                         } else {
                             /// ANSWER
                             self.process(.judgement(answer), recurse: false, userInitiated: true)
-//                       } else {
-//                           print("ANSWER", answer)
                        }
                     }
                 }
                 
                 /// SENTENCE
                 self.process(s, userInitiated: true) // process in main memory
-                
-//                for el in recent { // add stable patterns from recent memory
-//                    self.process(.judgement(el), recurse: false, userInitiated: true)
-//                }
             }
             
             /// PAUSE
@@ -207,12 +194,6 @@ public final class NARS: Item {
 }
 
 // MARK: Private
-
-extension NARS: Equatable {
-    public static func == (lhs: NARS, rhs: NARS) -> Bool {
-        lhs.name == rhs.name
-    }
-}
 
 extension NARS {
     fileprivate func process(recent j: Judgement) -> [Judgement] {
@@ -330,13 +311,8 @@ extension NARS {
         lastPerformance = now
             
         var input = input // set time stamp if not yet set
-        if case .judgement(var j) = input, j.timestamp == 0 {
-            if j.derivationPath.count == 1 { // also update derivationPath
-                input = .judgement(j.statement + (j.truthValue.f, j.truthValue.c, now.rawValue))
-            } else {
-                j.timestamp = now.rawValue
-                input = .judgement(j)
-            }
+        if case .judgement(let j) = input, j.timestamp == 0 {
+            input = .judgement(.updateTimestamp(j))
         }
 
         output(label)
