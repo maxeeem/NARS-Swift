@@ -1,16 +1,9 @@
-/// MEM protocol to abstract Bag and WrappedBag
-//protocol MEM {
-//    func consider(_ s: Sentence, derive: Bool) -> [Judgement]
-//}
-//
-//extension Bag<Concept>: MEM {}
-//extension WrappedBag<Concept>: MEM {}
 
 extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
         case .judgement(let j): return consider(j, derive: derive)
-        case .goal: return [] // TODO: finish implementation
+        case .goal(let g): return consider(g, derive: derive) // TODO: finish implementation
         case .question(let q): return consider(q, derive: derive)
         case .cycle: return []
         }
@@ -40,6 +33,11 @@ extension AbstractBag where I == Concept {
                 return []
             }
         }
+    }
+    func consider(_ g: Goal, derive: Bool) -> [Judgement] {
+        // TODO: change to predictive implication
+        let q: Question = ("?" => g.statement)-?
+        return consider(q, derive: derive)
     }
 }
 

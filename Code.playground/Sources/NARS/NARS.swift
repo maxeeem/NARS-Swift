@@ -3,6 +3,7 @@ public enum Sentence {
     case judgement(Judgement)
     case goal(Goal)
     case question(Question)
+
     case cycle(Int)
 }
 
@@ -351,8 +352,27 @@ extension NARS {
                 derivedBuffer.enqueue(derived)
             }
             
-        case .goal:
-            break // TODO: finish implementation
+        case .goal(let g):
+            // TODO: take desireValue into account
+            if let winner = derived.first,
+               case .statement(let s, let c, let p) = winner.statement,
+               // TODO: change to predictive implication
+               case .operation = s, c == .implication, p == g.statement {
+                output(".  🤖 \(s)")
+                
+            } else if recurse { // switch to imagination flow
+//                if userInitiated && !dreaming {
+//                    self.dreaming = true
+//                }
+//                
+//                iqueue.async {
+//                    imagine()
+//                    // re-process goal
+//                    self.process(.goal(g))
+//                }
+            } else {
+                output("\t(3)I don't know 🤷‍♂️")
+            }
             
         case .question(let question):
             // consider a question

@@ -1,3 +1,4 @@
+import NAL
 
 public extension Term {
     init(_ s: String, parser: Narsese) throws {

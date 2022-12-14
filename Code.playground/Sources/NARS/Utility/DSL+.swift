@@ -1,3 +1,4 @@
+import NAL
 
 // convenience initializer for Belief
 public func +(_ j: Judgement, p: Double) -> Belief {

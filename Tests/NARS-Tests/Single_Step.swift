@@ -330,6 +330,32 @@ class Single_Step: XCTestCase {
         outputMustContain("⏱ anticipate <S>.")// %1.00;0.81%")
     }
     
+    func testOp() {
+        nars.perform(
+            ||("G")-!,
+            (("ball" --> "[left]") >>|=> (.operation("move", ["[left]"]) >>|=> "G"))-*,
+            ||("ball" --> "[left]")-*,
+            .cycle
+        )
+        outputMustContain("🤖 ^move [left]")
+    }
+    
+    func testMultipleQuestions() {
+        nars.perform(
+            ("bird" --> "animal")-*,
+            ("dog" --> "person")-?,
+            .cycle,
+            ("o" --> "x")-?,
+            ("bird" --> "[flying]")-*,
+            ("bird" --> "animal")-?,
+            .cycle,
+            ("dog" --> "person")-*,
+            .cycle
+        )
+        outputMustContain("💡 <bird -> animal>.")
+        outputMustContain("💡 <dog -> person>. %1.00;0.90%.")
+    }
+    
     func testMultiStep() {
         nars.perform(
             ("a" --> "b")-*,

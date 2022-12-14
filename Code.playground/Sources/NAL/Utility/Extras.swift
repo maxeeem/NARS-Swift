@@ -121,7 +121,7 @@ extension Term: CustomStringConvertible {
                 return (word == nil) ? "?" : "?\(word!)"
             }
         case .operation(let name, let terms):
-            return name + terms.map{$0.description}.joined(separator: " ")
+            return "^\(name) " + terms.map{$0.description}.joined(separator: " ")
         }
     }
 }

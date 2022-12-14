@@ -6,13 +6,7 @@ final class Parsing_Tests: XCTestCase {
     var narsese: Narsese!
     
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
         narsese = try Narsese()
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        narsese = nil
     }
 
     func testExample() throws {

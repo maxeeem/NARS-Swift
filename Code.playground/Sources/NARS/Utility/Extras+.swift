@@ -1,3 +1,4 @@
+import NAL
 
 extension Question {
     public init(_ f: @autoclosure () -> Statement) {
