@@ -15,11 +15,11 @@ extension Term {
     func logic() -> LogicTerm {
         switch self {
         case .symbol:
-            return LogicValue(self)
+            return self
         case .compound(let c, let terms):
-            return List.cons(LogicValue(c), terms.toList())
+            return List.cons(c, terms.toList())
         case .statement(let s, let c, let p):
-            return List.cons(LogicValue(c.atemporal), List.cons(s.logic(), List.cons(p.logic(), List.empty)))
+            return List.cons(c, List.cons(s.logic(), List.cons(p.logic(), List.empty)))
             
         case .variable:
             //        switch vari {
@@ -42,8 +42,8 @@ extension Term {
     }
         
     static func from(logic: LogicTerm) -> Term {
-        if let value = logic as? LogicValue<Term> {
-            return value.extract()
+        if let term = logic as? Term {
+            return term
         }
         if let variable = logic as? LogicVariable {
             if let vari = Variable(variable.name) {
@@ -52,17 +52,17 @@ extension Term {
         }
         if let list = logic as? List {
             if case .cons(let head, let tail) = list {
-                if let value = head as? LogicValue<Connector> { // compound
-                    return .compound(value.extract(), process(list: tail))
+                if let connector = head as? Connector { // compound
+                    return .compound(connector, process(list: tail))
                 }
                 
-                if let value = head as? LogicValue<Copula> { // statement
+                if let copula = head as? Copula { // statement
                     let terms = process(list: tail)
-                    return .statement(terms[0], value.extract(), terms[1])
+                    return .statement(terms[0], copula, terms[1])
                 }
                 
-                if let value = head as? LogicValue<String> { // operation
-                    return .operation(value.extract(), process(list: tail))
+                if let op = head as? LogicValue<String> { // operation
+                    return .operation(op.wrapped, process(list: tail))
                 }
             }
         }
@@ -77,5 +77,18 @@ extension Term {
         }
         
         return .NULL // DEFAULT
+    }
+}
+
+extension Term: LogicTerm {}
+
+extension Connector: LogicTerm {}
+
+extension Copula: LogicTerm {
+    func equals(_ other: LogicTerm) -> Bool {
+        if let rhs = (other as? Copula) {
+            return rhs.atemporal == self.atemporal
+        }
+        return false
     }
 }

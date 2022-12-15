@@ -356,8 +356,7 @@ extension NARS {
             // TODO: take desireValue into account
             if let winner = derived.first,
                case .statement(let s, let c, let p) = winner.statement,
-               // TODO: change to predictive implication
-               case .operation = s, c == .implication, p == g.statement {
+               case .operation = s, c == .predictiveImp, p == g.statement {
                 output(".  🤖 \(s)")
                 
             } else if recurse { // switch to imagination flow

@@ -35,8 +35,7 @@ extension AbstractBag where I == Concept {
         }
     }
     func consider(_ g: Goal, derive: Bool) -> [Judgement] {
-        // TODO: change to predictive implication
-        let q: Question = ("?" => g.statement)-?
+        let q: Question = ("?" >>|=> g.statement)-?
         return consider(q, derive: derive)
     }
 }

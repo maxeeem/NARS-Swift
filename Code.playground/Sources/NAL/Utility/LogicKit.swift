@@ -87,7 +87,7 @@ class LogicVariableFactory {
 
 struct LogicValue<T: Equatable>: LogicTerm {
 
-    fileprivate let wrapped: T
+    internal let wrapped: T
 
     init(_ val: T) {
         self.wrapped = val
@@ -101,9 +101,6 @@ struct LogicValue<T: Equatable>: LogicTerm {
         return false
     }
 
-    func extract() -> T {
-        return wrapped
-    }
 }
 
 extension LogicValue: Equatable {
