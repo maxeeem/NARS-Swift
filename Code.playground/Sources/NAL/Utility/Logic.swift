@@ -19,7 +19,7 @@ extension Term {
         case .compound(let c, let terms):
             return List.cons(c, terms.toList())
         case .statement(let s, let c, let p):
-            return List.cons(c, List.cons(s.logic(), List.cons(p.logic(), List.empty)))
+            return List.cons(c, [s, p].toList())
             
         case .variable:
             //        switch vari {

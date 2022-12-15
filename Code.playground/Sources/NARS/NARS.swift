@@ -41,6 +41,7 @@ public final class NARS: Item {
 //    fileprivate var lastPerformance = DispatchWallTime.now()
     
     private let timeProviderMs: () -> UInt32
+    private var operations: [String: ([Term]) -> Void] = [:]
     
     public init(timeProviderMs: @escaping () -> UInt32, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
