@@ -6,6 +6,7 @@ extension Copula {
         case .retrospectiveImp: fallthrough
         case .concurrentImp: return .implication
         case .predictiveEq: fallthrough
+        case .retrospectiveEq: fallthrough
         case .concurrentEq: return .equivalence
         default: return self
         }
@@ -27,7 +28,7 @@ extension Copula {
     var retrospective: Copula {
         switch self {
         case .implication: return .retrospectiveImp
-        case .equivalence: return .predictiveEq
+        case .equivalence: return .retrospectiveEq
         default: return self
         }
     }
@@ -38,6 +39,6 @@ extension Copula {
         self == .predictiveEq || self == .predictiveImp
     }
     var isRetrospective: Bool {
-        self == .retrospectiveImp
+        self == .retrospectiveImp || self == .retrospectiveEq
     }
 }

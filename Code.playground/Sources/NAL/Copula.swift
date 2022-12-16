@@ -14,6 +14,7 @@ public enum Copula: String, CaseIterable, Codable {
     case retrospectiveImp  =  "\\=>"     // 7 - note: second slash is bc escape char in Swift
     case concurrentImp     =   "|=>"     // 7
     case predictiveEq      =  "/<=>"     // 7
+    case retrospectiveEq   =  "\\<=>"    // 7 - note: book describes it as optional
     case concurrentEq      =  "|<=>"     // 7
 }
 
@@ -34,4 +35,5 @@ infix operator >>|=>  : Copula //  "/=>"  future
 infix operator <<|=>  : Copula //  "\=>"   past
 infix operator   |=>  : Copula //  "|=>"  present
 infix operator >>|<=> : Copula //  "/<=>"
+infix operator <<|<=> : Copula //  "\<=>"
 infix operator   |<=> : Copula //  "|<=>"

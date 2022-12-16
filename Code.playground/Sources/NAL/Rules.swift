@@ -219,28 +219,13 @@ public let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Jud
                 
                 if delta < window {
                     //                    print("||", t)
-                    if cc == .implication {
-                        cc = .concurrentImp
-                    } else if cc == .equivalence {
-                        cc = .concurrentEq
-                    }
+                    cc = cc.concurrent
                 } else if forward {
                     //                    print(">>", t)
-                    if cc == .implication {
-                        cc = .predictiveImp
-                    } else if cc == .equivalence {
-                        cc = .predictiveEq
-                    }
+                    cc = cc.predictive
                 } else {
                     //                    print("<<", t)
-                    if cc == .implication {
-                        cc = .retrospectiveImp
-                    } else if cc == .equivalence {
-                        let swap = cs
-                        cs = cp
-                        cc = .predictiveEq
-                        cp = swap
-                    }
+                    cc = cc.retrospective
                 }
                 
                 // use temporal conclusion
@@ -349,11 +334,7 @@ public let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Jud
                     
                     if (j1c.isRetrospective && j2c.isRetrospective) {
                         // both retrospective
-                        if cc == .equivalence {
-                            return .statement(cp, .predictiveEq, cs)
-                        } else {
-                            return .statement(cs, cc.retrospective, cp)
-                        }
+                        return .statement(cs, cc.retrospective, cp)
                     }
                     
                     if (j1c.isConcurrent && j2c.isPredictive)
@@ -369,52 +350,35 @@ public let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Jud
                     }
                     
                     // Complex
+                    var list = [Term]()
                     
                     if j1c.isPredictive && j2c.isRetrospective {
-                        var list = [j1s, j1p]
+                        list = [j1s, j1p]
                         if let idx = list.firstIndex(of: j2s) {
                             list.insert(j2p, at: idx)
                         }
                         if let idx = list.firstIndex(of: j2p) {
                             list.insert(j2s, at: idx+1)
                         }
-                        if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
-                            if cpi > csi {
-                                // predicate after subject
-                                return .statement(cs, cc.predictive, cp)
-                            } else {
-                                // predicate before subject
-                                if cc == .equivalence {
-                                    return .statement(cp, .predictiveEq, cs)
-                                } else {
-                                    return .statement(cs, cc.retrospective, cp)
-                                }
-                            }
-                        }
-                    }
-                    
-                    if j2c.isPredictive && j1c.isRetrospective {
-                        var list = [j2s, j2p]
+                    } else if j2c.isPredictive && j1c.isRetrospective {
+                        list = [j2s, j2p]
                         if let idx = list.firstIndex(of: j1s) {
                             list.insert(j1p, at: idx)
                         }
                         if let idx = list.firstIndex(of: j1p) {
                             list.insert(j1s, at: idx+1)
                         }
-                        if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
-                            if cpi > csi {
-                                // predicate after subject
-                                return .statement(cs, cc.predictive, cp)
-                            } else {
-                                // predicate before subject
-                                if cc == .equivalence {
-                                    return .statement(cp, .predictiveEq, cs)
-                                } else {
-                                    return .statement(cs, cc.retrospective, cp)
-                                }
-                            }
-                        }
                     }
+                    
+                    if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
+                        if cpi > csi {
+                            // predicate after subject
+                            return .statement(cs, cc.predictive, cp)
+                        } else {
+                            // predicate before subject
+                            return .statement(cs, cc.retrospective, cp)
+                        }
+                    }                    
                 }
             }
 //            if result == (("John" * "key_101") --> "hold") {
