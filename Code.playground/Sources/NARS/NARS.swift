@@ -270,7 +270,7 @@ extension NARS {
                 Rules.allCases.flatMap { r in
                     r.apply((b.judgement, j))
                 }.forEach {
-                    if var el = $0 {
+                    if let el = $0 {
                         //                    if el.timestamp == 0 {
                         //                        let now = DispatchWallTime.now()
                         //                        if el.derivationPath.count == 1 { // also update derivationPath

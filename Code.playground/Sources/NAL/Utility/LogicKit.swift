@@ -44,8 +44,8 @@ struct LogicVariable: LogicTerm {
 
 extension LogicVariable: Hashable {
 
-    var hashValue: Int {
-        return self.name.hashValue
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
     }
 
     static func == (left: LogicVariable, right: LogicVariable) -> Bool {

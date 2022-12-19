@@ -21,7 +21,7 @@ extension Term {
         case .statement(let s, let c, let p):
             return List.cons(LogicValue(c.atemporal), List.cons(s.logic(), List.cons(p.logic(), List.empty)))
             
-        case .variable(let vari):
+        case .variable:
             //        switch vari {
             //        case .independent(let name):
             //            return List.cons(LogicValue("var-ind"), List.cons(LogicVariable(named: name), List.empty))
