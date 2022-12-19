@@ -10,22 +10,22 @@ Assumption of Insufficient Knowledge and Resources, or **AIKR**, is the fundamen
 TBD
 
 # Overview 
-The system consists of two parts – the [logic part]() and the [control part](), with the latter dependent on the logic.
+The system consists of two parts – the [logic part](Code.playground/Sources/NAL) and the [control part](/Code.playground/Sources/NARS), with the latter dependent on the logic.
 
-"The representation language of NARS is called *Narsese*, which serves both the roles of internal representation and external communication for NARS." In [NARS-Swift](), we embed Narsese in the programming language of the system (Swift) as a DSL or Domain Specific Language, so statements in Swift Narsese dialect are both valid Narsese *and* valid Swift code. 
+"The representation language of NARS is called *Narsese*, which serves both the roles of internal representation and external communication for NARS." In [NARS-Swift](https://github.com/maxeeem/NARS-Swift), we embed Narsese in the programming language of the system (Swift) as a DSL or Domain Specific Language, so statements in Swift Narsese dialect are both valid Narsese *and* valid Swift code. 
 
 ## Logic
-Statements in Narsese represent relations between terms, and inference rules are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula]() connects two terms to form a `statement`, and you can use a [Connector]() to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
+Statements in Narsese represent relations between terms, and inference rules are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](Code.playground/Sources/NAL/Copula.swift) connects two terms to form a `statement`, and you can use a [Connector](Code.playground/Sources/NAL/Narsese.swift#L14) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
 
 ```[narsese in swift]```
 
-Several [extensions]() to the language allow writing Narsese statements like `(bird --> animal)`, which are simultaneously valid Swift code. Having embedded Narsese as a DSL in Swift, it is now possible to express the [inference rules]() of NAL directly. For example, one of the deduction rules is `(M --> P, S --> M, S --> P)`.
+Several [extensions](Code.playground/Sources/NAL/DSL.swift) to the language allow writing Narsese statements like `(bird --> animal)`, which are simultaneously valid Swift code. Having embedded Narsese as a DSL in Swift, it is now possible to express the [inference rules](Code.playground/Sources/NAL/Inference.swift#L107) of NAL directly. For example, one of the deduction rules is `(M --> P, S --> M, S --> P)`.
 
 ```[inference rules]```
 
-During inference, several [extensions]() transform Narsese into logic terms, and the solver produces a set of substitutions matching the rule’s pattern. Later, we reverse the process to obtain Narsese statements from logic terms. Another DSL called [miniKanren]() helps decide which rules apply to any two statements. It is a relational programming language designed to be small and embeddable, and in NARS-Swift, we use Dimitri Racordon’s implementation.
+During inference, several [extensions](Code.playground/Sources/NAL/Utility/Logic.swift) transform Narsese into logic terms, and the solver produces a set of substitutions matching the rule’s pattern. Later, we reverse the process to obtain Narsese statements from logic terms. Another DSL called [miniKanren](https://github.com/kyouko-taiga/SwiftKanren) helps decide which rules apply to any two statements. It is a relational programming language designed to be small and embeddable, and in NARS-Swift, we use Dimitri Racordon’s implementation.
 
-For external communication, it is often convenient to express Narsese as a string of text. While technically not part of the core system, that functionality is highly desirable and is implemented as part of NARS+, extending the system’s capabilities. A third-party library [Covfefe]() by Palle Klewitz translates Narsese [grammar]() defined in Backus-Naur Form into an Abstract Syntax Tree (AST) which we then convert to Narsese data structures. 
+For external communication, it is often convenient to express Narsese as a string of text. While technically not part of the core system, that functionality is highly desirable and is implemented as part of NARS+, extending the system’s capabilities. A third-party library [Covfefe](https://github.com/palle-k/Covfefe) by Palle Klewitz translates Narsese [grammar](Sources/Narsese/Narsese.swift) defined in Backus-Naur Form into an Abstract Syntax Tree (AST) which we then convert to Narsese data structures. 
 
 ## Control
 TBD
