@@ -1,4 +1,4 @@
-# [NARS-Swift <sup>![gh](https://octicons.glitch.me/mark-github.svg)</sup>](https://github.com/maxeeem/NARS-Swift)
+# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/docs/assets/mark-github.svg)</sup>](https://github.com/maxeeem/NARS-Swift)
 
 Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com/us/book/non-axiomatic-logic-a-model-of-intelligent-reasoning/id666735302).
 
@@ -17,7 +17,7 @@ The system consists of two parts – the [logic part](https://github.com/maxeeem
 ## Logic
 Statements in Narsese represent relations between terms, and inference rules are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Copula.swift) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
 
-```[narsese in swift]```
+![NAL-1](https://github.com/maxeeem/NARS-Swift/docs/assets/Narsese_nal1.png)
 
 Several [extensions](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/DSL.swift) to the language allow writing Narsese statements like `(bird --> animal)`, which are simultaneously valid Swift code. Having embedded Narsese as a DSL in Swift, it is now possible to express the [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) of NAL directly. For example, one of the deduction rules is `(M --> P, S --> M, S --> P)`.
 
