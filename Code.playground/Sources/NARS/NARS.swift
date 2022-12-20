@@ -1,6 +1,6 @@
 import Dispatch
 
-public enum Sentence: Codable {
+public enum Sentence {
     case judgement(Judgement)
     case goal(Goal)
     case question(Question)

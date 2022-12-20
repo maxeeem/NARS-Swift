@@ -4,7 +4,7 @@ public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? //
 
 public typealias Infer = (Judgement) -> Judgement? /// Single-premise rules
 
-public enum Rules: String, CaseIterable, Codable {
+public enum Rules: String, CaseIterable {
     // NAL-1
     case deduction
     case induction

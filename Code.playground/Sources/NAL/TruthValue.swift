@@ -1,5 +1,5 @@
 
-public struct TruthValue: Hashable, Codable {
+public struct TruthValue: Hashable {
     public let frequency: Double
     public let confidence: Double
     

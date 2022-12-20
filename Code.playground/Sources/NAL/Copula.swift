@@ -1,5 +1,5 @@
 
-public enum Copula: String, CaseIterable, Codable {
+public enum Copula: String, CaseIterable {
     //// Primary
     case inheritance       =    "->" // NAL 1
     case similarity        =   "<–>"     // 2

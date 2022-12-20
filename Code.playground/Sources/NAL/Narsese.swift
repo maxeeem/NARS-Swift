@@ -3,7 +3,7 @@
 
 public typealias Statement = Term
 
-public indirect enum Term: Hashable, Codable {
+public indirect enum Term: Hashable {
     case symbol(String) /// <word>
     case compound(Connector, [Term])
     case statement(Term, Copula, Term)
@@ -11,7 +11,7 @@ public indirect enum Term: Hashable, Codable {
     case operation(String, [Term])
 }
 
-public enum Connector: String, CaseIterable, Codable {
+public enum Connector: String, CaseIterable {
     /// intensional set  Ω
     case intSet = "[]"
     /// extensional set U
@@ -47,13 +47,13 @@ public enum Connector: String, CaseIterable, Codable {
     case p = ";"
 }
 
-public enum Variable: Hashable, Codable {
+public enum Variable: Hashable {
     case independent(String)
     case dependent(String?, [String])
     case query(String?)
 }
 
-public struct Judgement: Hashable, Codable {
+public struct Judgement: Hashable {
     public let statement: Statement
     public let truthValue: TruthValue
     
@@ -70,24 +70,24 @@ public struct Judgement: Hashable, Codable {
 
 public typealias DesireValue = TruthValue
 
-public struct Goal: Hashable, Codable {
+public struct Goal: Hashable {
     public let statement: Statement
     public let desireValue: DesireValue
 }
 
-public enum Quest: Hashable, Codable {
+public enum Quest: Hashable {
     case truth
     case desire
 }
 
-public struct Question: Hashable, Codable {
+public struct Question: Hashable {
     public let statement: Statement
     public let type: Quest
     
     public let tense: Tense?
 }
 
-public enum Tense: String, Hashable, Codable {
+public enum Tense: String, Hashable {
     case past    = "<<"
     case present = "||"
     case future  = ">>"
