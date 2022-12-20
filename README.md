@@ -41,7 +41,7 @@ public enum Copula {
 }
 ```
 
-Several [extensions](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/DSL.swift) to the language allow writing Narsese statements like `(bird --> animal)`, which are simultaneously valid Swift code. Having embedded Narsese as a DSL in Swift, it is now possible to express the inference rules of NAL directly. For example, one of the deduction rules is `(M --> P, S --> M |- S --> P)`.
+Several [extensions](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/DSL.swift) to the language allow writing Narsese statements like `(bird --> animal)`, which are simultaneously valid Swift code. Having embedded Narsese as a DSL in Swift, it is now possible to express the inference rules of NAL directly.
 
 <img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_rules.png?raw=true" width="450">
 
