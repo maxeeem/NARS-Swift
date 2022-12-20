@@ -1,3 +1,12 @@
+#if os(Linux)
+  import Glibc
+  typealias dispatch_time_t = UInt64
+#elseif os(Windows)
+  import CRT
+#else
+  import Darwin
+#endif
+
 import Dispatch
 
 public enum Sentence {
