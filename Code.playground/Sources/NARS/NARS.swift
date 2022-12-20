@@ -2,9 +2,9 @@
   import Glibc
   typealias dispatch_time_t = UInt64
 #elseif os(Windows)
-  import CRT
-#else
-  import Darwin
+  import WinSDK
+  typealias dispatch_time_t = UInt64
+  typealias useconds_t = UInt32
 #endif
 
 import Dispatch
@@ -104,7 +104,7 @@ public final class NARS: Item {
         imagination = WrappedBag(memory)
         recent = Bag<Belief>(4,40)
         cycleQueue.resume()
-        sleep(2)
+        _sleep(2)
     }
     
     public func perform(_ script: Sentence...) { // convenience
@@ -182,7 +182,7 @@ public final class NARS: Item {
         func snooze(_ t: Int) {
             thinking = true
             let ms = 1000 // millisecond
-            usleep(useconds_t(t * ms))
+            _usleep(useconds_t(t * ms))
             thinking = false
         }
         
@@ -463,3 +463,23 @@ extension NARS {
         }
     }
 }
+
+
+// MARK: - Compatibility
+
+func _sleep(_ t: UInt32) {
+    #if os(Windows)
+      Sleep(t * 1000)
+    #else
+      sleep(t)
+    #endif
+}
+
+func _usleep(_ t: UInt32) {
+    #if os(Windows)
+      Sleep(t)
+    #else
+      usleep(t)
+    #endif
+}
+

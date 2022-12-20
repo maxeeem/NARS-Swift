@@ -7,7 +7,40 @@ Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com
 Assumption of Insufficient Knowledge and Resources, or **AIKR**, is the fundamental feature of NARS — a Non-Axiomatic Reasoning System. 
 
 # Quickstart
-TBD
+You need to install Swift for your [platform](https://www.swift.org/getting-started/). Supported platforms include macOS, Linux, and Windows. For ARM-based devices like Raspberry Pi, you can use the [Swiftlang.xyz](http://swiftlang.xyz) repo.
+
+Once you have the Swift runtime installed, clone [this repo](https://github.com/maxeeem/NARS-Swift) and type 
+
+```swift run``` 
+
+This will launch the default `nar` executable.
+
+#### NARS-Swift can be used in a variety of ways.
+
+You can build `nar` with
+
+```swift build```
+
+Compiled binary is located in the `/.build` folder.
+
+If you have a Mac or an iPad, the easiest way to get started is to run the included `Code.playground` in [Swift Playgrounds](https://www.apple.com/swift/playgrounds/) app. It will allow you to experiment with the system and explore its capabilities without needing to install anything.
+
+For more advanced uses, add the following to your Package.swift file's dependencies:
+
+```
+.package(url: "https://github.com/maxeeem/NARS-Swift", from: "0.1.0")
+```
+
+There are four main modules included in [this repo](https://github.com/maxeeem/NARS-Swift): 
+
+`import NAL` if you want just the logic.
+
+`import NARS` if you want the complete system.
+
+`import Narsese` for converting strings of text into Narsese terms.
+
+Finally, there is `nar` command line tool that puts all of the above packages together.
+
 
 # Overview 
 The system consists of two parts – the [logic part](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL) and the [control part](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NARS), with the latter dependent on the logic.
@@ -15,7 +48,7 @@ The system consists of two parts – the [logic part](https://github.com/maxeeem
 "The representation language of NARS is called *Narsese*, which serves both the roles of internal representation and external communication for NARS." In [NARS-Swift](https://github.com/maxeeem/NARS-Swift), we embed Narsese in the programming language of the system (Swift) as a DSL or Domain Specific Language, so statements in Swift Narsese dialect are both valid Narsese *and* valid Swift code. 
 
 ## Logic
-Statements in [Narsese](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift) represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Copula.swift) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
+In [Narsese](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift), statements represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Copula.swift) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
 
 <img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_nal1.png?raw=true" width="340">
 
