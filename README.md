@@ -28,7 +28,7 @@ public indirect enum Term {
 }
 ```
 
-<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_symbols.png?raw=true" width="400">
+<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_symbols.png?raw=true" width="410">
 
 ```swift
 public enum Copula {
@@ -43,7 +43,7 @@ public enum Copula {
 
 Several [extensions](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/DSL.swift) to the language allow writing Narsese statements like `(bird --> animal)`, which are simultaneously valid Swift code. Having embedded Narsese as a DSL in Swift, it is now possible to express the inference rules of NAL directly.
 
-<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_rules.png?raw=true" width="450">
+<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_rules.jpeg?raw=true" width="450">
 
 ```swift
 ...
@@ -60,7 +60,7 @@ During inference, several [extensions](https://github.com/maxeeem/NARS-Swift/blo
 
 For external communication, it is often convenient to express Narsese as a string of text. While technically not part of the core system, that functionality is highly desirable and is implemented as part of NARS+, extending the system’s capabilities. A third-party library [Covfefe](https://github.com/palle-k/Covfefe) by Palle Klewitz translates Narsese [grammar](https://github.com/maxeeem/NARS-Swift/blob/main/Sources/Narsese/Narsese.swift) defined in Backus-Naur Form into an Abstract Syntax Tree (AST) which we then convert to Narsese data structures. 
 
-<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_grammar.png?raw=true" width="600">
+<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_grammar.jpeg?raw=true" width="500">
 
 ## Control
 TBD
