@@ -15,7 +15,10 @@ Once you have the Swift runtime installed, clone [this repo](https://github.com/
 
 This will launch the default `nar` executable.
 
-### NARS-Swift can be used in a variety of ways.
+### Use cases
+There are three primary ways to use NARS-Swift.
+
+#### Command-line tool
 
 You can build `nar` with
 
@@ -23,7 +26,11 @@ You can build `nar` with
 
 Compiled binary is located in the `/.build` folder.
 
+#### Playground
+
 If you have a Mac or an iPad, the easiest way to get started is to run the included `Code.playground` in [Swift Playgrounds](https://www.apple.com/swift/playgrounds/) app. It will allow you to experiment with the system and explore its capabilities without needing to install anything.
+
+#### Swift Package Manager
 
 For more advanced uses, add the following dependency to your Package.swift file:
 
@@ -31,7 +38,7 @@ For more advanced uses, add the following dependency to your Package.swift file:
 .package(url: "https://github.com/maxeeem/NARS-Swift", from: "0.1.0")
 ```
 
-There are four main modules included in [this repo](https://github.com/maxeeem/NARS-Swift): 
+There are four modules to choose from depending on your use case.
 
 `import NAL` if you want just the logic.
 
@@ -39,7 +46,7 @@ There are four main modules included in [this repo](https://github.com/maxeeem/N
 
 `import Narsese` for converting strings of text into Narsese terms.
 
-Finally, there is `nar` command line tool that puts all of the above packages together.
+Finally, there is `nar` command line tool that puts all of the above modules together.
 
 
 # Overview 
