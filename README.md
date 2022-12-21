@@ -17,10 +17,26 @@ Once you have the Swift runtime installed, clone [this repo](https://github.com/
 
 This will launch the default `nar` executable.
 
-### Use cases
+# Project structure
+```
+NARS-Swift
+├── Code.playground
+│   └── Sources
+│       ├── NAL
+│       └── NARS
+└── Sources
+    ├── Narsese
+    └── nar
+```
+
+# Use cases
 There are three primary ways to use NARS-Swift.
 
-#### Command-line tool
+## Playground
+
+If you have a Mac or an iPad, the easiest way to get started is to run the included `Code.playground` in [Swift Playgrounds](https://www.apple.com/swift/playgrounds/) app. It will allow you to experiment with the system and explore its capabilities without needing to install anything.
+
+## Command-line tool
 
 You can build `nar` with
 
@@ -28,11 +44,7 @@ You can build `nar` with
 
 Compiled binary is located in the `/.build` folder.
 
-#### Playground
-
-If you have a Mac or an iPad, the easiest way to get started is to run the included `Code.playground` in [Swift Playgrounds](https://www.apple.com/swift/playgrounds/) app. It will allow you to experiment with the system and explore its capabilities without needing to install anything.
-
-#### Swift Package Manager
+## Swift Package Manager
 
 For more advanced uses, add the following dependency to your Package.swift file:
 
