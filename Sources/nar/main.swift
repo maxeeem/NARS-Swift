@@ -11,6 +11,7 @@ import Narsese
 
 func main() {
     var cycle = false
+    var dialect = Dialect.swift // TODO: accept as parameter
     
     guard CommandLine.arguments.count <= 2 else {
         print("Usage: nar [-c]")
@@ -24,7 +25,7 @@ func main() {
     
     do {
         let nars = NARS(cycle: cycle)
-        let narsese = try Narsese.init()
+        let narsese = try Narsese(dialect: dialect)
         
         print("NARS started. Type 'q' to exit.\n")
         print("<task>          \n    execute narsese  - <bird -> animal>.")
@@ -94,7 +95,7 @@ func readInput() -> String? {
     var stripped = ""
     for c in line {
         // remove arrow key presses
-        if !["", ""].contains(c) {
+        if !["", "", "", ""].contains(c) {
             stripped.append(c)
         }
     }
