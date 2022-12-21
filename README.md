@@ -1,3 +1,5 @@
+![one](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
+
 # [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift)
 
 Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com/us/book/non-axiomatic-logic-a-model-of-intelligent-reasoning/id666735302).
