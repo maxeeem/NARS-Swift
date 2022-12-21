@@ -1,3 +1,22 @@
+precedencegroup Copula { // priority
+    higherThan: ComparisonPrecedence
+}
+
+infix operator -->    : Copula // "->"
+infix operator <->    : Copula
+infix operator  =>    : Copula
+infix operator <=>    : Copula
+
+infix operator •->    : Copula
+infix operator  ->•   : Copula
+infix operator •->•   : Copula
+
+infix operator >>|=>  : Copula //  "/=>"  future
+infix operator <<|=>  : Copula //  "\=>"   past
+infix operator   |=>  : Copula //  "|=>"  present
+infix operator >>|<=> : Copula //  "/<=>"
+infix operator <<|<=> : Copula //  "\<=>"
+infix operator   |<=> : Copula //  "|<=>"
 
 // convenience initializer for Judgement
 public func + (_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
