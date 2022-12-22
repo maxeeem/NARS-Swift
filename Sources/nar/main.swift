@@ -11,7 +11,7 @@ import Narsese
 
 func main() {
     var cycle = false
-    var dialect = Dialect.swift // TODO: accept as parameter
+    let dialect = Dialect.swift // TODO: accept as parameter
     
     guard CommandLine.arguments.count <= 2 else {
         print("Usage: nar [-c]")
@@ -23,63 +23,66 @@ func main() {
         cycle = true
     }
     
+    let nars = NARS(cycle: cycle)
+    
+    let narsese: Narsese
+    
     do {
-        let nars = NARS(cycle: cycle)
-        let narsese = try Narsese(dialect: dialect)
-        
-        print("NARS started. Type 'q' to exit.\n")
-        print("<task>          \n    execute narsese  - <bird -> animal>.")
-        print(":alias <task>   \n    create new alias - :bird <bird -> animal>.")
-        print("$alias          \n    execute an alias - $bird [will execute] <bird -> animal>.")
-        print("reset           \n    perform system reset")
-        print("10              \n    cycle for 10 seconds\n")
-        print("Ready for input \n")
-        
-        var aliases: [String: Sentence] = [:]
-        
-        while let input = readInput() {
-            if input == "q" {
-                print("Done.")
-                exit(0)
-            }
-            if input == "reset" {
-                nars.reset()
-                print("Ready for input \n")
-                continue
-            }
-            if input.isEmpty {
-                continue // return key pressed
-            }
-            if input.hasPrefix(":") {
-                let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
-                let task = input.suffix(from: input.index(after: alias.endIndex))
-                if !alias.isEmpty, !task.isEmpty,
-                    let s = Sentence(String(task), parser: narsese) {
-                    aliases[String(alias)] = s
-                    print("\(alias) := \(task)")
-                } else {
-                    print("invalid action: \(task)")
-                }
-                continue // new alias
-            }
-            if input.hasPrefix("$") {
-                let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
-                if let task = aliases[String(alias)] {
-                    nars.perform(task)
-                } else {
-                    print("invalid alias: \(alias)")
-                }
-                continue // run alias
-            }
-            guard let s = Sentence(input, parser: narsese) else {
-                print("invalid query: \(input)")
-                continue
-            }
-            nars.perform(s)
-        }
+        narsese = try Narsese(dialect: dialect)
     } catch {
         print(error)
         exit(1)
+    }
+    
+    print("NARS started. Type 'q' to exit.\n")
+    print("<task>          \n    execute narsese  - <bird -> animal>.")
+    print(":alias <task>   \n    create new alias - :bird <bird -> animal>.")
+    print("$alias          \n    execute an alias - $bird [will execute] <bird -> animal>.")
+    print("reset           \n    perform system reset")
+    print("10              \n    cycle for 10 seconds\n")
+    print("Ready for input \n")
+    
+    var aliases: [String: Sentence] = [:]
+    
+    while let input = readInput() {
+        if input == "q" {
+            print("Done.")
+            exit(0)
+        }
+        if input == "reset" {
+            nars.reset()
+            print("Ready for input \n")
+            continue
+        }
+        if input.isEmpty {
+            continue // return key pressed
+        }
+        if input.hasPrefix(":") {
+            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
+            let task = input.suffix(from: input.index(after: alias.endIndex))
+            if !alias.isEmpty, !task.isEmpty,
+               let s = Sentence(String(task), parser: narsese) {
+                aliases[String(alias)] = s
+                print("\(alias) := \(task)")
+            } else {
+                print("invalid action: \(task)")
+            }
+            continue // new alias
+        }
+        if input.hasPrefix("$") {
+            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
+            if let task = aliases[String(alias)] {
+                nars.perform(task)
+            } else {
+                print("invalid alias: \(alias)")
+            }
+            continue // run alias
+        }
+        guard let s = Sentence(input, parser: narsese) else {
+            print("invalid query: \(input)")
+            continue
+        }
+        nars.perform(s)
     }
 }
 

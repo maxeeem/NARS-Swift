@@ -2,26 +2,11 @@ public struct Narsese {
     public let parser: Parser
     public let dialect: Dialect
     
-    public init(dialect: Dialect = .swift) throws {
+    public init(dialect: Dialect) throws {
         self.dialect = dialect
 
-        let allValid: Bool = {
-            // TODO: check copulas for possible conflicts
-            let connectors = Connector.allCases.flatMap { $0.variants[dialect]! }
-            let connectorsValid = (connectors.count == Set(connectors).count)
-            if !connectorsValid {
-                print("ERROR: Duplicate connectors for Narsese dialect `\(dialect)`")
-                print(connectors)
-            }
-            return connectorsValid
-        }()
-
-        guard allValid else {
-            enum DialectParsingError: Error {
-                case containsDuplicates
-            }
-            throw DialectParsingError.containsDuplicates
-        }
+        try Connector.validate(dialect)
+        // TODO: perform validation for copulas
         
         let ebnf = Narsese.grammar(dialect)
         let grammar = try Grammar(ebnf: ebnf, start: "exp")
@@ -58,7 +43,7 @@ public struct Narsese {
         ;
         
         compound-infix   = '(', term, seq, (connector|connector-diff), seq, term, ')';
-        compound-neg     = '(', (\(ç.n.all(dialect))), (seq|space), term, ')';
+        compound-neg     = '(', \(ç.neg(dialect)), (seq|space), term, ')';
         
         compound-image   = '(',
                                ('/' | '\\\\'), seq, term,
@@ -68,9 +53,9 @@ public struct Narsese {
                            ,')'
         ;
         
-        connector        = \([ç.Ω, .U, .x, .c, .d, .s, .p].map({$0.all(dialect)}).joined(separator: "|"));
+        connector        = \(ç.primary(dialect));
         
-        connector-diff   = \([ç.l, .ø].map({$0.all(dialect)}).joined(separator: "|"));
+        connector-diff   = \(ç.diff(dialect));
         
         terms            = term, [{seq-comma, term}|{seq-space, term}];
         

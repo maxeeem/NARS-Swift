@@ -7,7 +7,7 @@ final class Parsing_Tests: XCTestCase {
     
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        narsese = try Narsese()
+        narsese = try Narsese(dialect: .swift)
     }
 
     override func tearDownWithError() throws {
@@ -23,13 +23,6 @@ final class Parsing_Tests: XCTestCase {
         // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
         let term = try Term.init("<a -> b>", parser: narsese)
         XCTAssertEqual(term, ("a" --> "b"))
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
     }
 
 }
