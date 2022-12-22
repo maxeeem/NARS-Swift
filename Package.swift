@@ -39,7 +39,8 @@ let package = Package(
             dependencies: ["NAL"]),
         .executableTarget(
             name: "nar",
-            dependencies: ["NARS", "Narsese"]),
+            dependencies: ["NARS", "Narsese"],
+            resources: [.copy("Commander/LICENSE")]),
         
         .testTarget(
             name: "NARS-Tests",
