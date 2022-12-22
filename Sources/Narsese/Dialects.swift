@@ -1,4 +1,4 @@
-public enum Dialect {
+public enum Dialect: String, CaseIterable {
     case canonical, ona, opennars, swift
 }
 

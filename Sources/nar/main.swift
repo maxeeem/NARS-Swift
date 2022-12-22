@@ -9,19 +9,12 @@
 import NARS
 import Narsese
 
-func main() {
-    var cycle = false
-    let dialect = Dialect.swift // TODO: accept as parameter
-    
-    guard CommandLine.arguments.count <= 2 else {
-        print("Usage: nar [-c]")
-        print("Pass optional -c flag to enable cycling")
-        exit(1)
-    }
-    
-    if CommandLine.arguments.last == "-c" {
-        cycle = true
-    }
+import Commander
+
+let main = command(
+    Flag("cycle", flag: "c", description: "Enable cycling"),
+    Option("dialect", default: Dialect.swift, description: "Narsese Dialect \(Dialect.allCases)")
+) { cycle, dialect in
     
     let nars = NARS(cycle: cycle)
     
@@ -36,13 +29,13 @@ func main() {
     
     print("NARS started. Type 'q' to exit.\n")
     print("<task>          \n    execute narsese  - <bird -> animal>.")
-    print(":alias <task>   \n    create new alias - :bird <bird -> animal>.")
-    print("$alias          \n    execute an alias - $bird [will execute] <bird -> animal>.")
+//    print(":alias <task>   \n    create new alias - :bird <bird -> animal>.")
+//    print("$alias          \n    execute an alias - $bird [will execute] <bird -> animal>.")
     print("reset           \n    perform system reset")
     print("10              \n    cycle for 10 seconds\n")
     print("Ready for input \n")
     
-    var aliases: [String: Sentence] = [:]
+//    var aliases: [String: Sentence] = [:]
     
     while let input = readInput() {
         if input == "q" {
@@ -57,27 +50,27 @@ func main() {
         if input.isEmpty {
             continue // return key pressed
         }
-        if input.hasPrefix(":") {
-            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
-            let task = input.suffix(from: input.index(after: alias.endIndex))
-            if !alias.isEmpty, !task.isEmpty,
-               let s = Sentence(String(task), parser: narsese) {
-                aliases[String(alias)] = s
-                print("\(alias) := \(task)")
-            } else {
-                print("invalid action: \(task)")
-            }
-            continue // new alias
-        }
-        if input.hasPrefix("$") {
-            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
-            if let task = aliases[String(alias)] {
-                nars.perform(task)
-            } else {
-                print("invalid alias: \(alias)")
-            }
-            continue // run alias
-        }
+//        if input.hasPrefix(":") {
+//            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
+//            let task = input.suffix(from: input.index(after: alias.endIndex))
+//            if !alias.isEmpty, !task.isEmpty,
+//               let s = Sentence(String(task), parser: narsese) {
+//                aliases[String(alias)] = s
+//                print("\(alias) := \(task)")
+//            } else {
+//                print("invalid action: \(task)")
+//            }
+//            continue // new alias
+//        }
+//        if input.hasPrefix("$") {
+//            let alias = input.dropFirst().prefix(while: { !$0.isWhitespace })
+//            if let task = aliases[String(alias)] {
+//                nars.perform(task)
+//            } else {
+//                print("invalid alias: \(alias)")
+//            }
+//            continue // run alias
+//        }
         guard let s = Sentence(input, parser: narsese) else {
             print("invalid query: \(input)")
             continue
@@ -86,7 +79,7 @@ func main() {
     }
 }
 
-main()
+main.run()
 
 
 // MARK: Helpers
@@ -103,4 +96,18 @@ func readInput() -> String? {
         }
     }
     return stripped
+}
+
+extension Dialect: ArgumentConvertible {
+    public init(parser: Commander.ArgumentParser) throws {
+        guard let dialect = Dialect(rawValue: parser.description) else {
+            enum DialectParsingError: Error {
+                case invalidDialect
+            }
+            throw DialectParsingError.invalidDialect
+        }
+        self = dialect
+    }
+    
+    public var description: String { rawValue }
 }
