@@ -9,7 +9,7 @@
 import NARS
 import Narsese
 
-import Commander
+/* import Commander */ /// included as source -- credit: Kyle Fuller
 
 let main = command(
     Flag("cycle", flag: "c", description: "Enable cycling"),
@@ -99,7 +99,7 @@ func readInput() -> String? {
 }
 
 extension Dialect: ArgumentConvertible {
-    public init(parser: Commander.ArgumentParser) throws {
+    public init(parser: ArgumentParser) throws {
         guard let dialect = Dialect(rawValue: parser.description) else {
             enum DialectParsingError: Error {
                 case invalidDialect
