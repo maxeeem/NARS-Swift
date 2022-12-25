@@ -82,6 +82,35 @@ extension Term {
     }
 }
 
+// MARK: Match
+
+extension Term {
+    static func match(t: Statement, s: Statement) -> Statement? {
+        var results = [Term]()
+        let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
+        
+        for sol in solve(goal) {
+            //                print(sol)
+            let ts = s.terms.flatMap({ $0.terms.map({ $0.logic() }) })
+            
+            let valid = sol.allSatisfy { (v, _) in
+                !ts.contains { $0.equals(v) }
+            }
+            
+            if valid {
+                var result = t
+                for item in sol {
+                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                }
+                if result != t {
+                    results.append(result)
+                }
+            }
+        }
+
+        return results.min(by: { $0.complexity < $1.complexity })
+    }
+}
 
 // MARK: Replace
 
@@ -95,6 +124,8 @@ extension Term {
             return self
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, indepVarName: indepVarName), cop, pre.replace(termName: termName, indepVarName: indepVarName))
+        case .compound(let c, let terms):
+            return .compound(c, terms.map{$0.replace(termName: termName, indepVarName: indepVarName)})
         default: // TODO: properly handle all cases
             return self
         }
@@ -132,6 +163,8 @@ extension Term {
                 return term
             }
             return self
+        case .operation(let name, let terms):
+            return .operation(name, terms.map{$0.replace(termName: termName, term: term)})
         default: // TODO: properly handle all cases
             return self
         }

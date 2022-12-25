@@ -37,11 +37,27 @@ public final class NARS: Item {
     
 //    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
 //    fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
+
+    //    fileprivate var lastPerformance = DispatchWallTime.now()
+
+    public typealias Op = ([Term]) -> Term
+    private var operations: [String: Op] = [:]
     
-//    fileprivate var lastPerformance = DispatchWallTime.now()
+    @discardableResult
+    public func register(_ op: String, _ closure: @escaping Op) -> Op? {
+        let existing = operations[op]
+        operations[op] = closure
+        return existing
+    }
+    
+    @discardableResult
+    public func unregister(_ op: String) -> Op? {
+        let existing = operations[op]
+        operations.removeValue(forKey: op)
+        return existing
+    }
     
     private let timeProviderMs: () -> UInt32
-    private var operations: [String: ([Term]) -> Void] = [:]
     
     public init(timeProviderMs: @escaping () -> UInt32, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
@@ -124,6 +140,13 @@ public final class NARS: Item {
             }
         }
     
+        // TODO: finish this implementation
+        if case .goal(let g) = s {
+            for t in g.statement.terms {
+                self.process(t-*, userInitiated: true)
+            }
+        }
+        
         /// SENTENCE
         return process(s, userInitiated: true) // process in main memory
     }
@@ -355,11 +378,17 @@ extension NARS {
             
         case .goal(let g):
             // TODO: take desireValue into account
-            if let winner = derived.first,
-               case .statement(let s, let c, let p) = winner.statement,
-               case .operation = s, c == .predictiveImp, p == g.statement {
-                output(".  🤖 \(s)")
-                
+            if let winner = derived.first {
+               if case .statement(let s, let c, let p) = winner.statement,
+                  case .operation(let op, let args) = s, c == .predictiveImp, p == g.statement {
+                   output(".  🤖 \(s)")
+                   if let operation = operations[op] {
+                       let result = operation(args) // execute
+                       output(result.description)
+                   } else {
+                       output("Unknown operation \(op)")
+                   }
+               }
             } else if recurse { // switch to imagination flow
 //                if userInitiated && !dreaming {
 //                    self.dreaming = true

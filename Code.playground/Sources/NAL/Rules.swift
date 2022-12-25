@@ -452,7 +452,7 @@ public var rule_generator: (_ rule: Rule) -> Apply {
 // MARK: - Variable introduction and elimination
 
 private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
-    if case .statement(_, let cop1, _) = t1, cop1 == .implication || cop1 == .equivalence {
+    if case .statement(_, let cop1, _) = t1, cop1.atemporal == .implication || cop1.atemporal == .equivalence {
         return Term.match(t: t1, s: t2) ?? t1
     }
     return t1

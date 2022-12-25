@@ -47,6 +47,37 @@ extension AbstractBag where I == Concept {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
+//        print(">>", s.identifier)
+        
+        if let bag = self as? Bag<Concept> {
+            var matches = [String]()
+            for c in bag.items.values {
+                if case .variable = c.term {
+                    continue
+                }
+//                print(c.identifier, "\n::", c.term.logic())
+//                print(">>", s.logic())
+                let solver = solve(s.logic() === c.term.logic()).makeIterator().next()
+                if let sol = solver {
+//                    print("SOL", sol)
+                    matches.append(c.identifier)
+                }
+            }
+            for m in matches {
+                var concept = get(m)!
+                let derived = f(&concept)
+                concept.adjustPriority(derived)
+                derivedJudgements.append(contentsOf: derived)
+                put(concept)
+            }
+        }
+//        if var c = get(s.identifier) {
+//            print("here")
+//            let derived = f(&c)
+//            derivedJudgements.append(contentsOf: derived)
+//            c.adjustPriority(derived)
+//            put(c)
+//        }
         switch s {
         case .symbol: // TODO: is this accurate?
             var concept = get(s.description) ?? Concept(term: s)

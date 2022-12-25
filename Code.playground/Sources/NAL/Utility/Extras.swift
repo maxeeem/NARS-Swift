@@ -182,6 +182,18 @@ extension Tense: CustomStringConvertible {
 
 // MARK: Identifiable
 
+extension Statement {
+//    public var identifier: String {
+//        var s = self
+//        let ts = Term.getTerms(self)
+////        print("ok", ts)
+//        for (i, t) in ts.enumerated() {
+//            s = s.replace(termName: t.description, indepVarName: "\(i+1)")
+//        }
+//        return s.description
+//    }
+}
+
 extension Judgement {
     public var identifier: String { tense == nil ? statement.description : tense!.description + " " + statement.description }
 }

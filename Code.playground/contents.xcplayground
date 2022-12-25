@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<playground target-platform="ios" version="6.0" requires-full-environment="false">
+<playground version="6.0" target-platform="ios" requires-full-environment="false">
     <pages>
         <page name="Playground"/>
         <page name="Experimental"/>
+        <page name="Multiplication"/>
     </pages>
 </playground>
