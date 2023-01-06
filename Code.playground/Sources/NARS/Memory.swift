@@ -5,7 +5,7 @@ extension AbstractBag where I == Concept {
         case .judgement(let j): return consider(j, derive: derive)
         case .goal: return [] // TODO: finish implementation
         case .question(let q): return consider(q, derive: derive)
-        case .pause, .cycle: return []
+        case .cycle: return []
         }
     }
     func consider(_ j: Judgement, derive: Bool) -> [Judgement] {

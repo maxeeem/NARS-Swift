@@ -169,11 +169,11 @@ extension Term: ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
         self = {
             if value.first == "{" {
-                return .instance(.symbol(value.word))
+                return .instance(.init(stringLiteral: value.word))
             }
 
             if value.first == "[" {
-                return .property(.symbol(value.word))
+                return .property(.init(stringLiteral: value.word))
             }
 
             if value.first == "?" {

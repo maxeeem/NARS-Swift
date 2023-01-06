@@ -1,27 +1,27 @@
-#if os(Linux)
-  import Glibc
-  typealias dispatch_time_t = UInt64
-#elseif os(Windows)
-  import WinSDK
-  typealias dispatch_time_t = UInt64
-  typealias useconds_t = UInt32
-#endif
+//#if os(Linux)
+//  import Glibc
+//  typealias dispatch_time_t = UInt64
+//#elseif os(Windows)
+//  import WinSDK
+//  typealias dispatch_time_t = UInt64
+//  typealias useconds_t = UInt32
+//#endif
 
-import Dispatch
+//import Dispatch
 
 public enum Sentence {
     case judgement(Judgement)
     case goal(Goal)
     case question(Question)
     
-    case pause(Int)
+//    case pause(Int)
     case cycle(Int)
 }
 
 extension Sentence {
     /// default wait time in milliseconds (0.001s)
     /// neurons spike between 5ms and 1000ms
-    public static var pause: Sentence { .pause(defaultPause) }
+//    public static var pause: Sentence { .pause(defaultPause) }
     public static var defaultPause = 1000
     
     public static var cycle: Sentence { .cycle(1) }
@@ -39,167 +39,290 @@ public final class NARS: Item {
     
     public var output: (String) -> Void
     
-    private var queue = DispatchQueue(label: "input", qos: .userInitiated)
-    private var iqueue = DispatchQueue(label: "imagination", qos: .userInitiated)
-    private var cycleQueue = DispatchQueue(label: "cycle", qos: .utility)
-    private var dreaming = false
+//    private var queue = DispatchQueue(label: "input", qos: .userInitiated)
+//    private var iqueue = DispatchQueue(label: "imagination", qos: .userInitiated)
+//    private var cycleQueue = DispatchQueue(label: "cycle", qos: .utility)
     
+//    private var thinking = false
+
 //    public var pendingTasks = Bag<Task>()
 //    private var lastQuestion: Statement?
 
-    lazy var cycleItem = DispatchWorkItem { [weak self] in
-        while true {
-            guard let s = self, s.cycle else { continue }
-            
-            let quietTime = s.lastPerformance.rawValue - DispatchWallTime.now().rawValue
-            
-            // TODO: potentially get items from recent memory and process them in imagination  
-            if quietTime > s.cycleLength, let c = s.imagination.get(), let b = c.beliefs.get() {
-                
-                c.beliefs.put(b)
-                s.imagination.put(c)
-                
-                let immediate = Rules.immediate(b.judgement)
-                let structural = Theorems.apply(b.judgement)
-                
-                let results = (immediate + structural).filter { !s.imagination.contains($0) }
-
-                results.forEach { j in
-                    s.process(.judgement(j))
-                }
-            }
-        }
-    }
+//    lazy var cycleItem = DispatchWorkItem { [weak self] in
+//        while true {
+//            guard let s = self, s.cycle else { continue }
+//
+//            let quietTime = s.lastPerformance.rawValue - DispatchWallTime.now().rawValue
+//
+//            // TODO: potentially get items from recent memory and process them in imagination
+//            if quietTime > s.cycleLength, let c = s.imagination.get(), let b = c.beliefs.get() {
+//
+//                c.beliefs.put(b)
+//                s.imagination.put(c)
+//
+//                let immediate = Rules.immediate(b.judgement)
+//                let structural = Theorems.apply(b.judgement)
+//
+//                let results = (immediate + structural).filter { !s.imagination.contains($0) }
+//
+//                results.forEach { j in
+//                    s.process(.judgement(j))
+//                }
+//            }
+//        }
+//    }
     
-    public var cycle = false {
-        didSet {
-            if cycle {
-                cycleQueue.resume()
-            } else {
-                cycleQueue.suspend()
-            }
-        }
-    }
+//    public var cycle = false {
+//        didSet {
+//            if cycle {
+//                cycleQueue.resume()
+//            } else {
+//                cycleQueue.suspend()
+//            }
+//        }
+//    }
     
-    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
-    fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
+//    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
+//    fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
     
-    fileprivate var lastPerformance = DispatchWallTime.now()
+//    fileprivate var lastPerformance = DispatchWallTime.now()
     
-    public init(cycle: Bool = true, _ output: @escaping (String) -> Void = { print($0) }) {
+    let timeProvider: () -> UInt64
+    
+    public init(timestamp: @escaping () -> UInt64, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
-        self.cycle = cycle
-
-        if !cycle {
-            cycleQueue.suspend()
-        }
-        cycleQueue.async(execute: cycleItem)
+        self.timeProvider = timestamp
+//        if !cycle {
+//            cycleQueue.suspend()
+//        }
+//        cycleQueue.async(execute: cycleItem)
     }
     
     public func reset() {
-        dreaming = false
-        thinking = false
-        cycleQueue.suspend()
+//        thinking = false
+//        cycleQueue.suspend()
+        inputBuffer.removeAll()
+        recentBuffer.removeAll()
+        imaginationBuffer.removeAll()
+        
         memory = Bag<Concept>()
         imagination = WrappedBag(memory)
         recent = Bag<Belief>(4,40)
-        cycleQueue.resume()
-        _sleep(2)
+//        cycleQueue.resume()
+//        _sleep(2)
     }
     
     public func perform(_ script: Sentence...) { // convenience
-        perform(script)
+//        perform(script)
+        inputBuffer.insert(contentsOf: script.reversed(), at: 0)
+        for _ in 0 ..< script.count {
+            inputCycle()
+            recentCycle()
+        }
     }
     
-    public func perform(_ script: [Sentence]) {
-        // TODO: add buffer
-        script.forEach { s in
-            
-            /// PROCESS
-            self.queue.async { // default processing queue
-                
-                var s = s // for updating timstamp
-                
-//                var recent: [Judgement] = []
-                
-                /// JUDGEMENT
-                if case .judgement(let j) = s {
-                    // set time stamp if not yet set
-                    if j.timestamp == 0 {
-                        s = .judgement(.updateTimestamp(j))
-                    }
-                    // process in recent memory
-                    DispatchQueue.global().async {
-                        let recent = self.process(recent: j)
-                        for el in recent { // add stable patterns from recent memory
-                            self.process(.judgement(el), recurse: false, userInitiated: true)
-                        }
-                    }
-                
-                //
-                // TODO: account for tense in question answering
-                //
-
-                /// QUESTION
-                } else if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
-                    // check recent memory, then imagination
-                    if let answer = self.recent.peek(q.identifier)?.judgement // OR
-                        ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
-                        // check main memory if the answer is already present
-                        if let c = self.memory.items[sub.description] {
-                            if c.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
-                                /// ANSWER
-                                self.process(.judgement(answer), recurse: false, userInitiated: true)
-                            }
-                        } else {
-                            /// ANSWER
-                            self.process(.judgement(answer), recurse: false, userInitiated: true)
-                       }
-                    }
-                }
-                
-                /// SENTENCE
-                self.process(s, userInitiated: true) // process in main memory
-            }
-            
-            /// PAUSE
-            if case .pause(let t) = s {
-                snooze(t)
-            }
-            
-            /// CYCLE
-            if case .cycle(let n) = s {
-                if cycle == false {
-                    cycle = true
-                    think(n * Sentence.defaultPause)
-                    cycle = false
-                } else {
-                    think(n * Sentence.defaultPause)
-                }
-            }
-        }
-            
-        func snooze(_ t: Int) {
-            thinking = true
-            let ms = 1000 // millisecond
-            _usleep(useconds_t(t * ms))
-            thinking = false
+    var inputBuffer: [Sentence] = []
+    
+    func inputCycle() {
+        guard var s = inputBuffer.popLast() else {
+            return
         }
         
-        func think(_ t: Int) {
-            thinking = true
-            let deadline = dispatch_time_t(t) * 1000 * 1000
-            let start = DispatchWallTime.now().rawValue
-            while thinking, deadline > (start - DispatchWallTime.now().rawValue) {
-                /// cycle
+        /// JUDGEMENT
+        if case .judgement(let j) = s {
+            // set time stamp if not yet set
+            if j.timestamp == 0 {
+                s = .judgement(.updateTimestamp(j, timeProvider))
             }
-            thinking = false
+            // process in recent memory
+            recentBuffer.insert(j, at: 0)
+        }
+        
+        //
+        // TODO: account for tense in question answering
+        //
+        
+        /// QUESTION
+        if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
+            // check recent memory, then imagination
+            if let answer = self.recent.peek(q.identifier)?.judgement // OR
+                ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
+                // check main memory if the answer is already present
+                if let c = self.memory.items[sub.description] {
+                    if c.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
+                        /// ANSWER
+                        self.process(.judgement(answer), recurse: false, userInitiated: true)
+                    }
+                } else {
+                    /// ANSWER
+                    self.process(.judgement(answer), recurse: false, userInitiated: true)
+               }
+            }
+        }
+    
+        /// SENTENCE
+        self.process(s, userInitiated: true) // process in main memory
+        
+        
+        /// PAUSE
+//        if case .pause(let t) = s {
+//            snooze(t)
+//        }
+        
+        /// CYCLE
+        if case .cycle(let n) = s {
+//            thinking = true
+            for _ in 0 ..< n {
+                if imaginationBuffer.isEmpty {
+                    mainCycle()
+                } else {
+                    imaginationCycle()
+                }
+            }
+//            thinking = false
+//            if cycle == false {
+//                cycle = true
+//                think(n * Sentence.defaultPause)
+//                cycle = false
+//            } else {
+//                think(n * Sentence.defaultPause)
+//            }
         }
     }
     
-    private var thinking = false
-    public var lastCycle: [(UInt64,String)] = []
-    private var lastInput: Sentence!
+    func mainCycle() {
+        // TODO: potentially get items from recent memory and process them in imagination
+        //        if let r = recent.get() {
+        //            recent.put(r)
+        //            self.process(.judgement(b.judgement))
+        //        }
+
+        if let c = self.imagination.get(), let b = c.beliefs.get() {
+            c.beliefs.put(b)
+            self.imagination.put(c)
+            
+            let immediate = Rules.immediate(b.judgement)
+            let structural = Theorems.apply(b.judgement)
+            
+            let results = (immediate + structural).filter { !self.imagination.contains($0) }
+
+            results.forEach { j in
+                self.process(.judgement(j))
+            }
+        }
+    }
+    
+    var recentBuffer: [Judgement] = []
+    
+    func recentCycle() {
+        guard let j = recentBuffer.popLast() else {
+            return
+        }
+        let recent = self.process(recent: j)
+        for el in recent { // add stable patterns from recent memory
+            self.process(.judgement(el), recurse: false, userInitiated: true)
+        }
+    }
+    
+    var imaginationBuffer: [Sentence] = []
+    
+    func imaginationCycle() {
+        guard let s = imaginationBuffer.popLast() else {
+            return
+        }
+        self.process(s)
+    }
+    
+    
+//    public func perform(_ script: [Sentence]) {
+//        // TODO: add buffer
+//        script.forEach { s in
+//
+//            /// PROCESS
+//            self.queue.async { // default processing queue
+//
+//                var s = s // for updating timstamp
+//
+////                var recent: [Judgement] = []
+//
+//                /// JUDGEMENT
+//                if case .judgement(let j) = s {
+//                    // set time stamp if not yet set
+//                    if j.timestamp == 0 {
+//                        s = .judgement(.updateTimestamp(j))
+//                    }
+//                    // process in recent memory
+//                    DispatchQueue.global().async {
+//                        let recent = self.process(recent: j)
+//                        for el in recent { // add stable patterns from recent memory
+//                            self.process(.judgement(el), recurse: false, userInitiated: true)
+//                        }
+//                    }
+//
+//                //
+//                // TODO: account for tense in question answering
+//                //
+//
+//                /// QUESTION
+//                } else if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
+//                    // check recent memory, then imagination
+//                    if let answer = self.recent.peek(q.identifier)?.judgement // OR
+//                        ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
+//                        // check main memory if the answer is already present
+//                        if let c = self.memory.items[sub.description] {
+//                            if c.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
+//                                /// ANSWER
+//                                self.process(.judgement(answer), recurse: false, userInitiated: true)
+//                            }
+//                        } else {
+//                            /// ANSWER
+//                            self.process(.judgement(answer), recurse: false, userInitiated: true)
+//                       }
+//                    }
+//                }
+//
+//                /// SENTENCE
+//                self.process(s, userInitiated: true) // process in main memory
+//            }
+//
+//            /// PAUSE
+//            if case .pause(let t) = s {
+//                snooze(t)
+//            }
+//
+//            /// CYCLE
+//            if case .cycle(let n) = s {
+//                if cycle == false {
+//                    cycle = true
+//                    think(n * Sentence.defaultPause)
+//                    cycle = false
+//                } else {
+//                    think(n * Sentence.defaultPause)
+//                }
+//            }
+//        }
+//
+//    }
+//    func snooze(_ t: Int) {
+//        thinking = true
+//        let ms = 1000 // millisecond
+//        _usleep(useconds_t(t * ms))
+//        thinking = false
+//    }
+    
+//    func think(_ t: Int) {
+//        thinking = true
+//        let deadline = dispatch_time_t(t) * 1000 * 1000
+//        let start = DispatchWallTime.now().rawValue
+//        while thinking, deadline > (start - DispatchWallTime.now().rawValue) {
+//            /// cycle
+//        }
+//        thinking = false
+//    }
+    
+    // TODO: remove -- this was for temporary profiling
+//    public var lastCycle: [(UInt64,String)] = []
+//    private var lastInput: Sentence!
 }
 
 // MARK: Private
@@ -308,20 +431,20 @@ extension NARS {
     
     fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
 //        var recurse = recurse; recurse = true
-        let now = DispatchWallTime.now()
+//        let now = DispatchWallTime.now()
 //        if lastCycle.count == 1 && lastCycle[0] == (0,"") {
 //            lastCycle.remove(at: 0) // first cycle
 //        }
-        let duration = lastInput == nil ? 0 : lastPerformance.rawValue - now.rawValue
+//        let duration = lastInput == nil ? 0 : lastPerformance.rawValue - now.rawValue
         let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)"
-        lastCycle.append((duration, label))
+//        lastCycle.append((duration, label))
         
-        lastInput = input
-        lastPerformance = now
+//        lastInput = input
+//        lastPerformance = now
             
         var input = input // set time stamp if not yet set
         if case .judgement(let j) = input, j.timestamp == 0 {
-            input = .judgement(.updateTimestamp(j))
+            input = .judgement(.updateTimestamp(j, timeProvider))
         }
 
         output(label)
@@ -356,15 +479,15 @@ extension NARS {
                     self.imagination.reset() //= self.memory.copy()
                 }
 
-                if thinking {
+//                if thinking {
                     output("thinking... \(input)")
 
-                    iqueue.async {
-//                    self.dreaming = true
-                        // re-process question
-                        self.process(input)
-                    }
-                }
+//                    iqueue.async {
+//                        // re-process question
+//                        self.process(input)
+//                    }
+                    imaginationBuffer.insert(input, at: 0)
+//                }
             }
             return
         }
@@ -373,9 +496,9 @@ extension NARS {
         func imagine(recurse r: Bool = true) {
             //print("dj \(derivedJudgements)")
             derivedJudgements.forEach { j in
-                if dreaming || cycle {
+//                if thinking || cycle {
                     process(.judgement(j), recurse: r)
-                }
+//                }
             }
         }
         
@@ -403,18 +526,18 @@ extension NARS {
             if case .statement(let s, _, let p) = question.statement {
                 if case .variable = s {
                     if let winner = derivedJudgements.first {
-                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
+//                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
                         let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
-                        lastCycle.append((duration, label))
+//                        lastCycle.append((duration, label))
                         output(".  💡 \(winner)")
                     } else {
                         output("\t(2)I don't know 🤷‍♂️")
                     }
                 } else if case .variable = p {
                     if let winner = derivedJudgements.first {
-                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
+//                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
                         let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
-                        lastCycle.append((duration, label))
+//                        lastCycle.append((duration, label))
                         output(".  💡 \(winner)")
                     } else {
                         output("\t(2)I don't know 🤷‍♂️")
@@ -423,42 +546,45 @@ extension NARS {
                     
                     if !userInitiated {
                         // cancel all in-flight activities
-                        dreaming = false
-                        thinking = false
+//                        thinking = false
+                        
+                        imaginationBuffer.removeAll()
                         
                         // process winning judgement
                         process(.judgement(winner),
                                      recurse: false, // determines if derived judgements are inserted
                                      userInitiated: true) // will cause insertion into main memory
                     } else {
-                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
+//                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
                         let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
-                        lastCycle.append((duration, label))
+//                        lastCycle.append((duration, label))
                     }
                     output(".  💡 \(winner)")
                     print("}}", winner.derivationPath)
-//                    print("here", dreaming, cycle)
                     break
                     
                 } else if recurse { // switch to imagination flow
-//                    print("there", dreaming)
-                    if userInitiated && !dreaming {
+//                    if userInitiated && !thinking {
 //                        iqueue.sync {
 //                            self.imagination.reset() //= self.memory.copy()
 //                        }
-                        self.dreaming = true
-                    }
+//                        self.thinking = true
+//                    }
                     
-                    iqueue.async {
-                        imagine()
-                        // re-process question
-                        self.process(.question(question))
-                    }
+//                    iqueue.async {
+//                        imagine()
+//                        // re-process question
+//                        self.process(.question(question))
+//                    }
+                    
+                    let js: [Sentence] = derivedJudgements.reversed().flatMap({[.question(question), .judgement($0)]})
+                    imaginationBuffer.insert(contentsOf: js, at: 0)
+                    
                 } else {
                     output("\t(2)I don't know 🤷‍♂️")
                 }
             }
-        case .pause, .cycle: 
+        case .cycle:
             break // do nothing
         }
     }
@@ -467,19 +593,19 @@ extension NARS {
 
 // MARK: - Compatibility
 
-func _sleep(_ t: UInt32) {
-    #if os(Windows)
-      Sleep(t * 1000)
-    #else
-      sleep(t)
-    #endif
-}
-
-func _usleep(_ t: UInt32) {
-    #if os(Windows)
-      Sleep(t)
-    #else
-      usleep(t)
-    #endif
-}
+//func _sleep(_ t: UInt32) {
+//    #if os(Windows)
+//      Sleep(t * 1000)
+//    #else
+//      sleep(t)
+//    #endif
+//}
+//
+//func _usleep(_ t: UInt32) {
+//    #if os(Windows)
+//      Sleep(t)
+//    #else
+//      usleep(t)
+//    #endif
+//}
 

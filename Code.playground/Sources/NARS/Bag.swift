@@ -1,4 +1,4 @@
-import Dispatch
+//import Dispatch
 
 public protocol AbstractBag {
     associatedtype I: Item
@@ -11,6 +11,22 @@ public protocol AbstractBag {
 }
 
 
+//class SyncQueue {
+//    var writing = false
+//    func sync<I>(_ block: () -> I) -> I {
+//        while writing { /*wait*/ }
+//        writing = true
+//        defer { writing = false }
+//        return block()
+//    }
+//    func sync(_ block: () -> Void) {
+//        while writing { /*wait*/ }
+//        writing = true
+//        defer { writing = false }
+//        block()
+//    }
+//}
+
 public final class Bag<I: Item>: AbstractBag {
     var buckets: [[I]]
     var items: [String: I] = [:]
@@ -19,7 +35,7 @@ public final class Bag<I: Item>: AbstractBag {
     internal let capacity: Int
     internal var currentLevel: Int
     
-    internal var queue = DispatchQueue(label: "ioqueue", qos: .background)
+//    internal let queue = SyncQueue()//DispatchQueue(label: "ioqueue", qos: .background)
     
     public init(_ levels: Int = 100, _ capacity: Int = 10000) {
         buckets = Array(repeating: [], count: levels)
@@ -30,7 +46,7 @@ public final class Bag<I: Item>: AbstractBag {
     
     @discardableResult
     public func put(_ item: I) -> I? {
-        queue.sync {
+//        queue.sync {
             var item = item
             let oldItem = items[item.identifier]
             if let oldItem = oldItem {
@@ -39,11 +55,11 @@ public final class Bag<I: Item>: AbstractBag {
             }
             items[item.identifier] = item
             return addToBucket(item)
-        }
+//        }
     }
     
     public func get() -> I? {
-        queue.sync {
+//        queue.sync {
             if items.isEmpty {
                 return nil
             }
@@ -54,34 +70,34 @@ public final class Bag<I: Item>: AbstractBag {
             let item = buckets[currentLevel].removeFirst()
             items.removeValue(forKey: item.identifier)
             return item
-        }
+//        }
     }
     
     public func get(_ identifier: String) -> I? {
-        queue.sync {
+//        queue.sync {
             if let item = items[identifier] {
                 removeFromBucket(item)
                 items.removeValue(forKey: item.identifier)
                 return item
             }
             return nil
-        }
+//        }
     }
     
     public func peek() -> I? {
-        queue.sync {
+//        queue.sync {
             if items.isEmpty {
                 return nil
             }
             currentLevel = selectNonEmptyLevel()
             return buckets[currentLevel].first
-        }
+//        }
     }
     
     public func peek(_ identifier: String) -> I? {
-        queue.sync {
+//        queue.sync {
             return items[identifier]
-        }
+//        }
     }
 
     private func getLevel(_ item: I) -> Int {
@@ -137,49 +153,49 @@ public final class WrappedBag<I: Item>: AbstractBag {
     weak var wrapped: Bag<I>?
     var bag = Bag<I>()
     
-    internal var queue = DispatchQueue(label: "wrappedqueue-\(I.self)", qos: .background)
+//    internal var queue = SyncQueue()//DispatchQueue(label: "wrappedqueue-\(I.self)", qos: .background)
 
     init(_ bag: Bag<I>) {
         wrapped = bag
     }
     
     public func reset() {
-        queue.sync {
+//        queue.sync {
             bag = Bag<I>()
-        }
+//        }
     }
     
     @discardableResult
     public func put(_ item: I) -> I? {
-        queue.sync {
+//        queue.sync {
             if item != wrapped?.peek(item.identifier) {
                 bag.put(item) // items have diverged
             }
             return nil
-        }
+//        }
     }
     
     public func get() -> I? {
-        queue.sync {
+//        queue.sync {
             bag.get() ?? wrapped?.peek()
-        }
+//        }
     }
     
     public func get(_ identifier: String) -> I? {
-        queue.sync {
+//        queue.sync {
             bag.get(identifier) ?? wrapped?.peek(identifier)
-        }
+//        }
     }
     
     public func peek() -> I? {
-        queue.sync {
+//        queue.sync {
             bag.peek() ?? wrapped?.peek()
-        }
+//        }
     }
     
     public func peek(_ identifier: String) -> I? {
-        queue.sync {
+//        queue.sync {
             bag.peek(identifier) ?? wrapped?.peek(identifier)
-        }
+//        }
     }
 }

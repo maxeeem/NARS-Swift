@@ -99,11 +99,13 @@ extension Rules {
             var x: [Judgement?] = []
                         
             // apply rules
-            x.append(contentsOf: self.allRules.flatMap { r in
-                [rule_generator(r)((j1, j2)),
-                 rule_generator(r)((j2, j1))] // switch order of premises
-            })
-            
+            self.allRules.forEach { r in
+                x.append(rule_generator(r)((j1, j2)))
+            }
+            // switch order of premises
+            self.allRules.forEach { r in
+                x.append(rule_generator(r)((j2, j1)))
+            }
             
             // MARK: Variable introduction
             // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”

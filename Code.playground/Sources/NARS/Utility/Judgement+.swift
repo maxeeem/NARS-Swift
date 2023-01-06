@@ -1,13 +1,13 @@
-import Dispatch
+//import Dispatch
 
 extension Judgement {
-    static func updateTimestamp(_ j: Judgement) -> Judgement {
+    static func updateTimestamp(_ j: Judgement, _ timeProvider: () -> UInt64) -> Judgement {
         var j = j
-        let now = DispatchWallTime.now()
+        let now = timeProvider()
         if j.derivationPath.count == 1 { // also update derivationPath
-            return Judgement(j.statement, j.truthValue, tense: j.tense, timestamp: now.rawValue)
+            return Judgement(j.statement, j.truthValue, tense: j.tense, timestamp: now)
         } else {
-            j.timestamp = now.rawValue
+            j.timestamp = now
             return j
         }
     }

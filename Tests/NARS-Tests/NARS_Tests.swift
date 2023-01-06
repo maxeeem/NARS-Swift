@@ -6,13 +6,25 @@ import XCTest
 // MARK: Tests
 
 final class NARS_Tests: XCTestCase {
+
 //    func testBag() throws {
 //        let bag = Bag<Belief>()
-//        for _ in 0...1000000 {
-//            let term = Term.word("\(Int.random(in: 0...1000000))")
+//        var log: [String] = []
+//        DispatchQueue.global().async {
+//            for _ in 0...1000 {
+//                let term = Term.word("\(Int.random(in: 0...10000))")
+//                bag.put(term-* + 0.9)
+//                log.append("-")
+//            }
+//        }
+//        
+//        for _ in 0...1000 {
+//            let term = Term.word("\(Int.random(in: 0...10000))")
 //            bag.put(term-* + 0.9)
+//            log.append("+")
 //            usleep(100)
 //        }
+//        print(log)
 //    }
     
     func testWrappedBag() throws {
