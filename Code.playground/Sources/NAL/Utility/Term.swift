@@ -181,6 +181,13 @@ extension Term: ExpressibleByStringLiteral {
                 let name = (word.count == 0) ? nil : String(word)
                 return .variable(.query(name))
             }
+            
+            if value.first == "$" {
+                let word = value.dropFirst()
+                let name = (word.count == 0) ? "_" : String(word)
+
+                return .variable(.independent(name))
+            }
 
             let words = value.words
 

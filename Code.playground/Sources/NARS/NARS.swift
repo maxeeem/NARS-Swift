@@ -1,9 +1,9 @@
 //#if os(Linux)
 //  import Glibc
-//  typealias dispatch_time_t = UInt64
+//  typealias dispatch_time_t = UInt32
 //#elseif os(Windows)
 //  import WinSDK
-//  typealias dispatch_time_t = UInt64
+//  typealias dispatch_time_t = UInt32
 //  typealias useconds_t = UInt32
 //#endif
 
@@ -27,11 +27,23 @@ extension Sentence {
     public static var cycle: Sentence { .cycle(1) }
 }
 
+@dynamicMemberLookup
 public final class NARS: Item {
     public var identifier: String { name.description }
     public var priority: Double = 0.9
     
     public var name = Term.symbol("SELF") // TODO: inject via init
+    
+    //    subscript(dynamicMember dynamicMember: KeyPath<Term, Term>) -> Term {
+    subscript(dynamicMember dynamicMember: String) -> Concept {
+        imagination.get(dynamicMember.description)
+        ??
+        {
+            let new = Concept(string: dynamicMember)
+            imagination.put(new)
+            return new
+        }()
+    }
     
     public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
     public internal(set) var memory = Bag<Concept>()
@@ -87,11 +99,11 @@ public final class NARS: Item {
     
 //    fileprivate var lastPerformance = DispatchWallTime.now()
     
-    let timeProvider: () -> UInt64
+    let timeProviderMs: () -> UInt32
     
-    public init(timestamp: @escaping () -> UInt64, _ output: @escaping (String) -> Void = { print($0) }) {
+    public init(timeProviderMs: @escaping () -> UInt32, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
-        self.timeProvider = timestamp
+        self.timeProviderMs = timeProviderMs
 //        if !cycle {
 //            cycleQueue.suspend()
 //        }
@@ -132,7 +144,7 @@ public final class NARS: Item {
         if case .judgement(let j) = s {
             // set time stamp if not yet set
             if j.timestamp == 0 {
-                s = .judgement(.updateTimestamp(j, timeProvider))
+                s = .judgement(.updateTimestamp(j, timeProviderMs))
             }
             // process in recent memory
             recentBuffer.insert(j, at: 0)
@@ -321,8 +333,10 @@ public final class NARS: Item {
 //    }
     
     // TODO: remove -- this was for temporary profiling
-//    public var lastCycle: [(UInt64,String)] = []
+//    public var lastCycle: [(UInt32,String)] = []
 //    private var lastInput: Sentence!
+    
+    private var derivedQuestions: [Statement: (Judgement, Rules)] = [:]
 }
 
 // MARK: Private
@@ -444,19 +458,25 @@ extension NARS {
             
         var input = input // set time stamp if not yet set
         if case .judgement(let j) = input, j.timestamp == 0 {
-            input = .judgement(.updateTimestamp(j, timeProvider))
+            input = .judgement(.updateTimestamp(j, timeProviderMs))
         }
 
         output(label)
         
         // memory or imagination
         let derivedJudgements: [Judgement] = {
-            var derivedJudgements: [Judgement]
+            var derivedJudgements: [Judgement] = []
+//            // apply theorems
+//            if case .judgement(let judgement) = input {
+//                derivedJudgements.append(contentsOf: Theorems.apply(judgement))
+//            }
+            // process in memory or imagination
             if userInitiated {
                 derivedJudgements = memory.consider(input, derive: recurse)
             } else {
                 derivedJudgements = imagination.consider(input, derive: recurse)
             }
+            // filter out duplicates
             derivedJudgements = derivedJudgements.filter({ j in
                 if j.truthValue.confidence == 0 {
                     return false
@@ -493,21 +513,21 @@ extension NARS {
         }
         
         // helper
-        func imagine(recurse r: Bool = true) {
-            //print("dj \(derivedJudgements)")
-            derivedJudgements.forEach { j in
-//                if thinking || cycle {
-                    process(.judgement(j), recurse: r)
-//                }
-            }
-        }
+//        func imagine(recurse r: Bool = true) {
+//            //print("dj \(derivedJudgements)")
+//            derivedJudgements.forEach { j in
+////                if thinking || cycle {
+//                    process(.judgement(j), recurse: r)
+////                }
+//            }
+//        }
         
         switch input {
         
         case .judgement:
             //  consider a judgement
             if !recurse { break } // return if no recursion is needed
-            
+                        
             if userInitiated {
                 derivedJudgements.forEach { j in
                     process(.judgement(j),
@@ -515,7 +535,9 @@ extension NARS {
                             userInitiated: true) // will cause insertion into main memory
                 }
             } else {
-                imagine(recurse: false)
+                let js: [Sentence] = derivedJudgements.reversed().map({.judgement($0)})
+                imaginationBuffer.insert(contentsOf: js, at: 0)
+//                imagine(recurse: false)
             }
             
         case .goal:
@@ -547,8 +569,31 @@ extension NARS {
                     if !userInitiated {
                         // cancel all in-flight activities
 //                        thinking = false
-                        
-                        imaginationBuffer.removeAll()
+//                        print(imaginationBuffer)
+//                        imaginationBuffer.removeAll()
+                        if let source = derivedQuestions[winner.statement] {
+//                            print("___", winner, source)
+                            
+                            derivedQuestions.removeValue(forKey: winner.statement)
+                            
+                            let idx = imaginationBuffer.firstIndex(where: { s in
+                                if case .question(let q) = s {
+                                    if q.statement == winner.statement {
+                                        return true
+                                    }
+                                }
+                                return false                                
+                            })
+                            if let i = idx {
+                                imaginationBuffer = Array(imaginationBuffer.prefix(through: i))
+                            }
+                            
+                            let answer = source.1.apply((winner, source.0))
+                            .compactMap { $0 }
+                            .map { Sentence.judgement($0) }
+                            
+                            imaginationBuffer.insert(contentsOf: answer, at: 0)
+                        }
                         
                         // process winning judgement
                         process(.judgement(winner),
@@ -577,7 +622,19 @@ extension NARS {
 //                        self.process(.question(question))
 //                    }
                     
-                    let js: [Sentence] = derivedJudgements.reversed().flatMap({[.question(question), .judgement($0)]})
+//                    let js: [Sentence] = derivedJudgements.reversed().flatMap({[.question(question), .judgement($0)]})
+                    
+                    let source = derivedJudgements.first!
+//                    print("\n\n", derivedQuestions, "\n\n")
+                    derivedJudgements.dropFirst().forEach { j in
+                        derivedQuestions[j.statement] = (source, j.truthValue.rule ?? .deduction)
+                    }
+                    
+                    let js: [Sentence] = derivedJudgements.dropFirst().reversed().flatMap({[
+                        .question(question),
+                        .question(.init($0.statement))
+                    ]})
+                    
                     imaginationBuffer.insert(contentsOf: js, at: 0)
                     
                 } else {

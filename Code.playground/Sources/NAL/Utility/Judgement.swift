@@ -14,7 +14,7 @@ public extension Array where Element == Judgement {
 }
 
 extension Judgement {
-    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String] = [], tense: Tense? = nil, timestamp: UInt64 = 0) {
+    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String] = [], tense: Tense? = nil, timestamp: UInt32 = 0) {
         self.statement = statement
         self.truthValue = truthValue
         self.tense = tense

@@ -11,13 +11,13 @@ public func -*(_ s: Statement, _ fc: (Double, Double)) -> Judgement {
 public func -*(_ s: Statement, _ fc: (Double, Double)) -> Sentence {
     Sentence(s -* fc)
 }
-public func -*(_ s: Statement, _ fct: (Double, Double, UInt64)) -> Sentence {
+public func -*(_ s: Statement, _ fct: (Double, Double, UInt32)) -> Sentence {
     Sentence(s -* fct)
 }
 public func -*(_ s: Statement, _ f: Double) -> Sentence {
     Sentence(s -* (f, 0.9))
 }
-public func -*(_ s: Statement, _ t: UInt64) -> Sentence {
+public func -*(_ s: Statement, _ t: UInt32) -> Sentence {
     Sentence(s -* (1, 0.9, t))
 }
 

@@ -108,8 +108,7 @@ final class NARS_Tests: XCTestCase {
         )).contains(
             ("C" --> "A")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
 
-        let exemplificationRule = Rules.exemplification.apply
-        let applied = exemplificationRule((("A" --> "B")-*, ("B" --> "C")-*))
+        let applied = Rules.exemplification.apply((("A" --> "B")-*, ("B" --> "C")-*))
         print("exemplification", Rules.exemplification.firstOrder, (applied.first == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
 
         print("comparison", Rules.comparison.firstOrder, Rules.comparison.apply((

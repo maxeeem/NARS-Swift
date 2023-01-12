@@ -27,7 +27,12 @@ extension AbstractBag where I == Concept {
         if case .statement = q.statement {
             return consider(q.statement, derive: derive) { c in c.answer(q) }
         } else {
-            return considerVar(q.variableTerm, derive: derive) { c in c.answer(q) }
+            // TODO: change this; just a temporary modification
+            if let vari = q.variableTerm {
+                return considerVar(q.variableTerm, derive: derive) { c in c.answer(q) }
+            } else {
+                return []
+            }
         }
     }
 }

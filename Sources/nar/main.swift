@@ -1,9 +1,11 @@
-#if os(Linux)
+#if canImport(Glibc)
   import Glibc
-#elseif os(Windows)
+#elseif canImport(CRT)
   import CRT
-#else
+#elseif canImport(Darwin)
   import Darwin
+#elseif canImport(WASILibc)
+  import WASILibc
 #endif
 
 import NARS
@@ -12,18 +14,23 @@ import Narsese
 func main() {
     var cycle = false
     
-    guard CommandLine.arguments.count <= 2 else {
-        print("Usage: nar [-c]")
-        print("Pass optional -c flag to enable cycling")
-        exit(1)
-    }
-    
-    if CommandLine.arguments.last == "-c" {
-        cycle = true
-    }
+//    guard CommandLine.arguments.count <= 2 else {
+//        print("Usage: nar [-c]")
+//        print("Pass optional -c flag to enable cycling")
+//        exit(1)
+//    }
+//
+//    if CommandLine.arguments.last == "-c" {
+//        cycle = true
+//    }
     
     do {
-        let nars = NARS(cycle: cycle)
+//        let nars = NARS(cycle: cycle)
+//        var time: UInt32 = 0
+//        let timeProviderMs: () -> UInt32 = { time += 1 ; return time }
+//
+//        let nars = NARS(timeProviderMs: timeProviderMs)
+
         let narsese = try Narsese.init()
         
         print("NARS started. Type 'q' to exit.\n")
@@ -33,13 +40,13 @@ func main() {
         print("reset           \n    perform system reset")
         print("10              \n    cycle for 10 seconds\n")
         print("Ready for input \n")
-        
+        /*
         var aliases: [String: Sentence] = [:]
         
         while let input = readInput() {
             if input == "q" {
                 print("Done.")
-                exit(0)
+//                exit(0)
             }
             if input == "reset" {
                 nars.reset()
@@ -76,9 +83,10 @@ func main() {
             }
             nars.perform(s)
         }
+         */
     } catch {
         print(error)
-        exit(1)
+//        exit(1)
     }
 }
 

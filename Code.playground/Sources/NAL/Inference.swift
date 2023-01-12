@@ -64,6 +64,36 @@ private func neg(_ s: Statement) -> Statement {
 }
 
 public extension Rules {
+    var forward: [Rule] {
+        let rules = firstOrder + higherOrder
+        var permutations: [Rule] = []
+        for r in rules {
+            let (p1, p2, c, tf) = r
+            var sp1: Statement!
+            var sp2: Statement!
+            if case .statement(let s, let copula, let p) = p1 {
+                if copula == .similarity || copula == .equivalence {
+                    sp1 = .statement(p, copula, s)
+                }
+            }
+            if case .statement(let s, let copula, let p) = p2 {
+                if copula == .similarity || copula == .equivalence {
+                    sp2 = .statement(p, copula, s)
+                }
+            }
+            if sp1 != nil {
+                permutations.append((sp1, p2, c, tf))
+            }
+            if sp2 != nil {
+                permutations.append((p1, sp2, c, tf))
+            }
+            if sp1 != nil && sp2 != nil {
+                permutations.append((sp1, sp2, c, tf))
+            }
+        }
+        return rules + permutations
+    }
+    
     var allRules: [Rule] {
         let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
         var permutations: [Rule] = []
@@ -105,7 +135,8 @@ public extension Rules {
     }
     
     var firstOrder: [Rule] {
-        let S = Term.var("S")
+        let S = __.$S//.var("S")
+//        let S: Term = "$S"//.var("S")
         let P = Term.var("P")
         let M = Term.var("M")
 
@@ -113,6 +144,16 @@ public extension Rules {
         case .deduction:
             return [(M --> P,     S --> M, S --> P, tf),
                     (P --> M,     M --> S, P --> S, tfi)]
+//            return [
+//                (__ .$m --> __ .$e,
+//                 __ .$a --> __ .$m,
+//                 __ .$a --> __ .$e, tf),
+//
+//                (__ .$a --> __ .$m,
+//                 __ .$m --> __ .$e,
+//                 __ .$e --> __ .$a, tfi)
+//            ]
+
         case .induction:
             return [(M --> P,     M --> S, S --> P, tf),
                     (M --> P,     M --> S, P --> S, tfi)]
@@ -152,7 +193,7 @@ public extension Rules {
                 ( M => T1,    M => T2 ,    M => (T1 && T2), tf),
                 ( T1 => M,    T2 => M ,    (T1 || T2) --> M, tf),
                 /// conditional
-                (      T1,          T2,    (T1 && T2), tf) // TODO: verify nothing else needs to be checked
+                (T1 --> T2,   T2 --> T1,   ((T1 --> T2) && (T2 --> T1)), tf) // TODO: verify nothing else needs to be checked
             ]
         case .union:
             return [ /// first order
@@ -162,7 +203,7 @@ public extension Rules {
                 ( M => T1,    M => T2 ,    M => (T1 || T2), tf),
                 ( T1 => M,    T2 => M ,    (T1 && T2) --> M, tf),
                 /// conditional
-                (      T1,          T2,    (T1 || T2), tf) // TODO: verify nothing else needs to be checked
+                (T1 --> T2,   T2 --> T1,   ((T1 --> T2) || (T2 --> T1)), tf) // TODO: verify nothing else needs to be checked
             ]
         case .difference:
             return [
@@ -220,6 +261,10 @@ public extension Rules {
         case .intersection:
             return [
                 (             T1,                T2,        (T1 && T2), tf) // TODO: verify nothing else needs to be checked
+            ]
+        case .union:
+            return [
+                (             T1,                T2,        (T1 || T2), tf) // TODO: verify nothing else needs to be checked
             ]
         default:
             return []

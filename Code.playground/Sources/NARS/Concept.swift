@@ -36,6 +36,10 @@ public struct Concept: Item {
     private var _beliefs = Bag<Belief>()
     internal var beliefs: WrappedBag<Belief>
 
+    init(string: String) {
+        self.init(term: Term(stringLiteral: string))
+    }
+    
     init(term: Term) {
         self.term = term
         self.termLinks = WrappedBag(_termLinks)
@@ -138,6 +142,9 @@ extension Concept {
         // return if no recursion
         guard derive else { return derived }
         
+        /// apply theorems
+        derived.append(contentsOf: Theorems.apply(j))
+        
         /// apply two-premise rules
         twoPremiseRules:
         if var b = beliefs.get() {
@@ -151,6 +158,13 @@ extension Concept {
                     break twoPremiseRules
                 }
             }
+            
+            
+//            print("\n\n>>>", b.judgement, j, "<<<\n\n")
+            
+//
+//            let theorems = Theorems.apply(Term.compound(.x, [b.judgement.statement, j.statement])-*)
+//            print("+++\n", theorems, "\n")
             
             // apply rules
             let results = Rules.allCases
@@ -261,6 +275,12 @@ extension Concept {
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
             // all other rules // backwards inference
+//            print(">>>", s, b)
+//            let backward = Rules.allCases.flatMap { r in
+//                r.backward((s-*, b.judgement))
+//            }.compactMap { $0 }
+//            
+//            print(">>> backward", backward, "\n")
             
             let r = Theorems.apply(b.judgement)
                 .filter { beliefs.peek($0.description) == nil }
@@ -269,10 +289,10 @@ extension Concept {
                 return [answer]
             }
             
-            return r +
+            return [b.judgement] + //r +
              Rules.allCases
                 .flatMap { r in
-                    r.apply((s-*, b.judgement))
+                    r.backward((s-*, b.judgement))
                 }
                 .compactMap { $0 }
         }

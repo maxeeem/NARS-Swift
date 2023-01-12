@@ -42,48 +42,73 @@ extension Rules {
     var tfi: TruthFunction { // inverse
         TruthValue.truthFunction(self, true)
     }
-    public var apply: (_ judgements: (Judgement, Judgement)) -> [Judgement?] {
-        { j in
-            var (j1, j2) = j
-//            print("\n>>>", j)
+    
+    public func backward(_ judgements: (Judgement, Judgement)) -> [Judgement?] {
+        var (j1, j2) = judgements
+        
+        var x: [Judgement?] = []
+        
+        // apply rules
+        self.forward.forEach { r in
+            x.append(rule_generator(r)((j1, j2)))
+        }
+        // switch order of premises
+        self.forward.forEach { r in
+            x.append(rule_generator(r)((j2, j1)))
+        }
+        
+        let unique = x.compactMap({$0}).removeDuplicates()
+//            print("+++", x)
+//            print("===", unique)
+//        if !unique.isEmpty {
+//            print(judgements)
+//            print(unique)
+//        }
+        return unique
+    }
+    
+    public func apply(_ judgements: (Judgement, Judgement), _ varIntro: Bool = true) -> [Judgement?] {
+//        { j in
+            var (j1, j2) = judgements
+            //            print("\n>>>", j)
             
             var t1 = j1.statement // test
             var t2 = j2.statement // test
-//            print(p1, p2, j1, j2)
-    //        print("=", commonTerms)
-    //        return nil
+            //            print(p1, p2, j1, j2)
+            //        print("=", commonTerms)
+            //        return nil
             
             if case .compound(let conn, let ts1) = t1, conn == .n {
-//                print("1.", t1, t2)
+                //                print("1.", t1, t2)
                 if ts1[0] == t2 { // TODO: use similarity helper to account for symmetrical connectors and copulas
                     return [] // no conclusion can be reached if premises are just opposite of each other
                 }
             }
             if case .compound(let conn, let ts2) = t2, conn == .n {
-//                print("2.", t1, t2)
+                //                print("2.", t1, t2)
                 if ts2[0] == t1 { // TODO: use similarity helper to account for symmetrical connectors and copulas
                     return [] // no conclusion can be reached if premises are just opposite of each other
                 }
             }
-             
+            
             /// temporal
             
-//            if j1.truthValue.rule == nil && j2.truthValue.rule == nil {
-//                
-//            }
+            //            if j1.truthValue.rule == nil && j2.truthValue.rule == nil {
+            //
+            //            }
             
             /// variable elimination
-//            print("before")
-//            print("t1", t1)
-//           print("t2", t2)
-//           print("")
+            //            print("before")
+            //            print("t1", t1)
+            //           print("t2", t2)
+            //           print("")
             /// independent
             t1 = variableEliminationIndependent(t1, t2)
             t2 = variableEliminationIndependent(t2, t1)
-//            print("after")
-//             print("t1", t1)
-//            print("t2", t2)
-//            print("")
+            //            print("after")
+            //             print("t1", t1)
+            //            print("t2", t2)
+            //            print("")
             /// dependent
             if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
                 return result
@@ -95,9 +120,9 @@ extension Rules {
             
             j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
             j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-           
+            
             var x: [Judgement?] = []
-                        
+            
             // apply rules
             self.allRules.forEach { r in
                 x.append(rule_generator(r)((j1, j2)))
@@ -107,6 +132,7 @@ extension Rules {
                 x.append(rule_generator(r)((j2, j1)))
             }
             
+        if varIntro {
             // MARK: Variable introduction
             // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
             
@@ -124,6 +150,7 @@ extension Rules {
                 x.append(contentsOf: variableIntroductionDependent(t1, t2, j1, j2, self))
             }
             
+        }
             ///
             // TODO: multi-variable introduction rules
             ///
@@ -133,280 +160,281 @@ extension Rules {
 //            print("===", unique)
             return unique
         }
-    }
+//    }
 }
 
 // MARK: Rule application
 
 private var checkOverlap = false // TODO: dirty trick to get dependent-variable introduction to work
 
-public let rule_generator: (_ rule: Rule) -> Apply = { (arg) -> ((Judgement, Judgement)) -> Judgement? in
-    // premise (p1) premise (p2) conclusion (c) truth-function (tf)
-    var (p1, p2, c, tf) = arg
-
-    return { (arg) in
-        let (j1, j2) = arg
+public var rule_generator: (_ rule: Rule) -> Apply {
+    { (arg) -> ((Judgement, Judgement)) -> Judgement? in
+        // premise (p1) premise (p2) conclusion (c) truth-function (tf)
+        var (p1, p2, c, tf) = arg
         
-        if let j1t = j1.tense, let j2t = j2.tense, j1t != j2t {
-            return nil // temporal order cannot be determined
-        }
-        
-        /*
-         * MARK: do temporal
-         */
-        
-        // TODO: need to check copulas to ensure temporal order can be established
-        
-        guard let temporal = temporalReasoning(c) else {
-            return nil // outside temporal window
-        }
-
-        c = temporal // introduce temporal copulas
-
-        /*
-         * MARK: appply logic
-         */
-        
-        guard var result = logicReasoning(c) else {
-            return nil // no conclusion
-        }
-        
-        // TODO: come up with a better way
-        result = determineOrder()
-        result = accountForExemplification()
-        
-        //        print("here", result)
-
-        // TODO: handle temporal compounds
-        // TODO: check that compounds do not contain each other
-
-        /*
-         * MARK: check results
-         */
-        
-        if let statement = validate(result), !statement.isTautology {
-//            print("accepted", result)
-            let truthValue = tf(j1.truthValue, j2.truthValue)
-            let derivationPath = Judgement.mergeEvidence(j1, j2)
-//            print("--")
-//            print(j1, j2)
-//            print("accepted", statement, truthValue, c)
-            return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
-        }
-        
-        return nil // PROGRAM END
-        
-        
-        // MARK: - helpers
-        
-        func temporalReasoning(_ t: Term) -> Term? {
-            if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
-               case .statement(var cs, var cc, var cp) = t,
-               cc == .implication || cc == .equivalence {
-                let forward = j1.timestamp < j2.timestamp
-                let delta = forward ? j2.timestamp - j1.timestamp : j1.timestamp - j2.timestamp
-                
-                let window = 50 * 1000000 // 50 ms
-                let distance = 10
-                // delta should be less than some param
-                // otherwise rules should not apply
-                // here we choose 1 second computed as
-                // distance factor on either side of the window
-                
-                guard delta < window * 2 * distance else {
-                    return nil
-                }
-                //                print("N", delta, window, forward, j1, j2)
-                //                print(j1.timestamp, j2.timestamp)
-                
-                if delta < window {
-                    //                    print("||", t)
-                    cc = cc.concurrent
-                } else if forward {
-                    //                    print(">>", t)
-                    cc = cc.predictive
-                } else {
-                    //                    print("<<", t)
-                    cc = cc.retrospective
-                }
-                
-                // use temporal conclusion
-                return .statement(cs, cc, cp)
+        return { (arg) in
+            let (j1, j2) = arg
+            
+            if let j1t = j1.tense, let j2t = j2.tense, j1t != j2t {
+                return nil // temporal order cannot be determined
             }
-
-            return t // use original conclusion
-        }
-        
-        func logicReasoning(_ t: Term) -> Term? {
-            var result = t
-            var map: [String: Term] = [:]
-            let test1: LogicGoal = (p1.logic() === j1.statement.logic())
-            let test2: LogicGoal = (p2.logic() === j2.statement.logic())
             
-            let substitution = solve(test1 && test2).makeIterator().next()
+            /*
+             * MARK: do temporal
+             */
             
-            // TODO: use LogicVariableFactory to avoid collision with terms
-            // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
+            // TODO: need to check copulas to ensure temporal order can be established
             
-            if let sol = substitution {
-                //            print("\n---SOL---\n", sol, "\n")
-                let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
-                let valid = sol.allSatisfy { (v, _) in
-                    ts.contains { $0.equals(v) }
-                }
-                
-                if valid {
-                    for item in sol {
-                        //                print(item.LogicVariable.name)
-                        //                print(type(of: item.LogicTerm))
-                        result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
-                        //                print("result\n", result)
+            guard let temporal = temporalReasoning(c) else {
+                return nil // outside temporal window
+            }
+            
+            c = temporal // introduce temporal copulas
+            
+            /*
+             * MARK: appply logic
+             */
+            
+            guard var result = logicReasoning(c) else {
+                return nil // no conclusion
+            }
+            
+            // TODO: come up with a better way
+            result = determineOrder()
+            result = accountForExemplification()
+            
+            //        print("here", result)
+            
+            // TODO: handle temporal compounds
+            // TODO: check that compounds do not contain each other
+            
+            /*
+             * MARK: check results
+             */
+            
+            if let statement = validate(result), !statement.isTautology {
+                //            print("accepted", result)
+                let truthValue = tf(j1.truthValue, j2.truthValue)
+                let derivationPath = Judgement.mergeEvidence(j1, j2)
+                //            print("--")
+                //            print(j1, j2)
+                //            print("accepted", statement, truthValue, c)
+                return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
+            }
+            
+            return nil // PROGRAM END
+            
+            
+            // MARK: - helpers
+            
+            func temporalReasoning(_ t: Term) -> Term? {
+                if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
+                   case .statement(var cs, var cc, var cp) = t,
+                   cc == .implication || cc == .equivalence {
+                    let forward = j1.timestamp < j2.timestamp
+                    let delta = forward ? j2.timestamp - j1.timestamp : j1.timestamp - j2.timestamp
+                    
+                    let window = 50 * 1000000 // 50 ms
+                    let distance = 10
+                    // delta should be less than some param
+                    // otherwise rules should not apply
+                    // here we choose 1 second computed as
+                    // distance factor on either side of the window
+                    
+                    guard delta < window * 2 * distance else {
+                        return nil
                     }
+                    //                print("N", delta, window, forward, j1, j2)
+                    //                print(j1.timestamp, j2.timestamp)
+                    
+                    if delta < window {
+                        //                    print("||", t)
+                        cc = cc.concurrent
+                    } else if forward {
+                        //                    print(">>", t)
+                        cc = cc.predictive
+                    } else {
+                        //                    print("<<", t)
+                        cc = cc.retrospective
+                    }
+                    
+                    // use temporal conclusion
+                    return .statement(cs, cc, cp)
                 }
+                
+                return t // use original conclusion
             }
             
-//            print("}}}}", j1, j2, result)
-            
-            return (result == t) ? nil : result
-        }
-        
-        func validate(_ term: Term) -> Term? {
-            switch term {
-
-            // TODO: difference connectors take exactly 2 terms
-
-            case .compound(let connector, let terms):
-                if terms.count == 0 {
-                    return nil // empty compound
-                }
-                if terms.count == 1 {
-                    if connector == .intSet || connector == .extSet {
-                        if case .compound(let c, let ts) = terms[0] {
-                            if ts.count == 1, c == .intSet || c == .extSet {
-                                return nil // prevent nesting i.e. [{x}], {{x}}, [[x]], {[x]}
-                            }
+            func logicReasoning(_ t: Term) -> Term? {
+                var result = t
+                var map: [String: Term] = [:]
+                let test1: LogicGoal = (p1.logic() === j1.statement.logic())
+                let test2: LogicGoal = (p2.logic() === j2.statement.logic())
+                
+                let substitution = solve(test1 && test2).makeIterator().next()
+                
+                // TODO: use LogicVariableFactory to avoid collision with terms
+                // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
+                
+                if let sol = substitution {
+                    //            print("\n---SOL---\n", sol, "\n")
+                    let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
+                    let valid = sol.allSatisfy { (v, _) in
+                        ts.contains { $0.equals(v) }
+                    }
+                    
+                    if valid {
+                        for item in sol {
+                            //                print(item.LogicVariable.name)
+                            //                print(type(of: item.LogicTerm))
+                            result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                            //                print("result\n", result)
                         }
-                        return term // instances and properties are allowed one component
                     }
-//                    print("here", term)
+                }
+                
+                //            print("}}}}", j1, j2, result)
+                
+                return (result == t) ? nil : result
+            }
+            
+            func validate(_ term: Term) -> Term? {
+                switch term {
+                    
+                    // TODO: difference connectors take exactly 2 terms
+                    
+                case .compound(let connector, let terms):
+                    if terms.count == 0 {
+                        return nil // empty compound
+                    }
+                    if terms.count == 1 {
+                        if connector == .intSet || connector == .extSet {
+                            if case .compound(let c, let ts) = terms[0] {
+                                if ts.count == 1, c == .intSet || c == .extSet {
+                                    return nil // prevent nesting i.e. [{x}], {{x}}, [[x]], {[x]}
+                                }
+                            }
+                            return term // instances and properties are allowed one component
+                        }
+                        //                    print("here", term)
+                        if connector == .x || connector == .i || connector == .e {
+                            return term
+                        }
+                        return nil
+                    }
+                    if checkOverlap && j1.evidenceOverlap(j2) {
+                        return nil
+                    }
                     if connector == .x || connector == .i || connector == .e {
                         return term
                     }
+                    return connector.connect(terms)
+                    
+                case .statement(let subject, let cop, let predicate):
+                    if let sub = validate(subject), let pre = validate(predicate) {
+                        //                    if case .compound(let cs, _) = subject, case .compound(let cp, _) = predicate {
+                        //                        if cs == .x && cp == .x {
+                        //                            return nil
+                        //                        }
+                        //                    }
+                        return .statement(sub, cop, pre)
+                    }
                     return nil
-                }
-                if checkOverlap && j1.evidenceOverlap(j2) {
-                    return nil
-                }
-                if connector == .x || connector == .i || connector == .e {
+                    
+                default:
                     return term
-                }
-                return connector.connect(terms)
-                
-            case .statement(let subject, let cop, let predicate):
-                if let sub = validate(subject), let pre = validate(predicate) {
-//                    if case .compound(let cs, _) = subject, case .compound(let cp, _) = predicate {
-//                        if cs == .x && cp == .x {
-//                            return nil
-//                        }
-//                    }
-                    return .statement(sub, cop, pre)
-                }
-                return nil
-                
-            default:
-                return term
-            }
-        }
-        
-        func determineOrder() -> Term {
-            // TODO: get rid of this dirty trick and determine temporal order of the conclusion properly
-            if case .statement(var cs, var cc, var cp) = result, cc == .equivalence || cc == .implication {
-                if case .statement(let j1s, let j1c, let j1p) = j1.statement,
-                   case .statement(let j2s, let j2c, let j2p) = j2.statement {
-                    
-                    if (j1c.isConcurrent && j2c.isConcurrent) {
-                        // both concurrent
-                        return .statement(cs, cc.concurrent, cp)
-                    }
-                                        
-                    if (j1c.isPredictive && j2c.isPredictive) {
-                        // both predicitve
-                        return .statement(cs, cc.predictive, cp)
-                    }
-                    
-                    if (j1c.isRetrospective && j2c.isRetrospective) {
-                        // both retrospective
-                        return .statement(cs, cc.retrospective, cp)
-                    }
-                    
-                    if (j1c.isConcurrent && j2c.isPredictive)
-                        || (j2c.isConcurrent && j1c.isPredictive) {
-                        // one is concurrent, another is predictive
-                        return .statement(cs, cc.predictive, cp)
-                    }
-                    
-                    if (j1c.isConcurrent && j2c.isRetrospective)
-                        || (j2c.isConcurrent && j1c.isRetrospective) {
-                        // one is concurrent, another is retrospective
-                        return .statement(cs, cc.retrospective, cp)
-                    }
-                    
-                    // Complex
-                    var list = [Term]()
-                    
-                    if j1c.isPredictive && j2c.isRetrospective {
-                        list = [j1s, j1p]
-                        if let idx = list.firstIndex(of: j2s) {
-                            list.insert(j2p, at: idx)
-                        }
-                        if let idx = list.firstIndex(of: j2p) {
-                            list.insert(j2s, at: idx+1)
-                        }
-                    } else if j2c.isPredictive && j1c.isRetrospective {
-                        list = [j2s, j2p]
-                        if let idx = list.firstIndex(of: j1s) {
-                            list.insert(j1p, at: idx)
-                        }
-                        if let idx = list.firstIndex(of: j1p) {
-                            list.insert(j1s, at: idx+1)
-                        }
-                    }
-                    
-                    if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
-                        if cpi > csi {
-                            // predicate after subject
-                            return .statement(cs, cc.predictive, cp)
-                        } else {
-                            // predicate before subject
-                            return .statement(cs, cc.retrospective, cp)
-                        }
-                    }                    
-                }
-            }
-//            if result == (("John" * "key_101") --> "hold") {
-//                // set tense for the conclusion
-//            }
-            return result
-        }
-        
-        func accountForExemplification() -> Term {
-            let rule = tf(j1.truthValue, j2.truthValue).rule
-
-            if rule == .exemplification {
-                if case .statement(let rs, let rc, let rp) = result {
-                    if rc.isPredictive {
-                        return .statement(rs, rc.atemporal.retrospective, rp)
-                    } else if rc.isRetrospective {
-                        return .statement(rs, rc.atemporal.predictive, rp)
-                    }
                 }
             }
             
-            return result
+            func determineOrder() -> Term {
+                // TODO: get rid of this dirty trick and determine temporal order of the conclusion properly
+                if case .statement(var cs, var cc, var cp) = result, cc == .equivalence || cc == .implication {
+                    if case .statement(let j1s, let j1c, let j1p) = j1.statement,
+                       case .statement(let j2s, let j2c, let j2p) = j2.statement {
+                        
+                        if (j1c.isConcurrent && j2c.isConcurrent) {
+                            // both concurrent
+                            return .statement(cs, cc.concurrent, cp)
+                        }
+                        
+                        if (j1c.isPredictive && j2c.isPredictive) {
+                            // both predicitve
+                            return .statement(cs, cc.predictive, cp)
+                        }
+                        
+                        if (j1c.isRetrospective && j2c.isRetrospective) {
+                            // both retrospective
+                            return .statement(cs, cc.retrospective, cp)
+                        }
+                        
+                        if (j1c.isConcurrent && j2c.isPredictive)
+                            || (j2c.isConcurrent && j1c.isPredictive) {
+                            // one is concurrent, another is predictive
+                            return .statement(cs, cc.predictive, cp)
+                        }
+                        
+                        if (j1c.isConcurrent && j2c.isRetrospective)
+                            || (j2c.isConcurrent && j1c.isRetrospective) {
+                            // one is concurrent, another is retrospective
+                            return .statement(cs, cc.retrospective, cp)
+                        }
+                        
+                        // Complex
+                        var list = [Term]()
+                        
+                        if j1c.isPredictive && j2c.isRetrospective {
+                            list = [j1s, j1p]
+                            if let idx = list.firstIndex(of: j2s) {
+                                list.insert(j2p, at: idx)
+                            }
+                            if let idx = list.firstIndex(of: j2p) {
+                                list.insert(j2s, at: idx+1)
+                            }
+                        } else if j2c.isPredictive && j1c.isRetrospective {
+                            list = [j2s, j2p]
+                            if let idx = list.firstIndex(of: j1s) {
+                                list.insert(j1p, at: idx)
+                            }
+                            if let idx = list.firstIndex(of: j1p) {
+                                list.insert(j1s, at: idx+1)
+                            }
+                        }
+                        
+                        if let cpi = list.firstIndex(of: cp), let csi = list.firstIndex(of: cs) {
+                            if cpi > csi {
+                                // predicate after subject
+                                return .statement(cs, cc.predictive, cp)
+                            } else {
+                                // predicate before subject
+                                return .statement(cs, cc.retrospective, cp)
+                            }
+                        }                    
+                    }
+                }
+                //            if result == (("John" * "key_101") --> "hold") {
+                //                // set tense for the conclusion
+                //            }
+                return result
+            }
+            
+            func accountForExemplification() -> Term {
+                let rule = tf(j1.truthValue, j2.truthValue).rule
+                
+                if rule == .exemplification {
+                    if case .statement(let rs, let rc, let rp) = result {
+                        if rc.isPredictive {
+                            return .statement(rs, rc.atemporal.retrospective, rp)
+                        } else if rc.isRetrospective {
+                            return .statement(rs, rc.atemporal.predictive, rp)
+                        }
+                    }
+                }
+                
+                return result
+            }
         }
     }
 }
-
 
 
 // MARK: - Variable introduction and elimination

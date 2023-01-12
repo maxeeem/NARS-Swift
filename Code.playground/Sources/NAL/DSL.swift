@@ -19,7 +19,7 @@ infix operator <<|<=> : Copula //  "\<=>"
 infix operator   |<=> : Copula //  "|<=>"
 
 // convenience initializer for Judgement
-public func + (_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
+public func + (_ s: Statement, fc: (Double, Double, UInt32)) -> Judgement {
     Judgement(s, TruthValue(fc.0, fc.1), timestamp: fc.2)
 }
 
@@ -45,7 +45,7 @@ public extension Statement {
 }
 
 infix operator -* : Copula
-public func -* (_ s: Statement, _ fc: (Double, Double, UInt64)) -> Judgement {
+public func -* (_ s: Statement, _ fc: (Double, Double, UInt32)) -> Judgement {
     s + fc
 }
 

@@ -48,7 +48,7 @@ public extension Grammar {
 			
 			return prefixes.map {Production(pattern: NonTerminal(name: "\(production.pattern.name)-pre"), production: $0)}
 		}
-		let allProductions: [Production] = self.productions + prefixProductions + (NonTerminal(name: "\(self.start.name)-pre-start") --> n("\(self.start.name)-pre") <|> .nonTerminal(self.start))
+		let allProductions: [Production] = self.productions + prefixProductions + (NonTerminal(name: "\(self.start.name)-pre-start") ~~> n("\(self.start.name)-pre") <|> .nonTerminal(self.start))
 		return Grammar(
 			productions: allProductions.uniqueElements().collect(Array.init),
 			start: NonTerminal(name: "\(self.start.name)-pre-start"),

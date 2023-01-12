@@ -26,7 +26,7 @@ extension Theorems {
         let results: [[Judgement]] = res.flatMap{$0}.map { t in
             var rel = reliance
             if case .statement(let sub, let cop, _) = t, cop == .equivalence {
-                rel = j.statement == sub ? 0.9 : 1.0
+                rel = 0.9//j.statement == sub ? 0.9 : 1.0 // TODO: should this always be .9 or 1 ?
             }
             var results = Rules.strong.flatMap {
                 $0.apply((j, t-*(1,rel, ETERNAL)))
