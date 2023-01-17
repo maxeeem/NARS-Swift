@@ -44,7 +44,7 @@ extension Rules {
     }
     
     public func backward(_ judgements: (Judgement, Judgement)) -> [Judgement?] {
-        var (j1, j2) = judgements
+        let (j1, j2) = judgements
         
         var x: [Judgement?] = []
         
@@ -67,100 +67,96 @@ extension Rules {
         return unique
     }
     
-    public func apply(_ judgements: (Judgement, Judgement), _ varIntro: Bool = true) -> [Judgement?] {
-//        { j in
-            var (j1, j2) = judgements
-            //            print("\n>>>", j)
-            
-            var t1 = j1.statement // test
-            var t2 = j2.statement // test
-            //            print(p1, p2, j1, j2)
-            //        print("=", commonTerms)
-            //        return nil
-            
-            if case .compound(let conn, let ts1) = t1, conn == .n {
-                //                print("1.", t1, t2)
-                if ts1[0] == t2 { // TODO: use similarity helper to account for symmetrical connectors and copulas
-                    return [] // no conclusion can be reached if premises are just opposite of each other
-                }
+    public func apply(_ judgements: (Judgement, Judgement)) -> [Judgement?] {
+        var (j1, j2) = judgements
+        //            print("\n>>>", j)
+        
+        var t1 = j1.statement // test
+        var t2 = j2.statement // test
+        //            print(p1, p2, j1, j2)
+        //        print("=", commonTerms)
+        //        return nil
+        
+        if case .compound(let conn, let ts1) = t1, conn == .n {
+            //                print("1.", t1, t2)
+            if ts1[0] == t2 { // TODO: use similarity helper to account for symmetrical connectors and copulas
+                return [] // no conclusion can be reached if premises are just opposite of each other
             }
-            if case .compound(let conn, let ts2) = t2, conn == .n {
-                //                print("2.", t1, t2)
-                if ts2[0] == t1 { // TODO: use similarity helper to account for symmetrical connectors and copulas
-                    return [] // no conclusion can be reached if premises are just opposite of each other
-                }
-            }
-            
-            /// temporal
-            
-            //            if j1.truthValue.rule == nil && j2.truthValue.rule == nil {
-            //
-            //            }
-            
-            /// variable elimination
-            //            print("before")
-            //            print("t1", t1)
-            //           print("t2", t2)
-            //           print("")
-            /// independent
-            t1 = variableEliminationIndependent(t1, t2)
-            t2 = variableEliminationIndependent(t2, t1)
-            //            print("after")
-            //             print("t1", t1)
-            //            print("t2", t2)
-            //            print("")
-            /// dependent
-            if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
-                return result
-            } else if let result = variableEliminationDependent(t2, t1, j2, j1, self) {
-                return result
-            }
-            
-            /// original code
-            
-            j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-            j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-            
-            var x: [Judgement?] = []
-            
-            // apply rules
-            self.allRules.forEach { r in
-                x.append(rule_generator(r)((j1, j2)))
-            }
-            // switch order of premises
-            self.allRules.forEach { r in
-                x.append(rule_generator(r)((j2, j1)))
-            }
-            
-        if varIntro {
-            // MARK: Variable introduction
-            // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
-            
-            /// independent-variable introduction
-            ///
-            // TODO: introVarInner from CompositionalRules in OpenNARS
-            ///
-            if self == .induction || self == .comparison {
-                x.append(contentsOf: variableIntroductionIndependent(t1, t2, j1, j2, self))
-            }
-            
-            /// dependent-variable introduction
-            
-            if self == .intersection {
-                x.append(contentsOf: variableIntroductionDependent(t1, t2, j1, j2, self))
-            }
-            
         }
-            ///
-            // TODO: multi-variable introduction rules
-            ///
-            
-            let unique = x.compactMap({$0}).removeDuplicates()
+        if case .compound(let conn, let ts2) = t2, conn == .n {
+            //                print("2.", t1, t2)
+            if ts2[0] == t1 { // TODO: use similarity helper to account for symmetrical connectors and copulas
+                return [] // no conclusion can be reached if premises are just opposite of each other
+            }
+        }
+        
+        /// temporal
+        
+        //            if j1.truthValue.rule == nil && j2.truthValue.rule == nil {
+        //
+        //            }
+        
+        /// variable elimination
+//                        print("before")
+//                        print("t1", t1)
+//                       print("t2", t2)
+//                       print("")
+        /// independent
+        t1 = variableEliminationIndependent(t1, t2)
+        t2 = variableEliminationIndependent(t2, t1)
+//                        print("after")
+//                         print("t1", t1)
+//                        print("t2", t2)
+//                        print("")
+        /// dependent
+        if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
+            return result
+        } else if let result = variableEliminationDependent(t2, t1, j2, j1, self) {
+            return result
+        }
+        
+        /// original code
+        
+        j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
+        j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
+        
+        var x: [Judgement?] = []
+        
+        // apply rules
+        self.allRules.forEach { r in
+            x.append(rule_generator(r)((j1, j2)))
+        }
+        // switch order of premises
+        self.allRules.forEach { r in
+            x.append(rule_generator(r)((j2, j1)))
+        }
+        
+        // MARK: Variable introduction
+        // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
+        
+        /// independent-variable introduction
+        ///
+        // TODO: introVarInner from CompositionalRules in OpenNARS
+        ///
+        if self == .induction || self == .comparison {
+            x.append(contentsOf: variableIntroductionIndependent(t1, t2, j1, j2, self))
+        }
+        
+        /// dependent-variable introduction
+        
+        if self == .intersection {
+            x.append(contentsOf: variableIntroductionDependent(t1, t2, j1, j2, self))
+        }
+        
+        ///
+        // TODO: multi-variable introduction rules
+        ///
+        
+        let unique = x.compactMap({$0}).removeDuplicates()
 //            print("+++", x)
 //            print("===", unique)
-            return unique
-        }
-//    }
+        return unique
+    }
 }
 
 // MARK: Rule application
@@ -267,7 +263,6 @@ public var rule_generator: (_ rule: Rule) -> Apply {
             
             func logicReasoning(_ t: Term) -> Term? {
                 var result = t
-                var map: [String: Term] = [:]
                 let test1: LogicGoal = (p1.logic() === j1.statement.logic())
                 let test2: LogicGoal = (p2.logic() === j2.statement.logic())
                 

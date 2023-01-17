@@ -122,8 +122,6 @@ extension Sentence: CustomStringConvertible {
             return "\(goal)"
         case .question(let question):
             return "\(question)"
-//        case .pause(let t):
-//            return "💤 \(Double(t)/1000) seconds"
         case .cycle(let n):
             return "🔄 \(n) cycles"
         }

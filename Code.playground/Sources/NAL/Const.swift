@@ -11,5 +11,5 @@ public var k: Double { evidentialHorizon }
 public var r: Int { occamsRazor }
 
 
-public let ETERNAL: UInt32 = UInt32.max
+public let ETERNAL: UInt32 = UInt32.max // ~49 days in ms
 

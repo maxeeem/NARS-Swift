@@ -66,62 +66,12 @@ private func neg(_ s: Statement) -> Statement {
 public extension Rules {
     var forward: [Rule] {
         let rules = firstOrder + higherOrder
-        var permutations: [Rule] = []
-        for r in rules {
-            let (p1, p2, c, tf) = r
-            var sp1: Statement!
-            var sp2: Statement!
-            if case .statement(let s, let copula, let p) = p1 {
-                if copula == .similarity || copula == .equivalence {
-                    sp1 = .statement(p, copula, s)
-                }
-            }
-            if case .statement(let s, let copula, let p) = p2 {
-                if copula == .similarity || copula == .equivalence {
-                    sp2 = .statement(p, copula, s)
-                }
-            }
-            if sp1 != nil {
-                permutations.append((sp1, p2, c, tf))
-            }
-            if sp2 != nil {
-                permutations.append((p1, sp2, c, tf))
-            }
-            if sp1 != nil && sp2 != nil {
-                permutations.append((sp1, sp2, c, tf))
-            }
-        }
-        return rules + permutations
+        return rules + permutations(rules)
     }
     
     var allRules: [Rule] {
         let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
-        var permutations: [Rule] = []
-        for r in rules {
-            let (p1, p2, c, tf) = r
-            var sp1: Statement!
-            var sp2: Statement!
-            if case .statement(let s, let copula, let p) = p1 {
-                if copula == .similarity || copula == .equivalence {
-                    sp1 = .statement(p, copula, s)
-                }
-            }
-            if case .statement(let s, let copula, let p) = p2 {
-                if copula == .similarity || copula == .equivalence {
-                    sp2 = .statement(p, copula, s)
-                }
-            }
-            if sp1 != nil {
-                permutations.append((sp1, p2, c, tf))
-            }
-            if sp2 != nil {
-                permutations.append((p1, sp2, c, tf))
-            }
-            if sp1 != nil && sp2 != nil {
-                permutations.append((sp1, sp2, c, tf))
-            }
-        }
-        return rules + permutations
+        return rules + permutations(rules)
     }
 
     var higherOrder: [Rule] {
@@ -284,6 +234,36 @@ public extension Rules {
         }
     }
     
+    // Private
+    
+    private func permutations(_ rules: [Rule]) -> [Rule] {
+        var permutations: [Rule] = []
+        for r in rules {
+            let (p1, p2, c, tf) = r
+            var sp1: Statement!
+            var sp2: Statement!
+            if case .statement(let s, let copula, let p) = p1 {
+                if copula == .similarity || copula == .equivalence {
+                    sp1 = .statement(p, copula, s)
+                }
+            }
+            if case .statement(let s, let copula, let p) = p2 {
+                if copula == .similarity || copula == .equivalence {
+                    sp2 = .statement(p, copula, s)
+                }
+            }
+            if sp1 != nil {
+                permutations.append((sp1, p2, c, tf))
+            }
+            if sp2 != nil {
+                permutations.append((p1, sp2, c, tf))
+            }
+            if sp1 != nil && sp2 != nil {
+                permutations.append((sp1, sp2, c, tf))
+            }
+        }
+        return permutations
+    }
 }
 
 extension Theorems {

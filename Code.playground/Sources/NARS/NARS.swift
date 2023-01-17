@@ -1,31 +1,15 @@
-//#if os(Linux)
-//  import Glibc
-//  typealias dispatch_time_t = UInt32
-//#elseif os(Windows)
-//  import WinSDK
-//  typealias dispatch_time_t = UInt32
-//  typealias useconds_t = UInt32
-//#endif
-
-//import Dispatch
 
 public enum Sentence {
     case judgement(Judgement)
     case goal(Goal)
     case question(Question)
-    
-//    case pause(Int)
     case cycle(Int)
 }
 
 extension Sentence {
-    /// default wait time in milliseconds (0.001s)
-    /// neurons spike between 5ms and 1000ms
-//    public static var pause: Sentence { .pause(defaultPause) }
-    public static var defaultPause = 1000
-    
     public static var cycle: Sentence { .cycle(1) }
 }
+
 
 @dynamicMemberLookup
 public final class NARS: Item {
@@ -51,91 +35,70 @@ public final class NARS: Item {
     
     public var output: (String) -> Void
     
-//    private var queue = DispatchQueue(label: "input", qos: .userInitiated)
-//    private var iqueue = DispatchQueue(label: "imagination", qos: .userInitiated)
-//    private var cycleQueue = DispatchQueue(label: "cycle", qos: .utility)
-    
-//    private var thinking = false
-
-//    public var pendingTasks = Bag<Task>()
-//    private var lastQuestion: Statement?
-
-//    lazy var cycleItem = DispatchWorkItem { [weak self] in
-//        while true {
-//            guard let s = self, s.cycle else { continue }
-//
-//            let quietTime = s.lastPerformance.rawValue - DispatchWallTime.now().rawValue
-//
-//            // TODO: potentially get items from recent memory and process them in imagination
-//            if quietTime > s.cycleLength, let c = s.imagination.get(), let b = c.beliefs.get() {
-//
-//                c.beliefs.put(b)
-//                s.imagination.put(c)
-//
-//                let immediate = Rules.immediate(b.judgement)
-//                let structural = Theorems.apply(b.judgement)
-//
-//                let results = (immediate + structural).filter { !s.imagination.contains($0) }
-//
-//                results.forEach { j in
-//                    s.process(.judgement(j))
-//                }
-//            }
-//        }
-//    }
-    
-//    public var cycle = false {
-//        didSet {
-//            if cycle {
-//                cycleQueue.resume()
-//            } else {
-//                cycleQueue.suspend()
-//            }
-//        }
-//    }
-    
 //    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
 //    fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
     
 //    fileprivate var lastPerformance = DispatchWallTime.now()
     
-    let timeProviderMs: () -> UInt32
+    private let timeProviderMs: () -> UInt32
     
     public init(timeProviderMs: @escaping () -> UInt32, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
         self.timeProviderMs = timeProviderMs
-//        if !cycle {
-//            cycleQueue.suspend()
-//        }
-//        cycleQueue.async(execute: cycleItem)
     }
     
     public func reset() {
-//        thinking = false
-//        cycleQueue.suspend()
         inputBuffer.removeAll()
         recentBuffer.removeAll()
+        processingBuffer.removeAll()
         imaginationBuffer.removeAll()
+        
+        derivedQuestions.removeAll()
         
         memory = Bag<Concept>()
         imagination = WrappedBag(memory)
         recent = Bag<Belief>(4,40)
-//        cycleQueue.resume()
-//        _sleep(2)
     }
     
-    public func perform(_ script: Sentence...) { // convenience
-//        perform(script)
+    public func perform(_ script: Sentence...) { // blocking
+        // add things to buffer and process them in order
         inputBuffer.insert(contentsOf: script.reversed(), at: 0)
         for _ in 0 ..< script.count {
-            inputCycle()
-            recentCycle()
+            processInput()
+            processRecent()
+        }
+        // process derived judgements from previous cycles
+        while !processingBuffer.isEmpty {
+            processingCycle()
         }
     }
     
-    var inputBuffer: [Sentence] = []
+    // stores derived questions and their roots for backward inference
+    private var derivedQuestions: [Statement: (Judgement, Rules)] = [:]
     
-    func inputCycle() {
+    // Buffers
+    private var inputBuffer: [Sentence] = []
+    private var imaginationBuffer: [Sentence] = []
+    private var processingBuffer: [Sentence] = []
+    
+    
+    // MARK: Recent
+    
+    private var recentBuffer: [Judgement] = []
+    
+    private func processRecent() {
+        guard let j = recentBuffer.popLast() else {
+            return
+        }
+        let recent = self.process(recent: j)
+        for el in recent { // add stable patterns from recent memory
+            self.process(.judgement(el), recurse: false, userInitiated: true)
+        }
+    }
+    
+    // MARK: Input
+    
+    private func processInput() {
         guard var s = inputBuffer.popLast() else {
             return
         }
@@ -174,169 +137,7 @@ public final class NARS: Item {
     
         /// SENTENCE
         self.process(s, userInitiated: true) // process in main memory
-        
-        
-        /// PAUSE
-//        if case .pause(let t) = s {
-//            snooze(t)
-//        }
-        
-        /// CYCLE
-        if case .cycle(let n) = s {
-//            thinking = true
-            for _ in 0 ..< n {
-                if imaginationBuffer.isEmpty {
-                    mainCycle()
-                } else {
-                    imaginationCycle()
-                }
-            }
-//            thinking = false
-//            if cycle == false {
-//                cycle = true
-//                think(n * Sentence.defaultPause)
-//                cycle = false
-//            } else {
-//                think(n * Sentence.defaultPause)
-//            }
-        }
     }
-    
-    func mainCycle() {
-        // TODO: potentially get items from recent memory and process them in imagination
-        //        if let r = recent.get() {
-        //            recent.put(r)
-        //            self.process(.judgement(b.judgement))
-        //        }
-
-        if let c = self.imagination.get(), let b = c.beliefs.get() {
-            c.beliefs.put(b)
-            self.imagination.put(c)
-            
-            let immediate = Rules.immediate(b.judgement)
-            let structural = Theorems.apply(b.judgement)
-            
-            let results = (immediate + structural).filter { !self.imagination.contains($0) }
-
-            results.forEach { j in
-                self.process(.judgement(j))
-            }
-        }
-    }
-    
-    var recentBuffer: [Judgement] = []
-    
-    func recentCycle() {
-        guard let j = recentBuffer.popLast() else {
-            return
-        }
-        let recent = self.process(recent: j)
-        for el in recent { // add stable patterns from recent memory
-            self.process(.judgement(el), recurse: false, userInitiated: true)
-        }
-    }
-    
-    var imaginationBuffer: [Sentence] = []
-    
-    func imaginationCycle() {
-        guard let s = imaginationBuffer.popLast() else {
-            return
-        }
-        self.process(s)
-    }
-    
-    
-//    public func perform(_ script: [Sentence]) {
-//        // TODO: add buffer
-//        script.forEach { s in
-//
-//            /// PROCESS
-//            self.queue.async { // default processing queue
-//
-//                var s = s // for updating timstamp
-//
-////                var recent: [Judgement] = []
-//
-//                /// JUDGEMENT
-//                if case .judgement(let j) = s {
-//                    // set time stamp if not yet set
-//                    if j.timestamp == 0 {
-//                        s = .judgement(.updateTimestamp(j))
-//                    }
-//                    // process in recent memory
-//                    DispatchQueue.global().async {
-//                        let recent = self.process(recent: j)
-//                        for el in recent { // add stable patterns from recent memory
-//                            self.process(.judgement(el), recurse: false, userInitiated: true)
-//                        }
-//                    }
-//
-//                //
-//                // TODO: account for tense in question answering
-//                //
-//
-//                /// QUESTION
-//                } else if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
-//                    // check recent memory, then imagination
-//                    if let answer = self.recent.peek(q.identifier)?.judgement // OR
-//                        ?? self.imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
-//                        // check main memory if the answer is already present
-//                        if let c = self.memory.items[sub.description] {
-//                            if c.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
-//                                /// ANSWER
-//                                self.process(.judgement(answer), recurse: false, userInitiated: true)
-//                            }
-//                        } else {
-//                            /// ANSWER
-//                            self.process(.judgement(answer), recurse: false, userInitiated: true)
-//                       }
-//                    }
-//                }
-//
-//                /// SENTENCE
-//                self.process(s, userInitiated: true) // process in main memory
-//            }
-//
-//            /// PAUSE
-//            if case .pause(let t) = s {
-//                snooze(t)
-//            }
-//
-//            /// CYCLE
-//            if case .cycle(let n) = s {
-//                if cycle == false {
-//                    cycle = true
-//                    think(n * Sentence.defaultPause)
-//                    cycle = false
-//                } else {
-//                    think(n * Sentence.defaultPause)
-//                }
-//            }
-//        }
-//
-//    }
-//    func snooze(_ t: Int) {
-//        thinking = true
-//        let ms = 1000 // millisecond
-//        _usleep(useconds_t(t * ms))
-//        thinking = false
-//    }
-    
-//    func think(_ t: Int) {
-//        thinking = true
-//        let deadline = dispatch_time_t(t) * 1000 * 1000
-//        let start = DispatchWallTime.now().rawValue
-//        while thinking, deadline > (start - DispatchWallTime.now().rawValue) {
-//            /// cycle
-//        }
-//        thinking = false
-//    }
-    
-    // TODO: remove -- this was for temporary profiling
-//    public var lastCycle: [(UInt32,String)] = []
-//    private var lastInput: Sentence!
-    
-    private var derivedQuestions: [Statement: (Judgement, Rules)] = [:]
 }
 
 // MARK: Private
@@ -443,33 +244,24 @@ extension NARS {
         return stable
     }
     
+    /// Main processign function
+    /// - Parameters:
+    ///   - input: input `Sentence`
+    ///   - recurse: determines if derived judgements are produced
+    ///   - userInitiated: `true` will cause insertion into main memory
     fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) {
-//        var recurse = recurse; recurse = true
-//        let now = DispatchWallTime.now()
-//        if lastCycle.count == 1 && lastCycle[0] == (0,"") {
-//            lastCycle.remove(at: 0) // first cycle
-//        }
-//        let duration = lastInput == nil ? 0 : lastPerformance.rawValue - now.rawValue
-        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " \(input)"
-//        lastCycle.append((duration, label))
-        
-//        lastInput = input
-//        lastPerformance = now
+        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " "
             
         var input = input // set time stamp if not yet set
         if case .judgement(let j) = input, j.timestamp == 0 {
             input = .judgement(.updateTimestamp(j, timeProviderMs))
         }
 
-        output(label)
+        output(label + "\(input)")
         
         // memory or imagination
         let derivedJudgements: [Judgement] = {
             var derivedJudgements: [Judgement] = []
-//            // apply theorems
-//            if case .judgement(let judgement) = input {
-//                derivedJudgements.append(contentsOf: Theorems.apply(judgement))
-//            }
             // process in memory or imagination
             if userInitiated {
                 derivedJudgements = memory.consider(input, derive: recurse)
@@ -487,80 +279,55 @@ extension NARS {
                 return true
             })
             derivedJudgements = Array(Set(derivedJudgements)) //TODO: use choice to additionally resolve duplicates
-//        print(derivedJudgements)
 //            print("processed \(input)\n\tderived \(derivedJudgements)")
             return derivedJudgements
         }()
         
+        // check inference results
         if derivedJudgements.isEmpty { 
             if case .question = input {
-//                output("\t(1)I don't know 🤷‍♂️")
                 if userInitiated == false {
-                    self.imagination.reset() //= self.memory.copy()
+                    self.imagination.reset()
                 }
-
-//                if thinking {
-                    output("thinking... \(input)")
-
-//                    iqueue.async {
-//                        // re-process question
-//                        self.process(input)
-//                    }
-                    imaginationBuffer.insert(input, at: 0)
-//                }
+                output(label + "thinking... \(input)")
+                imaginationBuffer.insert(input, at: 0)
+                
+                return // break the flow
             }
-            return
         }
         
-        // helper
-//        func imagine(recurse r: Bool = true) {
-//            //print("dj \(derivedJudgements)")
-//            derivedJudgements.forEach { j in
-////                if thinking || cycle {
-//                    process(.judgement(j), recurse: r)
-////                }
-//            }
-//        }
+        
+        // main flow
         
         switch input {
-        
+            
         case .judgement:
             //  consider a judgement
             if !recurse { break } // return if no recursion is needed
-                        
+            
             if userInitiated {
-                derivedJudgements.forEach { j in
-                    process(.judgement(j),
-                            recurse: false, // determines if derived judgements are inserted
-                            userInitiated: true) // will cause insertion into main memory
-                }
+                let js: [Sentence] = derivedJudgements.reversed().map({.judgement($0)})
+                processingBuffer.insert(contentsOf: js, at: 0)
             } else {
                 let js: [Sentence] = derivedJudgements.reversed().map({.judgement($0)})
                 imaginationBuffer.insert(contentsOf: js, at: 0)
-//                imagine(recurse: false)
             }
             
         case .goal:
-            break // TODO: finish implementation 
-        
+            break // TODO: finish implementation
+            
         case .question(let question):
-            /// consider a question 
+            /// consider a question
             if case .statement(let s, _, let p) = question.statement {
                 if case .variable = s {
                     if let winner = derivedJudgements.first {
-//                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
-                        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
-//                        lastCycle.append((duration, label))
-                        output(".  💡 \(winner)")
+                        output(label + "💡 \(winner)")
                     } else {
                         output("\t(2)I don't know 🤷‍♂️")
                     }
                 } else if case .variable = p {
                     if let winner = derivedJudgements.first {
-//                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
-                        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
-//                        lastCycle.append((duration, label))
-                        output(".  💡 \(winner)")
+                        output(label + "💡 \(winner)")
                     } else {
                         output("\t(2)I don't know 🤷‍♂️")
                     }
@@ -568,12 +335,7 @@ extension NARS {
                     
                     if !userInitiated {
                         // cancel all in-flight activities
-//                        thinking = false
-//                        print(imaginationBuffer)
-//                        imaginationBuffer.removeAll()
                         if let source = derivedQuestions[winner.statement] {
-//                            print("___", winner, source)
-                            
                             derivedQuestions.removeValue(forKey: winner.statement)
                             
                             let idx = imaginationBuffer.firstIndex(where: { s in
@@ -582,50 +344,33 @@ extension NARS {
                                         return true
                                     }
                                 }
-                                return false                                
+                                return false
                             })
                             if let i = idx {
-                                imaginationBuffer = Array(imaginationBuffer.prefix(through: i))
+                                imaginationBuffer = Array(imaginationBuffer.prefix(upTo: i))
                             }
                             
                             let answer = source.1.apply((winner, source.0))
-                            .compactMap { $0 }
-                            .map { Sentence.judgement($0) }
+                                .compactMap { $0 }
+                                .map { Sentence.judgement($0) }
                             
                             imaginationBuffer.insert(contentsOf: answer, at: 0)
                         }
                         
                         // process winning judgement
                         process(.judgement(winner),
-                                     recurse: false, // determines if derived judgements are inserted
-                                     userInitiated: true) // will cause insertion into main memory
-                    } else {
-//                        let duration = lastPerformance.rawValue - DispatchWallTime.now().rawValue
-                        let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + "💡 \(winner)"
-//                        lastCycle.append((duration, label))
+                                recurse: false, // determines if derived judgements are inserted
+                                userInitiated: true) // will cause insertion into main memory
                     }
-                    output(".  💡 \(winner)")
-                    print("}}", winner.derivationPath)
-                    break
+                    
+                    output(label + "💡 \(winner)")
+                    // print("}}", winner.derivationPath)
+                    
+                    break // question answered
                     
                 } else if recurse { // switch to imagination flow
-//                    if userInitiated && !thinking {
-//                        iqueue.sync {
-//                            self.imagination.reset() //= self.memory.copy()
-//                        }
-//                        self.thinking = true
-//                    }
-                    
-//                    iqueue.async {
-//                        imagine()
-//                        // re-process question
-//                        self.process(.question(question))
-//                    }
-                    
-//                    let js: [Sentence] = derivedJudgements.reversed().flatMap({[.question(question), .judgement($0)]})
-                    
                     let source = derivedJudgements.first!
-//                    print("\n\n", derivedQuestions, "\n\n")
+                    //                    print("\n\n", derivedQuestions, "\n\n")
                     derivedJudgements.dropFirst().forEach { j in
                         derivedQuestions[j.statement] = (source, j.truthValue.rule ?? .deduction)
                     }
@@ -641,28 +386,57 @@ extension NARS {
                     output("\t(2)I don't know 🤷‍♂️")
                 }
             }
-        case .cycle:
-            break // do nothing
+            
+        /// CYCLE
+        
+        case .cycle(let n):
+            for _ in 0 ..< n {
+                if imaginationBuffer.isEmpty {
+                    mainCycle()
+                } else {
+                    imaginationCycle()
+                }
+            }
         }
     }
+    
+    
+    // MARK: Cycles
+    
+    private func mainCycle() {
+        // TODO: potentially get items from recent memory and process them in imagination
+        //        if let r = recent.get() {
+        //            recent.put(r)
+        //            self.process(.judgement(b.judgement))
+        //        }
+
+        if let c = self.imagination.get(), let b = c.beliefs.get() {
+            c.beliefs.put(b)
+            self.imagination.put(c)
+            
+            let immediate = Rules.immediate(b.judgement)
+            let structural = Theorems.apply(b.judgement)
+            
+            let results = (immediate + structural).filter { !self.imagination.contains($0) }
+
+            results.forEach { j in
+                self.process(.judgement(j))
+            }
+        }
+    }
+
+    private func imaginationCycle() {
+        guard let s = imaginationBuffer.popLast() else {
+            return
+        }
+        self.process(s)
+    }
+    
+    private func processingCycle() {
+        guard let s = processingBuffer.popLast() else {
+            return
+        }
+        self.process(s, recurse: false, // determines if derived judgements are inserted
+                     userInitiated: true) // will cause insertion into main memory
+    }
 }
-
-
-// MARK: - Compatibility
-
-//func _sleep(_ t: UInt32) {
-//    #if os(Windows)
-//      Sleep(t * 1000)
-//    #else
-//      sleep(t)
-//    #endif
-//}
-//
-//func _usleep(_ t: UInt32) {
-//    #if os(Windows)
-//      Sleep(t)
-//    #else
-//      usleep(t)
-//    #endif
-//}
-

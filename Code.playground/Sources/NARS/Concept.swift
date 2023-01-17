@@ -160,12 +160,6 @@ extension Concept {
             }
             
             
-//            print("\n\n>>>", b.judgement, j, "<<<\n\n")
-            
-//
-//            let theorems = Theorems.apply(Term.compound(.x, [b.judgement.statement, j.statement])-*)
-//            print("+++\n", theorems, "\n")
-            
             // apply rules
             let results = Rules.allCases
                 .flatMap { r in
@@ -274,27 +268,17 @@ extension Concept {
             
         } else if let b = beliefs.get() {
             beliefs.put(b) // put back
-            // all other rules // backwards inference
-//            print(">>>", s, b)
-//            let backward = Rules.allCases.flatMap { r in
-//                r.backward((s-*, b.judgement))
-//            }.compactMap { $0 }
-//            
-//            print(">>> backward", backward, "\n")
-            
-            let r = Theorems.apply(b.judgement)
+            // all other rules // backward inference
+            let theorems = Theorems.apply(b.judgement)
                 .filter { beliefs.peek($0.description) == nil }
-
-            if let answer = r.first(where: { $0.statement == s }) {
+            if let answer = theorems.first(where: { $0.statement == s }) {
                 return [answer]
-            }
-            
-            return [b.judgement] + //r +
-             Rules.allCases
-                .flatMap { r in
+            } else {
+                let backward = Rules.allCases.flatMap { r in
                     r.backward((s-*, b.judgement))
-                }
-                .compactMap { $0 }
+                }.compactMap { $0 }
+                return [b.judgement] + theorems + backward
+            }
         }
         return [] // no results found
     }

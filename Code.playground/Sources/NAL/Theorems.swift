@@ -63,15 +63,13 @@ extension Term {
     static func match(t: Statement, s: Statement) -> Statement? {
         var results = [Term]()
         let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
-        
+//        print("\n\n--", t)
         for sol in solve(goal) {
-            //                print(sol)
-            let ts = s.terms.flatMap({ $0.terms.map({ $0.logic() }) })
-            
-            let valid = sol.allSatisfy { (v, _) in
-                !ts.contains { $0.equals(v) }
-            }
-            
+//            print(sol)
+            let solutionVars = sol.map({ $0.LogicVariable.name })
+            let theoremVars = Term.getTerms(t).filter({ if case .variable = $0 { return true } else { return false } }).map({$0.description})
+            let valid = Set(solutionVars) == Set(theoremVars)
+       
             if valid {
                 var result = t
                 for item in sol {
