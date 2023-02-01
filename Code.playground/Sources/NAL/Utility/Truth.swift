@@ -35,13 +35,13 @@ extension Evidence {
 
 extension TruthValue {
     public init(_ frequency: Double, _ confidence: Double, _ rule: Rules! = nil) {
-        self.frequency = rounded(frequency)
-        self.confidence = rounded(confidence)
+        self.frequency = frequency//rounded(frequency)
+        self.confidence = confidence//rounded(confidence)
         self.rule = rule
     }
     init(_ ev: Evidence, _ rule: Rules! = nil) {
-        self.frequency = rounded(ev.frequency)
-        self.confidence = rounded(ev.confidence)
+        self.frequency = ev.frequency//rounded(ev.frequency)
+        self.confidence = ev.confidence//rounded(ev.confidence)
         self.rule = rule
     }
 }

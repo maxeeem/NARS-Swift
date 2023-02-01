@@ -135,8 +135,10 @@ extension Evidence: CustomStringConvertible {
 extension TruthValue: CustomStringConvertible {
     public var description: String {
         let r = rule == nil ? "." : "\(rule!)"
-        let f = "\(f)".count == 3 ? "\(f)0" : "\(f)"
-        let c = "\(c)".count == 3 ? "\(c)0" : "\(c)"
+        let rf = rounded(f)
+        let f = "\(rf)".count == 3 ? "\(rf)0" : "\(rf)"
+        let rc = rounded(c)
+        let c = "\(rc)".count == 3 ? "\(rc)0" : "\(rc)"
         return "%\(f);\(c)%\(r)"
     }
 }

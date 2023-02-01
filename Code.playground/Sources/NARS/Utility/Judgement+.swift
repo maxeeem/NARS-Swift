@@ -11,3 +11,14 @@ extension Judgement {
         }
     }
 }
+
+extension Sentence {
+    func setTimestamp(_ timeProviderMs: () -> UInt32) -> Sentence {
+        if case .judgement(let j) = self {
+            if j.timestamp == 0 {
+                return .judgement(.updateTimestamp(j, timeProviderMs))
+            }
+        }
+        return self
+    }
+}

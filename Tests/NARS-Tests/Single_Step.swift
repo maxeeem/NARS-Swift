@@ -41,17 +41,44 @@ class Single_Step: XCTestCase {
     func testSample() {
         nars.perform(
             ("{tom}" --> "cat")-*,
-            (Term.compound(.x, ["{tom}", "{sky}"]) --> "likes")-*,
-//            ("{tom}" --> Term.compound(.e, ["likes", .º, "{sky}"]))-*,
-//            ("{sky}" --> Term.compound(.e, ["likes", "{tom}", .º]))-*,
+            (*["{tom}", "{sky}"] --> "likes")-*,
             ("{sky}" --> "[blue]")-*,
-            (Term.compound(.x, ["cat", "[blue]"]) --> "likes")-?,
+            (*["cat", "[blue]"] --> "likes")-?,
             .cycle(100)
-//            ("cat" --> Term.compound(.e, ["likes", .º, "[blue]"]))-?,
         )
-//        outputMustContain("💡 <(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
-        outputMustContain("<(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
+        outputMustContain("💡 <(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
     }
+    
+    func testLang() {
+        nars.perform((*["cat", "animal"] --> "is")-*)
+        nars.perform(("cat" --> "animal")-*)
+        nars.perform((*["dog", "animal"] --> "is")-*)
+        nars.perform(("dog" --> "animal")-?)
+
+        outputMustContain("<dog -> animal>.")
+
+//        nars.perform(("dog" --> "animal")-*(1.0, 0.9, 0))
+//        nars.perform(("dog" --> "animal")-?)
+    }
+    
+    func testSymbolic() {
+        let relation = *["C", "subset"] --> "represent"
+//        let image = "C" --> ç.e_("represent", .º, "subset")
+        
+        let knowledge = *[.var("x"), "C", .var("y")] --> ç.e_("represent", .º, *[.var("x"), .var("y")] --> "subset")
+        
+        nars.perform(
+            relation-*,
+            knowledge-*,
+            .cycle(50),
+//            (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
+//            .cycle(50),
+            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?
+//            .cycle(50)
+        )
+        print(nars.memory)
+    }
+    
     /*
     func testik() {
         let relation = ç.x_("water", "salt") --> "dissolve"
@@ -191,10 +218,8 @@ class Single_Step: XCTestCase {
         nars.perform(
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "door_101") --> "open"))-*,
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "room_101") --> "enter"))-*,
-            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9)
+            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9),
 //            ((("John" * "room_101") --> "enter") <<|=> (("John" * "door_101") --> "open"))-*,
-            )
-        nars.perform(
             ||(("John" * "door_101") --> "open")-*
 //            ||(("John" * "room_101") --> "enter")-*,
         )
@@ -410,10 +435,11 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("robin" <-> "swan")-*,
            ("gull" <-> "swan")-*,
-           .cycle(10)
+           ("gull" <-> "robin")-?
+//           .cycle(10)
        )
-        print(nars.recent)
-        print(nars.recent.items.contains(where: { $0.value.description.contains("<gull <–> robin>. %1.00;0.81%") }))
+//        print(nars.recent)
+//        print(nars.recent.items.contains(where: { $0.value.description.contains("<gull <–> robin>. %1.00;0.81%") }))
        outputMustContain("<gull <–> robin>. %1.00;0.81%")
     }
     

@@ -275,6 +275,7 @@ extension Theorems {
 
         let T1 = Term.var("T1")
         let T2 = Term.var("T2")
+        let R = Term.var("R")
 
         switch self {
         case .inheritance:
@@ -301,7 +302,10 @@ extension Theorems {
                 (S <-> P) <=> (.property(S) <-> .property(P)),
                 
                 (S --> .instance(P)) <=> (S <-> .instance(P)),
-                (.property(S) --> P) <=> (.property(S) <-> P)
+                (.property(S) --> P) <=> (.property(S) <-> P),
+                
+                (*[T1, T2] --> R) <=> (T1 --> ç.e_(R, .º, T2)),
+                (*[T1, T2] --> R) <=> (T2 --> ç.e_(R, T1, .º))
             ]
         }
     }

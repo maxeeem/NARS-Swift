@@ -9,7 +9,7 @@ extension AbstractBag where I == Concept {
         }
     }
     func consider(_ j: Judgement, derive: Bool) -> [Judgement] {
-        consider(j.statement, derive: derive) { c in
+        consider(j.statement, isQuestion: false, j: j, derive: derive) { c in
             switch j.statement {
             case .symbol: fallthrough // TODO: is this accurate?
             case .compound:
@@ -25,7 +25,7 @@ extension AbstractBag where I == Concept {
     }
     func consider(_ q: Question, derive: Bool) -> [Judgement] {
         if case .statement = q.statement {
-            return consider(q.statement, derive: derive) { c in c.answer(q) }
+            return consider(q.statement, isQuestion: true, j: nil, derive: derive) { c in c.answer(q) }
         } else {
             // TODO: change this; just a temporary modification
             if let vari = q.variableTerm {
@@ -40,7 +40,7 @@ extension AbstractBag where I == Concept {
 // MARK: Private
 
 extension AbstractBag where I == Concept {
-    private func consider(_ s: Statement, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
+    private func consider(_ s: Statement, isQuestion: Bool, j: Judgement?, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
@@ -55,20 +55,41 @@ extension AbstractBag where I == Concept {
 //            if c == .n, ts.count == 1 { // TODO: is this correct?
 //                return consider(ts[0], derive: derive, f)
 //            }
-            if [.c, .d].contains(c) {
+            if [.c, .d, .x].contains(c) {
                 let terms = Set(ts.flatMap{$0.terms})
                 for t in terms {
-                    if var concept = get(t.description) {
-                        derivedJudgements.append(contentsOf: f(&concept))
-                        concept.adjustPriority(derivedJudgements)
+                    var concept = get(t.description) ?? Concept(term: t)
+                        var derived: [Judgement] = []
+                        if isQuestion {
+                            derived = concept.answer(s-?)
+                        } else {
+                            let j = j!
+                            switch j.statement {
+                            case .symbol: fallthrough // TODO: is this accurate?
+                            case .compound:
+                                derived = concept.accept(j, isSubject: concept.term == j.statement, derive: derive)
+                            case .statement(let subject, _, _):
+                                derived = concept.accept(j, isSubject: concept.term == subject, derive: derive)
+                            case .variable:
+                                derived = [] // TODO: is this accurate?
+                            case .operation:
+                                derived = [] // TODO: is this accurate?
+                            }
+                        }
+                        derivedJudgements.append(contentsOf: derived)
+                        concept.adjustPriority(derived)
                         put(concept)
-                    }
+                }
+                if isQuestion {
+                    print(derivedJudgements)
+                    
                 }
                 return derivedJudgements
             }
             var concept = get(s.description) ?? Concept(term: s)
-            derivedJudgements.append(contentsOf: f(&concept))
-            concept.adjustPriority(derivedJudgements)
+            let derived = f(&concept)
+            derivedJudgements.append(contentsOf: derived)
+            concept.adjustPriority(derived)
             put(concept)
             return derivedJudgements
         case .statement(let subject, _, let predicate):
@@ -78,14 +99,23 @@ extension AbstractBag where I == Concept {
             subjectConcept.adjustPriority(derivedJudgements)
             derivedJudgements.append(contentsOf: f(&predicateConcept))
             predicateConcept.adjustPriority(derivedJudgements)
-            if case .statement = subject {
-                derivedJudgements.append(contentsOf: consider(subject, derive: derive, f))
+            switch subject {
+            case .statement: fallthrough
+            case .compound:
+                derivedJudgements.append(contentsOf: consider(subject, isQuestion: isQuestion, j: j, derive: derive, f))
+            default: break
             }
-            if case .statement = predicate {
-                derivedJudgements.append(contentsOf: consider(predicate, derive: derive, f))
+            switch predicate {
+            case .statement: fallthrough
+            case .compound:
+                derivedJudgements.append(contentsOf: consider(predicate, isQuestion: isQuestion, j: j, derive: derive, f))
+            default: break
             }
             put(subjectConcept)
             put(predicateConcept)
+            if isQuestion {
+                
+            }
             return derivedJudgements
         case .variable:
             return [] // TODO: is this accurate?

@@ -144,3 +144,48 @@ extension WrappedBag: CustomStringConvertible {
     }
 }
 
+/// MEM protocol to abstract Bag and WrappedBag
+protocol MEM {
+    func consider(_ s: Sentence, derive: Bool) -> [Judgement]
+}
+
+extension Bag<Concept>: MEM {}
+extension WrappedBag<Concept>: MEM {}
+
+/// Utility
+
+extension Array where Element == Sentence {
+    mutating func enqueue(_ js: [Judgement]) {
+        let js: [Sentence] = js.reversed().map({.judgement($0)})
+        insert(contentsOf: js, at: 0)
+    }
+    mutating func cleanup(_ statement: Statement) {
+        let idx = firstIndex(where: { s in
+            if case .question(let q) = s {
+                if q.statement == statement {
+                    return true
+                }
+            }
+            return false
+        })
+        if let i = idx {
+            self = Array(prefix(through: i))
+        }
+    }
+}
+
+extension Array where Element == Judgement {
+    func removeDuplicates(matching sentence: Sentence) -> [Judgement] {
+        //TODO: use choice to additionally resolve duplicates
+        Array(Set(filter { j in
+            if j.truthValue.confidence == 0 {
+                return false
+            }
+            if case .judgement(let judgement) = sentence,
+                j == judgement || judgement.statement.isTautology {
+                return false
+            }
+            return true
+        }))
+    }
+}

@@ -100,22 +100,22 @@ final class NARS_Tests: XCTestCase {
             ("A" --> "B")-*,
             ("A" --> "Z")-*
         )).contains(
-            ("Z" --> "B")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
+            ("Z" --> "B")-*(1, 0.44751381215469616)) ? "pass" : XCTFail("fail"))
         
         print("abduction", Rules.abduction.firstOrder, Rules.abduction.apply((
             ("A" --> "B")-*,
             ("C" --> "B")-*
         )).contains(
-            ("C" --> "A")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
+            ("C" --> "A")-*(1, 0.44751381215469616)) ? "pass" : XCTFail("fail"))
 
         let applied = Rules.exemplification.apply((("A" --> "B")-*, ("B" --> "C")-*))
-        print("exemplification", Rules.exemplification.firstOrder, (applied.first == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
+        print("exemplification", Rules.exemplification.firstOrder, (applied.first == ("C" --> "A")-*(1, 0.44751381215469616) ? "pass" : XCTFail("fail")))
 
         print("comparison", Rules.comparison.firstOrder, Rules.comparison.apply((
             ("A" --> "B")-*,
             ("A" --> "C")-*
         )).contains(
-            ("C" <-> "B")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
+            ("C" <-> "B")-*(1, 0.44751381215469616)) ? "pass" : XCTFail("fail"))
 
 //        print(Rules.comparison.apply((
 //            ("A" --> "B")-*,

@@ -18,7 +18,7 @@ extension Judgement {
         self.statement = statement
         self.truthValue = truthValue
         self.tense = tense
-        self.timestamp = tense == nil ? ETERNAL : timestamp
+        self.timestamp = (tense == nil && timestamp == ETERNAL) ? ETERNAL : timestamp
         if derivationPath.isEmpty {
             let description = Judgement.sortedDescription(statement)
 //            print("--", description)
@@ -82,6 +82,8 @@ extension Judgement {
 
         if p1.isEmpty && p2.isEmpty {
             return true // judgements have the same root
+        } else if (p1.isEmpty && !p2.isEmpty) || (p2.isEmpty && !p1.isEmpty) {
+            return false // same root but one is empty indicating user input
         } else if p1.count == 1 && p2.count == 1 {
             if p1[0].hasSuffix("\(ETERNAL))") && p2[0].hasSuffix("\(ETERNAL))") {
                 // judgements are both eternal
