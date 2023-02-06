@@ -77,7 +77,13 @@
                   Identifier = "Single_Step/testLogicRules()">
                </Test>
                <Test
+                  Identifier = "Single_Step/testNal2_02()">
+               </Test>
+               <Test
                   Identifier = "Single_Step/testSample()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testSymbolic()">
                </Test>
                <Test
                   Identifier = "Single_Step/testfoo()">

@@ -1,3 +1,10 @@
+/// MEM protocol to abstract Bag and WrappedBag
+protocol MEM {
+    func consider(_ s: Sentence, derive: Bool) -> [Judgement]
+}
+
+extension Bag<Concept>: MEM {}
+extension WrappedBag<Concept>: MEM {}
 
 extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
@@ -55,7 +62,7 @@ extension AbstractBag where I == Concept {
 //            if c == .n, ts.count == 1 { // TODO: is this correct?
 //                return consider(ts[0], derive: derive, f)
 //            }
-            if [.c, .d, .x].contains(c) {
+            if [.c, .d].contains(c) {
                 let terms = Set(ts.flatMap{$0.terms})
                 for t in terms {
                     var concept = get(t.description) ?? Concept(term: t)

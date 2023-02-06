@@ -22,3 +22,18 @@ extension Sentence {
         return self
     }
 }
+
+extension Judgement {
+    var flipped: Judgement? {
+        var flipped: Statement?
+        if case .statement(let sub, let cop, let pre) = statement, (cop == .equivalence || cop == .similarity) {
+            flipped = .statement(pre, cop, sub)
+        }
+        if case .compound(let conn, let terms) = statement, conn == .c || conn == .U || conn == .Ω {
+            if terms.count == 2 { // TODO: handle compounds with multiple terms
+                flipped = .compound(conn, terms.reversed())
+            }
+        }
+        return (flipped == nil) ? nil : Judgement(flipped!, truthValue, derivationPath, tense: tense, timestamp: timestamp)
+    }
+}

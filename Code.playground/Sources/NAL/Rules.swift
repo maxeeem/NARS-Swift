@@ -49,12 +49,25 @@ extension Rules {
         var x: [Judgement?] = []
         
         // apply rules
-        self.forward.forEach { r in
-            x.append(rule_generator(r)((j1, j2)))
-        }
-        // switch order of premises
-        self.forward.forEach { r in
-            x.append(rule_generator(r)((j2, j1)))
+        self.allRules.forEach { r in
+            let (p1, p2, c, tf) = r
+
+            let q = j1
+            let j = j2
+            
+            if let m = Term.match(t: &&[p1, p2] => c, s: q.statement) {
+                if case .statement(let s, _, _) = m {
+                    let q1 = s.terms[0]
+                    let q2 = s.terms[1]
+                    let tv = tf(TruthValue(1.0, 0.9), TruthValue(1.0, 0.9))
+                    if q1 == j.statement {
+                        x.append(Judgement(statement: q2, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: tv.rule), tense: nil, derivationPath: []))
+                    }
+                    if q2 == j.statement {
+                        x.append(Judgement(statement: q1, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: tv.rule), tense: nil, derivationPath: []))
+                    }
+                }
+            }
         }
         
         let unique = x.compactMap({$0}).removeDuplicates()

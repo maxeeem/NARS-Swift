@@ -64,11 +64,7 @@ private func neg(_ s: Statement) -> Statement {
 }
 
 public extension Rules {
-    var forward: [Rule] {
-        let rules = firstOrder + higherOrder
-        return rules + permutations(rules)
-    }
-    
+
     var allRules: [Rule] {
         let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
         return rules + permutations(rules)
@@ -281,7 +277,9 @@ extension Theorems {
         case .inheritance:
             return [
                 (T1 & T2) --> (T1),
-                (T1 - T2) --> (T1)
+                (T1) --> (T1 | T2),
+                (T1 - T2) --> (T1),
+                (T1) --> (T1 ~ T2)
             ]
         case .similarity:
             return [

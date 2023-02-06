@@ -11,7 +11,7 @@ public enum Theorems: CaseIterable {
 extension Theorems {
     public static func apply(_ j: Judgement) -> [Judgement] {
         let res: [[Statement]] = self.allCases.map {
-            var results = $0.rules.compactMap { Term.match(t: $0, s: j.statement) }
+            var results = $0.rules.flatMap { t in [Term.match(t: t, s: j.statement)] + j.statement.terms.map({ s in Term.match(t: t, s: s) }) }.compactMap({$0})
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
                 results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .statement(p, c, s)) })
             }
@@ -24,18 +24,14 @@ extension Theorems {
         }
 
         let results: [[Judgement]] = res.flatMap{$0}.map { t in
-            var rel = reliance
-            if case .statement(let sub, let cop, _) = t, cop == .equivalence {
-                rel = 0.9//j.statement == sub ? 0.9 : 1.0 // TODO: should this always be .9 or 1 ?
-            }
             var results = Rules.strong.flatMap {
-                $0.apply((j, t-*(1,rel, ETERNAL)))
+                $0.apply((j, t-*(1.0, reliance, ETERNAL)))
             }.compactMap { $0 }
             
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
                 results.append(contentsOf:
                     Rules.strong.flatMap {
-                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1,reliance, ETERNAL)))
+                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
                     }.compactMap { $0 }
                )
             }
@@ -43,7 +39,7 @@ extension Theorems {
                 if terms.count == 2 { // TODO: handle compounds with multiple terms
                     results.append(contentsOf:
                         Rules.strong.flatMap {
-                        $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1,reliance, ETERNAL)))
+                        $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
                         }.compactMap { $0 }
                    )
                 }

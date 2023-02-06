@@ -144,13 +144,6 @@ extension WrappedBag: CustomStringConvertible {
     }
 }
 
-/// MEM protocol to abstract Bag and WrappedBag
-protocol MEM {
-    func consider(_ s: Sentence, derive: Bool) -> [Judgement]
-}
-
-extension Bag<Concept>: MEM {}
-extension WrappedBag<Concept>: MEM {}
 
 /// Utility
 
@@ -169,13 +162,13 @@ extension Array where Element == Sentence {
             return false
         })
         if let i = idx {
-            self = Array(prefix(through: i))
+            self = Array(prefix(upTo: i))
         }
     }
 }
 
 extension Array where Element == Judgement {
-    func removeDuplicates(matching sentence: Sentence) -> [Judgement] {
+    func remove(matching sentence: Sentence) -> [Judgement] {
         //TODO: use choice to additionally resolve duplicates
         Array(Set(filter { j in
             if j.truthValue.confidence == 0 {

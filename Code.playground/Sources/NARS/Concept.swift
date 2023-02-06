@@ -46,6 +46,8 @@ public struct Concept: Item {
         self.beliefs = WrappedBag(_beliefs)
     }
     
+    public var anticipations: [String: (Term, TruthValue)] = [:]
+    
     // TODO: how much should the input change
     // before it is considered different?
     // for how long should we keep the cache?
@@ -63,12 +65,17 @@ extension Concept {
     func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
 //        lastInput = j
-
-        var originalPriority: Double?
         
-        var derived: [Judgement] = []
-
+        /// helper
+        func store(_ j: Judgement) {
+            var b = j + (originalPriority ?? 0.9)
+            b.adjustPriority(derived)
+            beliefs.put(b)
+        }
+        
         var j = j
+        var originalPriority: Double?
+        var derived: [Judgement] = []
         
         // revision goes first
         if let b = beliefs.get(j.identifier) {
@@ -92,25 +99,8 @@ extension Concept {
             }
         }
         
-        var jflipped: Judgement = j
-        // store symmetrical statement
-        if case .statement(let sub, let cop, let pre) = j.statement, (cop == .equivalence || cop == .similarity) {
-            let flipped: Statement = .statement(pre, cop, sub)
-            jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
-            if beliefs.peek(jflipped.identifier) == nil {
-                derived.append(jflipped)
-            }
-        }
-        
-        // store symmetrical compound
-        if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
-            if terms.count == 2 { // TODO: handle compounds with multiple terms
-                let flipped: Statement = .compound(conn, terms.reversed())
-                jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
-                if beliefs.peek(jflipped.identifier) == nil {
-                    derived.append(jflipped)
-                }
-            }
+        if let jf = j.flipped, beliefs.peek(jf.identifier) == nil {
+            store(jf) // store symmetrical belief
         }
         
         defer {
@@ -132,24 +122,27 @@ extension Concept {
                 break // TODO: is this accurate?
             }
 
-            var b = j + (originalPriority ?? 0.9)
-            b.adjustPriority(derived)
-//            if j.truthValue.rule != .conversion {
-                beliefs.put(b) // store new belief
-//            }
+            store(j) // store original belief
         }
+
         
-        // return if no recursion
+        /*
+         * EXIT – return if no recursion
+         */
         guard derive else { return derived }
         
         /// apply theorems
         derived.append(contentsOf: Theorems.apply(j))
         
+//        if j.statement == "P" {
+//            _ = anticipations(for: j)
+//        }
+        
         /// apply two-premise rules
         twoPremiseRules:
         if var b = beliefs.get() {
             
-            if b.judgement.statement == jflipped.statement {
+            if b.judgement.statement == j.flipped?.statement {
                 if let b1 = beliefs.get() {
                     beliefs.put(b)
                     b = b1 // use another belief
@@ -266,18 +259,36 @@ extension Concept {
             beliefs.put(conv + 0.9)
             return [conv]
             
-        } else if let b = beliefs.get() {
-            beliefs.put(b) // put back
-            // all other rules // backward inference
-            let theorems = Theorems.apply(b.judgement)
-                .filter { beliefs.peek($0.description) == nil }
-            if let answer = theorems.first(where: { $0.statement == s }) {
-                return [answer]
-            } else {
-                let backward = Rules.allCases.flatMap { r in
-                    r.backward((s-*, b.judgement))
-                }.compactMap { $0 }
-                return [b.judgement] + theorems + backward
+        } else {
+            // apply term decomposition
+            let judgement = Judgement(s, TruthValue(1.0, reliance))
+            let decomposed = Theorems.apply(judgement)
+                .filter { beliefs.peek($0.identifier) != nil }
+            if let answer = decomposed.first,
+               let j = beliefs.items.values.first(where: { $0.judgement.statement == answer.statement })?.judgement {
+                let f = and(j.truthValue.f, answer.truthValue.f)
+                let c = and(j.truthValue.c, answer.truthValue.c)
+                let tv = TruthValue(f, c) // intersection
+                return [Judgement(s, tv)]
+            }
+
+            if let b = beliefs.get() {
+                beliefs.put(b) // put back
+                // all other rules // backward inference
+                let theorems = Theorems.apply(b.judgement)
+                    .filter { beliefs.peek($0.identifier) == nil }
+                if let answer = theorems.first(where: { $0.statement == s }) {
+                    return [answer]
+                } else {
+                    let backward = Rules.allCases.flatMap { r in
+                        r.backward((s-*, b.judgement))
+                    }.compactMap { $0 }
+                    if theorems.isEmpty && backward.isEmpty {
+                        let guess = Judgement(s, TruthValue(0.1, reliance))
+                        return [guess] // maybe?
+                    }
+                    return [b.judgement] + theorems + backward
+                }
             }
         }
         return [] // no results found
@@ -294,5 +305,53 @@ extension Concept {
                 return c.statement == j2.statement
             }
         return winner == nil ? [] : [winner!]
+    }
+}
+//
+//<(*, a, singular) --> represent>.
+//<(*, (*, a, $1), <$1 --> singular>) --> represent>.
+//<(*, ?, (*, a, dog)) --> represent>?
+//
+//
+//
+//<(*, {C}, {subset}) --> represent>.
+//<(*, (*, {#x}, {C}, {#y}), <(*, {#x}, {#y}) --> {subset}>) --> represent>.
+//<{(*, (*, {dog}, {C}, {animal}), {?1})} --> represent>?
+//
+//
+//
+//<{(*, C, subset)} --> represent>.
+//<(*, {(*, $x, C, $y)}, {<(*, $x, $y) --> subset>}) --> represent>.
+//<{(*, (*, dog, C, animal), ?1)} --> represent>?
+//
+//<<(C * ($x * $y)) --> SetTheoryExpression> ==> <($x * $y) --> Subset>>.
+//<(C * (dog * animal)) --> SetTheoryExpression>.
+
+
+
+//<(dog * animal) --> ?1>?
+
+extension Concept {
+    func anticipations(for j: Judgement) -> [String : (Term, TruthValue)] {
+        /// process anticipations
+        let anticipations = beliefs.items.compactMapValues { b in
+            if let ant = b.judgement.statement.anticipation(for: j.statement) {
+                return (ant, b.judgement.truthValue)
+            }
+            return nil
+        }
+        
+//        if !anticipations.isEmpty {
+//            print("anticipate", "from \(term):", anticipations.mapValues({$0}).map({$0.value}))
+//            
+//            let tv = anticipations.first!.value.1
+//            let original = anticipations.first!.value.0 + (tv.f, tv.c, 0)
+//            let c = tv.c / (tv.c + k)
+//            let observed = anticipations.first!.value.0 + (tv.f, c, 0)
+//            let rev = revision(j1: original, j2: observed)
+//            print("anticipate revised", rev)
+//        }
+        
+        return anticipations
     }
 }
