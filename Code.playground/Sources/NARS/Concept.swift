@@ -30,11 +30,11 @@ public struct Concept: Item {
     
     let term: Term
     
-    private var _termLinks = Bag<TermLink>()
-    internal var termLinks: WrappedBag<TermLink>
     //let tasks = Bag<TermLink>() // sentences
-    private var _beliefs = Bag<Belief>()
-    internal var beliefs: WrappedBag<Belief>
+    internal var beliefs = Bag<Belief>()
+//    internal var beliefs: WrappedBag<Belief>
+    
+    public var anticipations: [String: (Term, TruthValue)] = [:]
 
     init(string: String) {
         self.init(term: Term(stringLiteral: string))
@@ -42,11 +42,8 @@ public struct Concept: Item {
     
     init(term: Term) {
         self.term = term
-        self.termLinks = WrappedBag(_termLinks)
-        self.beliefs = WrappedBag(_beliefs)
+//        self.beliefs = WrappedBag(_beliefs)
     }
-    
-    public var anticipations: [String: (Term, TruthValue)] = [:]
     
     // TODO: how much should the input change
     // before it is considered different?
@@ -62,9 +59,15 @@ public struct Concept: Item {
 
 extension Concept {
     // returns derived judgements if any
-    func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
+    func accept(_ j: Judgement, derive: Bool) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
 //        lastInput = j
+        if j.statement.description == "[blue] -> (/ likes cat º)" {
+            
+        }
+        var j = j
+        var originalPriority: Double?
+        var derived: [Judgement] = []
         
         /// helper
         func store(_ j: Judgement) {
@@ -73,15 +76,26 @@ extension Concept {
             beliefs.put(b)
         }
         
-        var j = j
-        var originalPriority: Double?
-        var derived: [Judgement] = []
-        
         // revision goes first
         if let b = beliefs.get(j.identifier) {
             originalPriority = b.priority
             var judgement: Judgement
-            if j.evidenceOverlap(b.judgement) {
+            let sameRule: Bool = {
+                let r1 = j.truthValue.rule
+                let r2 = b.judgement.truthValue.rule
+                if (r1 == nil && r2 == nil) {
+                    return false // both user input – revise
+//                } else if (r1 == nil || r2 == nil) {
+//                    return true // one is input, another derived – choose best
+                }
+                return r1 == r2
+            }()
+//            let guess: Bool = {
+//                let t1 = j.truthValue
+//                let t2 = b.judgement.truthValue
+//                return t1 == t2 && t1 == .guess
+//            }()
+            if sameRule || j.evidenceOverlap(b.judgement) {
                 judgement = choice(j1: j, j2: b.judgement)
             } else {
                 if j.truthValue.rule == .conversion {
@@ -89,7 +103,10 @@ extension Concept {
                 } else if b.judgement.truthValue.rule == .conversion {
                     judgement = j
                 } else {
-                    judgement = revision(j1: j, j2: b.judgement)
+                    if j.statement == ("{Sandy}" --> "dog") {
+                        
+                    }
+                    judgement = revision(j1: b.judgement, j2: j)
                 }
             }
             // wait to put back original belief to process another one
@@ -104,24 +121,6 @@ extension Concept {
         }
         
         defer {
-            switch j.statement {
-            case .symbol: // TODO: is this accurate?
-                termLinks.put(TermLink(j.statement, 0.9))
-            case .compound(let c, _):
-                if ![.c, .d, .n].contains(c) {
-                    termLinks.put(TermLink(j.statement, 0.9))
-                }
-            case .statement(let subject, _, let predicate):
-                if !j.statement.isTautology {
-                    let term = isSubject ? predicate : subject
-                    termLinks.put(TermLink(term, 0.9))
-                }
-            case .variable:
-                break // TODO: is this accurate?
-            case .operation:
-                break // TODO: is this accurate?
-            }
-
             store(j) // store original belief
         }
 
@@ -261,7 +260,7 @@ extension Concept {
             
         } else {
             // apply term decomposition
-            let judgement = Judgement(s, TruthValue(1.0, reliance))
+            let judgement = Judgement(s, TruthValue(1.0, reliance)) // TODO: should we handle this better an pass actual timestamp?
             let decomposed = Theorems.apply(judgement)
                 .filter { beliefs.peek($0.identifier) != nil }
             if let answer = decomposed.first,
@@ -284,8 +283,7 @@ extension Concept {
                         r.backward((s-*, b.judgement))
                     }.compactMap { $0 }
                     if theorems.isEmpty && backward.isEmpty {
-                        let guess = Judgement(s, TruthValue(0.1, reliance))
-                        return [guess] // maybe?
+                        return [] // no clue
                     }
                     return [b.judgement] + theorems + backward
                 }

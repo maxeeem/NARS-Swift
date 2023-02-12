@@ -1,10 +1,10 @@
 /// MEM protocol to abstract Bag and WrappedBag
-protocol MEM {
-    func consider(_ s: Sentence, derive: Bool) -> [Judgement]
-}
-
-extension Bag<Concept>: MEM {}
-extension WrappedBag<Concept>: MEM {}
+//protocol MEM {
+//    func consider(_ s: Sentence, derive: Bool) -> [Judgement]
+//}
+//
+//extension Bag<Concept>: MEM {}
+//extension WrappedBag<Concept>: MEM {}
 
 extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
@@ -19,10 +19,9 @@ extension AbstractBag where I == Concept {
         consider(j.statement, isQuestion: false, j: j, derive: derive) { c in
             switch j.statement {
             case .symbol: fallthrough // TODO: is this accurate?
-            case .compound:
-                return c.accept(j, isSubject: c.term == j.statement, derive: derive)
-            case .statement(let subject, _, _):
-                return c.accept(j, isSubject: c.term == subject, derive: derive)
+            case .compound: fallthrough
+            case .statement:
+                return c.accept(j, derive: derive)
             case .variable:
                 return [] // TODO: is this accurate?
             case .operation:
@@ -73,10 +72,9 @@ extension AbstractBag where I == Concept {
                             let j = j!
                             switch j.statement {
                             case .symbol: fallthrough // TODO: is this accurate?
-                            case .compound:
-                                derived = concept.accept(j, isSubject: concept.term == j.statement, derive: derive)
-                            case .statement(let subject, _, _):
-                                derived = concept.accept(j, isSubject: concept.term == subject, derive: derive)
+                            case .compound: fallthrough
+                            case .statement:
+                                derived = concept.accept(j, derive: derive)
                             case .variable:
                                 derived = [] // TODO: is this accurate?
                             case .operation:
@@ -99,7 +97,7 @@ extension AbstractBag where I == Concept {
             concept.adjustPriority(derived)
             put(concept)
             return derivedJudgements
-        case .statement(let subject, _, let predicate):
+        case .statement(let subject, let copula, let predicate):
             var subjectConcept = get(subject.description) ?? Concept(term: subject)
             var predicateConcept = get(predicate.description) ?? Concept(term: predicate)
             derivedJudgements.append(contentsOf: f(&subjectConcept))
@@ -122,6 +120,45 @@ extension AbstractBag where I == Concept {
             put(predicateConcept)
             if isQuestion {
                 
+            }
+            if copula == .inheritance, let j = j {
+                if case .compound(let con, let terms) = predicate, con == .e {
+                    if case .compound(let con2, _) = subject, con2 == .e {
+                        return derivedJudgements // statement of the form <(/ likes º {sky}) -> (/ likes º [blue])>
+                    }
+
+                    // TODO: generalize this
+                    // (T1 --> ç.e_(R, .º, T2)) <=> (T2 --> ç.e_(R, T1, .º))
+                    if terms.count == 3 {//}&& !subject.terms.contains(where:
+                        //{ if case .compound(let c, _) = $0, c == .e { return true } else { return false } }) {
+                        let rel = terms[0]
+                        let complement: Statement
+                        if terms[1] == .º {
+                            complement = terms[2] --> ç.e_(rel, subject, .º)
+                        } else {
+                            complement = terms[1] --> ç.e_(rel, .º, subject)
+                        }
+//                        print("COMP", complement)
+                        
+                        if case .statement(let compS, _, let compP) = complement {
+                            
+                            var conc = get(compS.description) ?? Concept(term: compS)
+                            let res = conc.accept(Judgement(complement, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), derive: derive)
+                            
+                            //                        print("RES:", res)
+                            conc.adjustPriority(res)
+                            put(conc)
+                            
+                            var conc2 = get(compP.description) ?? Concept(term: compP)
+                            let res2 = conc.accept(Judgement(complement, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), derive: derive)
+                            
+                            //                        print("RES:", res)
+                            conc2.adjustPriority(res2)
+                            put(conc2)
+                        }
+                        
+                    }
+                }
             }
             return derivedJudgements
         case .variable:

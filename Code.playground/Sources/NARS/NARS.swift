@@ -20,18 +20,17 @@ public final class NARS: Item {
     
     //    subscript(dynamicMember dynamicMember: KeyPath<Term, Term>) -> Term {
     subscript(dynamicMember dynamicMember: String) -> Concept {
-        imagination.get(dynamicMember.description)
+        memory.get(dynamicMember.description)
         ??
         {
             let new = Concept(string: dynamicMember)
-            imagination.put(new)
+            memory.put(new)
             return new
         }()
     }
     
     public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
     public internal(set) var memory = Bag<Concept>()
-    public internal(set) lazy var imagination = WrappedBag(memory)
     
     public var output: (String) -> Void
     
@@ -48,11 +47,10 @@ public final class NARS: Item {
     }
     
     public func reset() {
-        imaginationBuffer.removeAll()
+        derivedBuffer.removeAll()
         derivedQuestions.removeAll()
         
         memory = Bag<Concept>()
-        imagination = WrappedBag(memory)
         recent = Bag<Belief>(4,40)
     }
     
@@ -62,10 +60,11 @@ public final class NARS: Item {
             
             process(anticipations: s) // TODO: should be done inside MEMORY to avoid extra read/write on concepts
             
-            for j in processInput(s) {
-                process(.judgement(j),
+            for j in processInput(s) { // derived judgements
+                let derived = process(.judgement(j),
                         recurse: false, // determines if derived judgements are inserted
                         userInitiated: true) // will cause insertion into main memory
+                derivedBuffer.enqueue(derived)
             }
         }
     }
@@ -76,7 +75,7 @@ public final class NARS: Item {
 
     
     // stores sentences for subsequent processing in imagination
-    private var imaginationBuffer = [Sentence]()
+    private var derivedBuffer = [Sentence]()
     
     // stores derived questions and their roots for backward inference
     private var derivedQuestions = [Statement: (judgement: Judgement, rule: Rules)]()
@@ -88,7 +87,8 @@ public final class NARS: Item {
         if case .judgement(let j) = s {
             for j in process(recent: j) {
                 // add stable patterns from recent memory
-                process(.judgement(j), recurse: false, userInitiated: true)
+                let derived = process(.judgement(j), recurse: false, userInitiated: true)
+                derivedBuffer.enqueue(derived)
             }
         }
     }
@@ -110,14 +110,14 @@ public final class NARS: Item {
         
         /// QUESTION
         if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
-            // check recent memory, then imagination
-            if let answer = recent.peek(q.identifier)?.judgement // OR
-                ?? imagination.consider(q, derive: false).first(where: { $0.statement == q.statement }) {
+            // check recent memory first
+            if let answer = recent.peek(q.identifier)?.judgement {
                 // check main memory if the answer is already present
                 let c = memory.items[sub.description]
                 if c == nil || c!.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
                     /// ANSWER
-                    process(.judgement(answer), recurse: false, userInitiated: true)
+                    let derived = process(.judgement(answer), recurse: false, userInitiated: true)
+                    derivedBuffer.enqueue(derived)
                 }
             }
         }
@@ -191,7 +191,30 @@ extension NARS {
             }
         }
     }
-    
+    /*
+     Test Case '-[NARS_Tests.Single_Step testSample]' started.
+     • <{tom} -> cat>. %1.00;0.90%.
+     • <{tom} -> (/ likes º {sky})>. %1.00;0.90%.
+     +•  ⏱ <cat -> (/ likes º {sky})>. %1.00;0.45%.ind
+     +•  ⏱ <(/ likes º {sky}) <–> cat>. %1.00;0.45%.com
+     +•  ⏱ <({tom} ⨯ {sky}) -> likes>. %1.00;0.81%.ana
+     +•  ⏱ <cat <–> (/ likes º {sky})>. %1.00;0.45%.com
+     +•  ⏱ <{tom} -> ((/ likes º {sky}) ⋃ cat)>. %1.00;0.81%.uni
+     +•  ⏱ <{tom} -> (cat – (/ likes º {sky}))>. %0.00;0.81%.dif
+     +•  ⏱ <{tom} -> (cat ⋂ (/ likes º {sky}))>. %1.00;0.81%.int
+     +•  ⏱ <{tom} -> (cat ⋃ (/ likes º {sky}))>. %1.00;0.81%.uni
+     +•  ⏱ <{sky} -> (/ likes {tom} º)>. %1.00;0.81%.ana
+     +•  ⏱ <{tom} -> ((/ likes º {sky}) ⋂ cat)>. %1.00;0.81%.int
+     +•  ⏱ <(/ likes º {sky}) -> cat>. %1.00;0.45%.ind
+     +•  ⏱ <{tom} -> ((/ likes º {sky}) – cat)>. %0.00;0.81%.dif
+     • <{sky} -> [blue]>. %1.00;0.90%.
+     •  ⏱ <(/ likes {tom} º) -> [blue]>. %1.00;0.45%.ind
+     •  ⏱ <[blue] <–> (/ likes {tom} º)>. %1.00;0.45%.com
+     •  ⏱ <(/ likes {tom} º) <–> [blue]>. %1.00;0.45%.com
+     •  ⏱ <[blue] -> (/ likes {tom} º)>. %1.00;0.45%.ind
+     • <cat -> (/ likes º [blue])>?
+     /Users/maximvt/Documents/devel/madmachine/NARS-Swift/Tests/NARS-Tests/Single_Step.swift:41: error: -[NARS_Tests.Single_Step testSample] : XCTAssertTrue failed
+     */
     fileprivate func process(recent j: Judgement) -> [Judgement] {
         guard recent.peek(j.identifier) == nil else {
             return []// no need to process what we already know
@@ -302,7 +325,6 @@ extension NARS {
     ///   - input: input `Sentence`
     ///   - recurse: determines if derived judgements are produced
     ///   - userInitiated: `true` will cause insertion into main memory
-    @discardableResult
     fileprivate func process(_ input: Sentence, recurse: Bool = true, userInitiated: Bool = false) -> [Judgement] {
         let label = (userInitiated ? "•" : ".") + (recurse && userInitiated ? "" : "  ⏱") + " "
             
@@ -311,78 +333,43 @@ extension NARS {
 
         output(label + "\(input)")
 
-        // process in memory or imagination
-        var derived = ((userInitiated ? memory : imagination) as MEM)
+        // process in memory
+        var derived = memory
             .consider(input, derive: recurse)
             .remove(matching: input)
         
+//        print("processed \(input)\n\tderived \(derived)")
         
-//        if derived.isEmpty == false {
-//            print("processed \(input)\n\tderived \(derived)")
-//
-//        }
-        
-        // check inference results
-        if case .question = input {
-            if derived.isEmpty {
-                if !userInitiated {
-                    self.imagination.reset()
-                }
-                output(label + "thinking... \(input)")
-                imaginationBuffer.insert(input, at: 0)
-                
-                return [] // BREAK THE FLOW
-            }
-        }
-        
-        // CONTINUE MAIN FLOW
-        
+        /*
+         * MAIN
+         */
         switch input {
             
         case .judgement:
-            //  consider in imagination
-            if recurse && !userInitiated {
-//                print("D", derived)
-//                print(imaginationBuffer)
-                imaginationBuffer.enqueue(derived)
-//                print(imaginationBuffer)
+            if !userInitiated {
+                // consider in imagination
+                derivedBuffer.enqueue(derived)
             }
             
         case .goal:
             break // TODO: finish implementation
             
         case .question(let question):
-            /// consider a question
-            if case .statement(let s, _, let p) = question.statement {
+            // consider a question
+            if case .statement(let s, _, let p) = question.statement, !derived.isEmpty {
                 if case .variable = s {
                     output(label + "💡 \(derived.first!)")
                 } else if case .variable = p {
                     output(label + "💡 \(derived.first!)")
 
-                } else if let winner = derived.first, winner.statement == question.statement {
+                } else if let winner = derived.first(where: { $0.statement == question.statement }) {
                     
-                    if !userInitiated {
-                        // cancel in-flight activities
-                        if let source = derivedQuestions[winner.statement] {
-                            derivedQuestions.removeValue(forKey: winner.statement)
-                            
-                            imaginationBuffer.cleanup(winner.statement)
-                            
-                            let answer = source.rule.apply((source.judgement, winner))
-                                .compactMap { $0 }
-                                .map { Sentence.judgement($0) }
-                            
-                            imaginationBuffer.insert(contentsOf: answer, at: 0)
-                        }
+                    // cancel in-flight activities
+                    derivedQuestions.removeValue(forKey: winner.statement)
+                    derivedBuffer.cleanup(winner.statement)
                         
-                        // process winning judgement
-                        process(.judgement(winner),
-                                recurse: false, // determines if derived judgements are inserted
-                                userInitiated: true) // will cause insertion into main memory
-                    }
-                    
                     output(label + "💡 \(winner)")
-//                    print("}}", winner.derivationPath)
+                    print("}}", winner.derivationPath)
                     
                     break // question answered
                     
@@ -390,25 +377,39 @@ extension NARS {
                  * IMAGINATION -- derived questions
                  */
                     
-                } else if recurse { // switch to imagination flow
+                } else if recurse && !derived.isEmpty { // switch to imagination flow
                     
                     let source = derived.removeFirst()
 
-                    derived.forEach { j in
+                    let qs: [Sentence] = derived.reversed().flatMap { j -> [Sentence] in
                         derivedQuestions[j.statement] = (source, j.truthValue.rule ?? .deduction)
+                        return [.question(question), .question(.init(j.statement))]
                     }
                     
-                    let qs: [Sentence] = derived.reversed().flatMap {
-                        [.question(question), .question(.init($0.statement))]
-                    }
+                    derivedBuffer.insert(contentsOf: qs, at: 0)
                     
-                    imaginationBuffer.insert(contentsOf: qs, at: 0)
-                    
-                    return []
+                    return [] // EXIT
                     
                 } else {
-                    
+                    // maybe?
+//                    for d in derived { // take a guess
+//                        if derivedQuestions[d.statement] != nil {
+//                            if !derivedBuffer.contains(where: {$0.description == Sentence.question(question).description }) {
+//                                let guess = Judgement(d.statement, .guess, d.derivationPath, tense: d.tense, timestamp: d.timestamp)
+//                                derivedBuffer.insert(contentsOf: [.question(question), .judgement(guess)], at: 0)
+//                            }
+//                        }
+//                    }
+                    // maybe?
+                    for d in derived { // take a guess
+                        if derivedQuestions[d.statement] != nil {
+                            let guess = Judgement(d.statement, .guess, d.derivationPath, tense: d.tense, timestamp: d.timestamp)
+                                derivedBuffer.insert(contentsOf: [.question(question), .judgement(guess)], at: 0)
+                                //print("guess", guess, question)
+                        }
+                    }
                     output("\t(2)I don't know 🤷‍♂️")
+                    // TODO: additionally process sentence *["SELF", question.statement] --> -("[know]")
                 }
             }
             
@@ -417,12 +418,14 @@ extension NARS {
         case .cycle(let n):
             for _ in 0 ..< n {
 //                print("Count:", imaginationBuffer.count)
-                if let s = imaginationBuffer.popLast() {
-                    process(s, recurse: false)
+                if let s = derivedBuffer.popLast() {
+                    let derived = process(s, recurse: false)
+                    derivedBuffer.enqueue(derived)
                 } else {
                     mainCycle()
                 }
             }
+            return [] // EXIT
         }
         
         /// DERIVED
@@ -439,21 +442,22 @@ extension NARS {
         //            self.process(.judgement(b.judgement))
         //        }
 
-        if let c = imagination.get(), let b = c.beliefs.get() {
-            c.beliefs.put(b)
-            imagination.put(c)
-            
+        if let c = memory.peek(), let b = c.beliefs.peek() {
+//            c.beliefs.put(b)
+//            memory.put(c)
+//            print("imagining", b.judgement)
             let immediate = Rules.immediate(b.judgement)
             let structural = Theorems.apply(b.judgement)
             
-            let results = (immediate + structural).filter { !imagination.contains($0) }
+            let results = (immediate + structural).filter { !memory.contains($0) }
 //            print("J1", b.judgement)
 //            print("R", results)
 //            print(imagination)
 //            print(results.contains(b.judgement))
             
             results.forEach { j in
-                process(.judgement(j))
+                let derived = process(.judgement(j))
+                derivedBuffer.enqueue(derived)
             }
         }
     }

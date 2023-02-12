@@ -86,34 +86,6 @@ extension Term {
 // MARK: Replace
 
 extension Term {
-    func replace(varName: String, termName: String) -> Term {
-        switch self {
-        case .symbol:
-            return self
-        case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(varName: varName, termName: termName)})
-        case .statement(let sub, let cop, let pre):
-            return .statement(sub.replace(varName: varName, termName: termName), cop, pre.replace(varName: varName, termName: termName))
-        case .variable(let vari):
-            switch vari {
-            case .independent(let str):
-                if str == varName {
-                    return .symbol(termName)
-                }
-                return self
-            case .dependent(let str, _):
-                if str == varName {
-                    return .symbol(termName)
-                }
-                return self
-            default: // TODO: how to handle dependent vars?
-                return self
-            }
-        case .operation(let name, let terms):
-            return .operation(name, terms.map{$0.replace(varName: varName, termName: termName)})
-        }
-    }
-    
     func replace(termName: String, indepVarName: String) -> Term {
         switch self {
         case .symbol(let str):

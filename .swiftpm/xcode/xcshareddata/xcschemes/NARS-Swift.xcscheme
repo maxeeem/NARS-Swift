@@ -14,6 +14,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "NAL"
+               BuildableName = "NAL"
+               BlueprintName = "NAL"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "NARS"
                BuildableName = "NARS"
                BlueprintName = "NARS"
@@ -41,11 +55,27 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES">
+      codeCoverageEnabled = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "YES">
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "NAL"
+            BuildableName = "NAL"
+            BlueprintName = "NAL"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "NARS"
+            BuildableName = "NARS"
+            BlueprintName = "NARS"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </CodeCoverageTargets>
       <Testables>
          <TestableReference
             skipped = "NO"
-            parallelizable = "YES"
             testExecutionOrdering = "random">
             <BuildableReference
                BuildableIdentifier = "primary"
@@ -80,10 +110,13 @@
                   Identifier = "Single_Step/testNal2_02()">
                </Test>
                <Test
-                  Identifier = "Single_Step/testSample()">
+                  Identifier = "Single_Step/testNal3_10()">
                </Test>
                <Test
-                  Identifier = "Single_Step/testSymbolic()">
+                  Identifier = "Single_Step/testNal3_11()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testSample()">
                </Test>
                <Test
                   Identifier = "Single_Step/testfoo()">

@@ -122,7 +122,7 @@ extension LogicValue: CustomStringConvertible {
 
 }
 
-
+/*
 struct Unassigned: LogicTerm, CustomStringConvertible {
 
     private static var LogicVariables = [LogicVariable: Int]()
@@ -159,7 +159,7 @@ struct Unassigned: LogicTerm, CustomStringConvertible {
     }
 
 }
-
+*/
 
 enum List: LogicTerm {
 
@@ -182,7 +182,7 @@ enum List: LogicTerm {
 
 }
 
-
+/*
 struct Map: LogicTerm {
 
     typealias StorageType = [String: LogicTerm]
@@ -285,7 +285,7 @@ extension Map: CustomStringConvertible {
     }
 
 }
-
+*/
 
 struct Substitution {
 
@@ -351,9 +351,9 @@ struct Substitution {
 
         // If the walked values of u and of v are maps, then unifying them
         // boils down to unifying their elements.
-        if (walkedU is Map) && (walkedV is Map) {
-            return self.unifyingMaps(walkedU as! Map, walkedV as! Map)
-        }
+//        if (walkedU is Map) && (walkedV is Map) {
+//            return self.unifyingMaps(walkedU as! Map, walkedV as! Map)
+//        }
 
         return nil
     }
@@ -374,7 +374,7 @@ struct Substitution {
             return nil
         }
     }
-
+/*
     private func unifyingMaps(_ u: Map, _ v: Map) -> Substitution? {
         let leftKeys = u.keys.sorted()
         let rightKeys = v.keys.sorted()
@@ -392,7 +392,8 @@ struct Substitution {
         }
         return result
     }
-
+*/
+/*
     func reified() -> Substitution {
         var result = Substitution()
         for LogicVariable in self.storage.keys {
@@ -439,7 +440,7 @@ struct Substitution {
         // We give back the LogicVariable if is not associated.
         return value
     }
-
+*/
 }
 
 extension Substitution: Sequence {
@@ -600,6 +601,13 @@ func === (u: LogicTerm, v: LogicTerm) -> LogicGoal {
     return u ≡ v
 }
 
+let x = fresh({ x in
+    x === LogicVariable(named: "a")
+})
+
+let v = freshn({ v in
+    v["x"] === v["y"]
+})
 
 /// Takes a LogicGoal constructor and returns a LogicGoal with fresh LogicVariables.
 ///
@@ -641,7 +649,7 @@ func && (left: @escaping LogicGoal, right: @escaping LogicGoal) -> LogicGoal {
     }
 }
 
-
+/*
 /// Takes a LogicGoal constructor and returns a LogicGoal with substitution.
 ///
 /// This function takes a *LogicGoal constructor* (i.e. a function), which accepts
@@ -652,7 +660,7 @@ func inEnvironment (_ constructor: @escaping (Substitution) -> LogicGoal) -> Log
         return constructor(reified)(state)
     }
 }
-
+*/
 
 /// Takes a LogicGoal and returns a thunk that wraps it.
 func delayed(_ LogicGoal: @escaping LogicGoal) -> LogicGoal {
@@ -675,7 +683,7 @@ let success = (LogicValue(true) === LogicValue(true))
 /// A LogicGoal that always fails.
 let failure = (LogicValue(false) === LogicValue(true))
 
-
+/*
 /// Creates a LogicGoal that tests if a LogicTerm is an instance of a `Value<T>`
 /// in the current substitution.
 func isValue<T : Equatable>(_ LogicTerm: LogicTerm, _ type: T.Type) -> LogicGoal {
@@ -726,3 +734,4 @@ func isMap(_ LogicTerm: LogicTerm) -> LogicGoal {
         }
     }
 }
+*/

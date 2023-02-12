@@ -42,7 +42,9 @@ extension Sentence {
     private func addTense(_ tense: Tense) -> Sentence {
         switch self {
         case .judgement(let j):
-            return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath, tense: tense, timestamp: j.timestamp))
+            return .judgement(Judgement(j.statement, j.truthValue, j.derivationPath,
+                                        tense: tense,
+                                        timestamp: j.timestamp == ETERNAL ? 0 : j.timestamp))
         case .question(let q):
             return .question(Question(q.statement, q.type, tense))
         default:

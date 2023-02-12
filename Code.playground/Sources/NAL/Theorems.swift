@@ -79,4 +79,42 @@ extension Term {
         
         return results.min(by: { $0.complexity < $1.complexity })
     }
+    
+    
+    static func match2(t: Statement, s: Statement, r: Statement) -> Statement? {
+        var results = [Term]()
+//        let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
+//        print("\n\n--", t.logic(), "\n", s.logic())
+//        if s == "[blue]" --> ç.e_("likes", "cat", .º) {
+//
+//        }
+        for sol in solve(t.logic() === s.logic()) {
+//            print(sol)
+            let solutionVars = sol.map({ $0.LogicVariable.name })
+            let theoremVars = Term.getTerms(t).filter({ if case .variable = $0 { return true } else { return false } }).map({$0.description})
+            let valid = Set(solutionVars) == Set(theoremVars)
+       
+            if valid {
+                var result = r
+                for item in sol {
+                    result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+                }
+                if result != r {
+                    results.append(result)
+                }
+//                if s == "cat" --> ç.e_("likes", .º, "[blue]") {
+//                    print("\n", t)
+//                    print("YAY")
+//                }
+            } else {
+//                if s == "cat" --> ç.e_("likes", .º, "[blue]") {
+//                    print("\n", t)
+//                    print("SOL:", Set(solutionVars))
+//                    print("THEO:", Set(theoremVars))
+//                }
+            }
+        }
+        
+        return results.min(by: { $0.complexity < $1.complexity })
+    }
 }

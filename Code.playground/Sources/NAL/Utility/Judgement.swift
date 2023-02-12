@@ -22,7 +22,7 @@ extension Judgement {
         if derivationPath.isEmpty {
             let description = Judgement.sortedDescription(statement)
 //            print("--", description)
-            self.derivationPath = ["\(description)+\((truthValue.f, truthValue.c, timestamp))"]
+            self.derivationPath = ["\(description)+\((truthValue.f, truthValue.c, timestamp, truthValue.rule))"]
         } else {
             self.derivationPath = derivationPath
         }

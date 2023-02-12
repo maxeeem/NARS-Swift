@@ -58,16 +58,15 @@ extension Bag: Equatable {
     }
 }
 
-extension WrappedBag: Equatable {
-    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
-        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
-    }
-}
+//extension WrappedBag: Equatable {
+//    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
+//        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
+//    }
+//}
 
 extension Concept: Equatable {
     public static func == (lhs: Concept, rhs: Concept) -> Bool {
         lhs.term == rhs.term
-        && lhs.termLinks == rhs.termLinks
         && lhs.beliefs == rhs.beliefs
     }
 }
@@ -81,10 +80,10 @@ extension NARS: Equatable {
 
 /// Convenience
 
-extension WrappedBag where I == Belief {
-    /// convenience for iterating over both dictionaries
-    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
-}
+//extension WrappedBag where I == Belief {
+//    /// convenience for iterating over both dictionaries
+//    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
+//}
 
 extension Belief: Comparable {
     public static func < (lhs: Belief, rhs: Belief) -> Bool {
@@ -97,7 +96,7 @@ extension Belief: Comparable {
 
 extension Concept: CustomStringConvertible {
     public var description: String {
-        "\(term)".uppercased() + "\n.  \(termLinks)" + ".  \(beliefs)"
+        "\(term)".uppercased() + ".  \(beliefs)"
     }
 }
 
@@ -136,13 +135,13 @@ extension Bag: CustomStringConvertible {
     }
 }
 
-extension WrappedBag: CustomStringConvertible {
-    public var description: String {
-        let b = "\(bag)"
-        let w = wrapped == nil ? "" : "\(wrapped!)"
-        return b + "\n---\n" + w
-    }
-}
+//extension WrappedBag: CustomStringConvertible {
+//    public var description: String {
+//        let b = "\(bag)"
+//        let w = wrapped == nil ? "" : "\(wrapped!)"
+//        return b + "\n---\n" + w
+//    }
+//}
 
 
 /// Utility

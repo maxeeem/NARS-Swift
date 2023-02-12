@@ -54,20 +54,23 @@ extension Rules {
 
             let q = j1
             let j = j2
-            
-            if let m = Term.match(t: &&[p1, p2] => c, s: q.statement) {
-                if case .statement(let s, _, _) = m {
-                    let q1 = s.terms[0]
-                    let q2 = s.terms[1]
-                    let tv = tf(TruthValue(1.0, 0.9), TruthValue(1.0, 0.9))
-                    if q1 == j.statement {
-                        x.append(Judgement(statement: q2, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: tv.rule), tense: nil, derivationPath: []))
-                    }
-                    if q2 == j.statement {
-                        x.append(Judgement(statement: q1, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: tv.rule), tense: nil, derivationPath: []))
-                    }
-                }
+//            print("--Q", q)
+//            print("--J", j)
+//            print(tf(TruthValue(1.0, 0.9), TruthValue(1.0, 0.9)).rule)
+//            print("q:>>>", q)
+            if let m = Term.match2(t: p1 => c, s: j.statement => q.statement, r: p2) {
+//                print("q:", m, "?")
+                let rule = tf(.tautology, .tautology).rule
+                let evidence = Judgement.mergeEvidence(q, j)
+                x.append(Judgement(statement: m, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), tense: nil, derivationPath: evidence))
             }
+            if let m = Term.match2(t: p2 => c, s: j.statement => q.statement, r: p1) {
+//                print("q:", m, "?")
+                let rule = tf(.tautology, .tautology).rule
+                let evidence = Judgement.mergeEvidence(q, j)
+                x.append(Judgement(statement: m, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), tense: nil, derivationPath: evidence))
+            }
+//            print("<<<")
         }
         
         let unique = x.compactMap({$0}).removeDuplicates()
@@ -225,9 +228,9 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                 //            print("accepted", result)
                 let truthValue = tf(j1.truthValue, j2.truthValue)
                 let derivationPath = Judgement.mergeEvidence(j1, j2)
-                //            print("--")
-                //            print(j1, j2)
-                //            print("accepted", statement, truthValue, c)
+//                            print("--")
+//                            print(j1, j2)
+//                            print("accepted", statement, truthValue, c)
                 return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
             }
             
@@ -238,6 +241,7 @@ public var rule_generator: (_ rule: Rule) -> Apply {
             
             func temporalReasoning(_ t: Term) -> Term? {
                 if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
+                   j1.timestamp != j2.timestamp, // TODO: investigate where is this coming from
                    case .statement(var cs, var cc, var cp) = t,
                    cc == .implication || cc == .equivalence {
                     let forward = j1.timestamp < j2.timestamp

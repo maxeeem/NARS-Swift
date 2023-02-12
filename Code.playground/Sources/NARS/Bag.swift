@@ -118,39 +118,39 @@ public final class Bag<I: Item>: AbstractBag {
 // MARK: - WrappedBag
 
 /// Read access to wrapped Bag with writes to internal bag
-public final class WrappedBag<I: Item>: AbstractBag {
-    weak var wrapped: Bag<I>?
-    var bag = Bag<I>()
-    
-    init(_ bag: Bag<I>) {
-        wrapped = bag
-    }
-    
-    public func reset() {
-        bag = Bag<I>()
-    }
-    
-    @discardableResult
-    public func put(_ item: I) -> I? {
-        if item != wrapped?.peek(item.identifier) {
-            bag.put(item) // items have diverged
-        }
-        return nil
-    }
-    
-    public func get() -> I? {
-        bag.get() ?? wrapped?.peek()
-    }
-    
-    public func get(_ identifier: String) -> I? {
-        bag.get(identifier) ?? wrapped?.peek(identifier)
-    }
-    
-    public func peek() -> I? {
-        bag.peek() ?? wrapped?.peek()
-    }
-    
-    public func peek(_ identifier: String) -> I? {
-        bag.peek(identifier) ?? wrapped?.peek(identifier)
-    }
-}
+//public final class WrappedBag<I: Item>: AbstractBag {
+//    weak var wrapped: Bag<I>?
+//    var bag = Bag<I>()
+//    
+//    init(_ bag: Bag<I>) {
+//        wrapped = bag
+//    }
+//    
+//    public func reset() {
+//        bag = Bag<I>()
+//    }
+//    
+//    @discardableResult
+//    public func put(_ item: I) -> I? {
+//        if item != wrapped?.peek(item.identifier) {
+//            bag.put(item) // items have diverged
+//        }
+//        return nil
+//    }
+//    
+//    public func get() -> I? {
+//        bag.get() ?? wrapped?.peek()
+//    }
+//    
+//    public func get(_ identifier: String) -> I? {
+//        bag.get(identifier) ?? wrapped?.peek(identifier)
+//    }
+//    
+//    public func peek() -> I? {
+//        bag.peek() ?? wrapped?.peek()
+//    }
+//    
+//    public func peek(_ identifier: String) -> I? {
+//        bag.peek(identifier) ?? wrapped?.peek(identifier)
+//    }
+//}

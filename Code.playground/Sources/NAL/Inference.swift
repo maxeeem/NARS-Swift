@@ -303,7 +303,15 @@ extension Theorems {
                 (.property(S) --> P) <=> (.property(S) <-> P),
                 
                 (*[T1, T2] --> R) <=> (T1 --> ç.e_(R, .º, T2)),
-                (*[T1, T2] --> R) <=> (T2 --> ç.e_(R, T1, .º))
+                (*[T1, T2] --> R) <=> (T2 --> ç.e_(R, T1, .º)),
+                
+                // EXTRA RULES
+                // not in the book but
+                // alternative forms and/or derived from above rules
+                // goal is to ease some derivations
+                // note: nars will work without these
+                // but will have to derive them during its lifetime
+                (T1 --> ç.e_(R, .º, T2)) <=> (T2 --> ç.e_(R, T1, .º))
             ]
         }
     }
