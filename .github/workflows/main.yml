@@ -1,2 +1,5 @@
-- name: TODO to Issue
-  uses: alstr/todo-to-issue-action@v4
+jobs:
+  my_first_job:
+    steps:
+      - name: TODO to Issue
+        uses: alstr/todo-to-issue-action@v4
