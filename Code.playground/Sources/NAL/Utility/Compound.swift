@@ -32,17 +32,15 @@ extension Connector {
                 return nil
             }
         }
-        
-        if c != .x {
-
-        }
         */
-        guard case .compound = t1, case .compound = t2, (c != .c || c != .d) else {
-            // at least one term is a simple term
-            guard t1t.intersection(t2t).isEmpty else {
-                return nil // terms should not contain each other
+        if c != .x {
+            guard case .compound = t1, case .compound = t2, (c != .c || c != .d) else {
+                // at least one term is a simple term
+                guard t1t.intersection(t2t).isEmpty else {
+                    return nil // terms should not contain each other
+                }
+                return validate(res) ? .compound(c, [t1, t2]) : nil
             }
-            return validate(res) ? .compound(c, [t1, t2]) : nil
         }
         
         // TODO: should we be filtering terms by intensional/extension

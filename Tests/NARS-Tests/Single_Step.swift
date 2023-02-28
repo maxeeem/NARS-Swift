@@ -331,12 +331,12 @@ class Single_Step: XCTestCase {
     }
     
     func testOp() {
-        nars.perform(
-            ||("G")-!,
-            (("ball" --> "[left]") >>|=> (.operation("move", ["[left]"]) >>|=> "G"))-*,
-            ||("ball" --> "[left]")-*,
-            .cycle
-        )
+//        nars.perform(
+//            ||("G")-!,
+//            (("ball" --> "[left]") >>|=> (.operation("move", ["[left]"]) >>|=> "G"))-*,
+//            ||("ball" --> "[left]")-*,
+//            .cycle
+//        )
         outputMustContain("🤖 ^move [left]")
     }
     

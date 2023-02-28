@@ -30,11 +30,6 @@ public struct Concept: Item {
     
     let term: Term
     
-<<<<<<< HEAD
-=======
-    private var _termLinks = Bag<TermLink>()
-    public var termLinks: WrappedBag<TermLink>
->>>>>>> 07f181e (wip on multiply)
     //let tasks = Bag<TermLink>() // sentences
     internal var beliefs = Bag<Belief>()
 //    internal var beliefs: WrappedBag<Belief>

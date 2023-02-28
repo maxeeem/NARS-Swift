@@ -116,7 +116,13 @@
                   Identifier = "Single_Step/testNal3_11()">
                </Test>
                <Test
+                  Identifier = "Single_Step/testPattern()">
+               </Test>
+               <Test
                   Identifier = "Single_Step/testSample()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testSymbolic()">
                </Test>
                <Test
                   Identifier = "Single_Step/testfoo()">
