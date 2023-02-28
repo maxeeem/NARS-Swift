@@ -30,6 +30,11 @@ public struct Concept: Item {
     
     let term: Term
     
+<<<<<<< HEAD
+=======
+    private var _termLinks = Bag<TermLink>()
+    public var termLinks: WrappedBag<TermLink>
+>>>>>>> 07f181e (wip on multiply)
     //let tasks = Bag<TermLink>() // sentences
     internal var beliefs = Bag<Belief>()
 //    internal var beliefs: WrappedBag<Belief>
@@ -192,7 +197,7 @@ extension Concept {
     
     
     // returns relevant belief or derived judgements if any
-    func answer(_ q: Question) -> [Judgement] {
+    public func answer(_ q: Question) -> [Judgement] {
         var result: [Judgement] = []
         switch q.statement {
         case .statement(let subject, let copula, let predicate):

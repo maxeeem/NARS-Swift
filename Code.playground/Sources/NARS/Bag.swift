@@ -10,7 +10,7 @@ public protocol AbstractBag {
 
 public final class Bag<I: Item>: AbstractBag {
     var buckets: [[I]]
-    var items: [String: I] = [:]
+    public var items: [String: I] = [:]
     
     internal let levels: Int
     internal let capacity: Int

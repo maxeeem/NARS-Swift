@@ -33,6 +33,7 @@ public final class NARS: Item {
     public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
     public internal(set) var memory = Bag<Concept>()
     
+    // TODO: rename to stdout and add stderr
     public var output: (String) -> Void
     
 //    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
@@ -41,7 +42,7 @@ public final class NARS: Item {
     //    fileprivate var lastPerformance = DispatchWallTime.now()
 
     public typealias Op = ([Term]) -> Term
-    private var operations: [String: Op] = [:]
+    public var operations: [String: Op] = [:]
     
     @discardableResult
     public func register(_ op: String, _ closure: @escaping Op) -> Op? {

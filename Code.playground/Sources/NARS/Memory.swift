@@ -35,21 +35,26 @@ extension AbstractBag where I == Concept {
         }
     }
     func consider(_ g: Goal, derive: Bool) -> [Judgement] {
+        var derived = [Judgement]()
+        let j: Judgement = g.statement-*
+        derived.append(contentsOf: consider(j, derive: derive))
         let q: Question = ("?" >>|=> g.statement)-?
-        return consider(q, derive: derive)
+        derived.append(contentsOf: consider(q, derive: derive))
+        return derived
     }
 }
 
 // MARK: Private
-
+import Dispatch
 extension AbstractBag where I == Concept {
     private func consider(_ s: Statement, isQuestion: Bool, j: Judgement?, derive: Bool, _ f: (inout Concept) -> [Judgement]) -> [Judgement] {
         var derivedJudgements = [Judgement]()
         // TODO: consider overall concept
         // let overallConcept = get(s.description) ?? Concept(term: s)
-//        print(">>", s.identifier)
-        
-        if let bag = self as? Bag<Concept> {
+//        print(">>", derive, s.description)
+        /*
+        let time = DispatchWallTime.now()
+        if derive, let bag = self as? Bag<Concept> {
             var matches = [String]()
             for c in bag.items.values {
                 if case .variable = c.term {
@@ -60,9 +65,12 @@ extension AbstractBag where I == Concept {
                 let solver = solve(s.logic() === c.term.logic()).makeIterator().next()
                 if let sol = solver {
 //                    print("SOL", sol)
-                    matches.append(c.identifier)
+                    if c.identifier != s.description {
+                        matches.append(c.identifier)
+                    }
                 }
             }
+            //print("m:", matches)
             for m in matches {
                 var concept = get(m)!
                 let derived = f(&concept)
@@ -71,6 +79,8 @@ extension AbstractBag where I == Concept {
                 put(concept)
             }
         }
+ */
+//        print("t:", (time.rawValue - DispatchWallTime.now().rawValue) / (1000 * 1000))
 //        if var c = get(s.identifier) {
 //            print("here")
 //            let derived = f(&c)
@@ -89,6 +99,9 @@ extension AbstractBag where I == Concept {
 //            if c == .n, ts.count == 1 { // TODO: is this correct?
 //                return consider(ts[0], derive: derive, f)
 //            }
+            derivedJudgements.append(contentsOf:
+                ts.flatMap({ consider($0, isQuestion: isQuestion, j: j, derive: derive, f) })
+            )
             if [.c, .d].contains(c) {
                 let terms = Set(ts.flatMap{$0.terms})
                 for t in terms {
@@ -143,6 +156,12 @@ extension AbstractBag where I == Concept {
             case .compound:
                 derivedJudgements.append(contentsOf: consider(predicate, isQuestion: isQuestion, j: j, derive: derive, f))
             default: break
+            }
+            if case .compound = subject {
+                derivedJudgements.append(contentsOf: consider(subject, isQuestion: isQuestion, j: j, derive: derive, f))
+            }
+            if case .compound = predicate {
+                 derivedJudgements.append(contentsOf: consider(predicate, isQuestion: isQuestion, j: j, derive: derive, f))
             }
             put(subjectConcept)
             put(predicateConcept)

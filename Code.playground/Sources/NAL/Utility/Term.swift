@@ -85,19 +85,19 @@ extension Term {
 // MARK: Match
 
 extension Term {
-    static func match(t: Statement, s: Statement) -> Statement? {
+    public static func match(t: Statement, s: Statement) -> Statement? {
         var results = [Term]()
         let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
         
         for sol in solve(goal) {
-            //                print(sol)
+                            print(sol)
             let ts = s.terms.flatMap({ $0.terms.map({ $0.logic() }) })
             
             let valid = sol.allSatisfy { (v, _) in
                 !ts.contains { $0.equals(v) }
             }
             
-            if valid {
+//            if valid {
                 var result = t
                 for item in sol {
                     result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
@@ -105,7 +105,7 @@ extension Term {
                 if result != t {
                     results.append(result)
                 }
-            }
+//            }
         }
 
         return results.min(by: { $0.complexity < $1.complexity })
