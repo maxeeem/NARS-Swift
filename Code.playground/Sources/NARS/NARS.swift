@@ -11,7 +11,7 @@ extension Sentence {
     public static var cycle: Sentence { .cycle(1) }
 }
 
-
+@dynamicCallable
 @dynamicMemberLookup
 public final class NARS: Item {
     public var identifier: String { name.description }
@@ -28,6 +28,18 @@ public final class NARS: Item {
             memory.put(new)
             return new
         }()
+    }
+    
+    public func dynamicallyCall(withArguments args : [Term]) -> Term { // operations
+        if let op = args.first?.description {
+            let terms = args.count > 1 ? Array(args.suffix(from: 1)) : []
+//            if let action = operations[op] {
+//                return action(terms)
+//            }
+            return .operation(op, terms)
+        }
+            
+        return .NULL
     }
     
     public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
@@ -101,12 +113,22 @@ public final class NARS: Item {
     
     
     // MARK: Recent
-    
+
+//    func throwing() throws {}
+//    // _ = { do { try self.throwing() } catch { /*_*/ }}
+
     private func processRecent(_ s: Sentence) {
         if case .judgement(let j) = s {
             for j in process(recent: j) {
                 // add stable patterns from recent memory
                 let derived = process(.judgement(j), recurse: false, userInitiated: true)
+//                _ = {
+//                    do {
+//                        try self.throwing()
+//                    } catch {
+//                        //
+//                    }
+//                }
                 derivedBuffer.enqueue(derived)
             }
         }
@@ -163,7 +185,7 @@ extension NARS {
         if case .judgement(let judgement) = `for` {
             if let concept = memory.get(judgement.statement.description) {
                 for ant in concept.anticipations {
-                    //                    print("ANT1", ant)
+//                                        print("ANT1", ant)
                     let st = ant.value.0
                     let tv = ant.value.1
                     if case .statement(let s, _, let p) = st {
@@ -180,7 +202,7 @@ extension NARS {
                             // check if it applies based on the temporal window
                             // TODO: determine if it is =/>, <=/> or none
                             
-                            let c = tv.c / (tv.c + k)
+                            let c = tv.c / (tv.c + k) // new confidence score
                             let observed = Judgement(st, TruthValue(tv.f, c), tense: judgement.tense, timestamp: judgement.timestamp)
                             
                             if concept.term == p { // isPredicate
@@ -379,30 +401,48 @@ extension NARS {
             
         case .goal(let g):
             // TODO: take desireValue into account
-            if let winner = derived.first {
-               if case .statement(let s, let c, let p) = winner.statement,
-                  case .operation(let op, let args) = s, c == .predictiveImp, p == g.statement {
-                   output(".  🤖 \(s)")
-                   if let operation = operations[op] {
-                       let result = operation(args) // execute
-                       output(result.description)
-                   } else {
-                       output("Unknown operation \(op)")
-                   }
-               }
-            } else if recurse { // switch to imagination flow
-//                if userInitiated && !dreaming {
-//                    self.dreaming = true
-//                }
-//                
-//                iqueue.async {
-//                    imagine()
-//                    // re-process goal
-//                    self.process(.goal(g))
-//                }
+            if let action = derived.first {
+                //                print("ac", action)
+                if //case .statement(let s, let c, let p) = winner.statement,
+                    case .operation(let op, let args) = action.statement { //}, c == .predictiveImp, p == g.statement {
+                    output(".  🤖 \(action.statement)")
+                    if let operation = operations[op] {
+                        let result = operation(args) // execute
+                        output(result.description)
+                    } else {
+                        output("Unknown operation \(op)")
+                    }
+                } else if recurse && !derived.isEmpty { // switch to imagination flow
+                    //                if userInitiated && !dreaming {
+                    //                    self.dreaming = true
+                    //                }
+                    //
+                    //                iqueue.async {
+                    //                    imagine()
+                    //                    // re-process goal
+                    //                    self.process(.goal(g))
+                    //                }
+                    //                let gs: [Sentence] = derived.reversed().flatMap { j -> [Sentence] in
+                    ////                    derivedQuestions[j.statement] = (source, j.truthValue.rule ?? .deduction)
+                    //                    return [.goal(g), .judgement(j)]
+                    //                }
+                    //
+                    //                derivedBuffer.insert(contentsOf: gs, at: 0)
+                    
+                    //                return [] // EXIT
+                    if derived.first?.statement == g.statement {
+                        derivedBuffer.insert(input, at: 0)
+                    }
+                    //               }
+                } else {
+                    output("\t(3)I don't know 🤷‍♂️")
+                    
+                    derivedBuffer.insert(input, at: 0)
+                }
             } else {
-                output("\t(3)I don't know 🤷‍♂️")
+                derivedBuffer.insert(input, at: 0)
             }
+            return [] // EXIT
             
         case .question(let question):
             // consider a question

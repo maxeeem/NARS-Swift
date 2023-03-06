@@ -42,6 +42,16 @@ class Multi {
 
 
 
+import SwiftUI
+extension Concept: View {
+    public var body: some View {
+        Text(verbatim: description)
+    }
+    
+    var properties: [Concept] {
+        []//beliefs.properties aka statements like `self --> [prop]`
+    }
+}
 
 
 

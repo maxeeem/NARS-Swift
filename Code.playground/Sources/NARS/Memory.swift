@@ -40,7 +40,7 @@ extension AbstractBag where I == Concept {
         derived.append(contentsOf: consider(j, derive: derive))
         let q: Question = ("?" >>|=> g.statement)-?
         derived.append(contentsOf: consider(q, derive: derive))
-        return derived
+        return derived.filter({ $0.statement != g.statement })
     }
 }
 
@@ -99,9 +99,9 @@ extension AbstractBag where I == Concept {
 //            if c == .n, ts.count == 1 { // TODO: is this correct?
 //                return consider(ts[0], derive: derive, f)
 //            }
-            derivedJudgements.append(contentsOf:
-                ts.flatMap({ consider($0, isQuestion: isQuestion, j: j, derive: derive, f) })
-            )
+//            derivedJudgements.append(contentsOf:
+//                ts.flatMap({ consider($0, isQuestion: isQuestion, j: j, derive: derive, f) })
+//            )
             if [.c, .d].contains(c) {
                 let terms = Set(ts.flatMap{$0.terms})
                 for t in terms {

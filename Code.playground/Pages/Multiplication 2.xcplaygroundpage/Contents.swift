@@ -54,3 +54,10 @@ narsy.perform(
     ("EVAL" && *["evaluate", .operation("__print__", ["hello world"])])-!,
     .pause
 )
+
+
+
+
+
+
+

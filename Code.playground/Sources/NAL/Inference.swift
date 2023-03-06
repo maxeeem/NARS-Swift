@@ -49,7 +49,7 @@ public func contraposition(j1: Judgement) -> Judgement? {
         return nil // invalid statement
     }
     let (f, c) = (j1.truthValue.f, j1.truthValue.c)
-    let c1 = (1 - f) * c / ((1 - f) * (c + k))
+    let c1 = (f == 1) ? 0 : (1 - f) * c / ((1 - f) * (c + k))
     let cs = neg(p) => neg(s)
     let cj = cs + (0, c1, ETERNAL)
     return Judgement(cs, TruthValue(0, c1, .contraposition), Judgement.mergeEvidence(j1, cj), tense: j1.tense, timestamp: j1.timestamp)
