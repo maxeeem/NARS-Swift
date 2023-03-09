@@ -1,4 +1,4 @@
-
+/*
 public struct Narsese {
     public let parser: Parser
     public init() throws {
@@ -4970,3 +4970,4 @@ extension Connector {
         allCases.map(\.dialects).first(where: { $0.contains(s) })?.first
     }
 }
+*/

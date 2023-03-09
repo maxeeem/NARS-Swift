@@ -14,9 +14,9 @@ class Experimental: XCTestCase {
     
     var output: [String] = []
     
-    var nars: NARS!
+    var narsy: NARS!
     
-    var __ : NARS { nars } // alias
+    var __ : NARS { narsy } // alias
     
     var verbose = true
     
@@ -26,11 +26,11 @@ class Experimental: XCTestCase {
         var time: UInt32 = 0
         let timeProviderMs: () -> UInt32 = { time += 1 ; return time }
         
-        nars = NARS(timeProviderMs: timeProviderMs) { self.output.append($0) ; if self.verbose { print($0) } }
+        narsy = NARS(timeProviderMs: timeProviderMs) { self.output.append($0) ; if self.verbose { print($0) } }
     }
     
     override func tearDownWithError() throws {
-        nars.reset()
+        narsy.reset()
         output.removeAll()
         //        usleep(1000000)
     }
@@ -45,7 +45,7 @@ class Experimental: XCTestCase {
     }
     
     func testTheory() {
-        nars.perform(//("{Sandy}" --> "dog")-*,
+        narsy.perform(//("{Sandy}" --> "dog")-*,
             //                     ("{Sandy}" --> "dog")-*,
             ("{Sandy}" --> "dog")-*(0.1, 0.9),
             ("{Sandy}" --> "dog")-*(0.1, 0.9),
@@ -56,28 +56,22 @@ class Experimental: XCTestCase {
     }
     
     func testSample() {
-        nars.perform(
+        narsy.perform(
             ("{tom}" --> "cat")-*,
-            //            (*["{tom}", "{sky}"] --> "likes")-*,
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
-            //            ("{sky}" --> "[blue]")-*,
-            //            (*["cat", "[blue]"] --> "likes")-?,
-            //                .cycle(50),
             ("{sky}" --> "[blue]")-*,
-            //            .cycle(50),
-            
-            ("cat" --> ç.e_("likes", .º, "[blue]"))-?
-            //            .cycle(50)
+            ("[blue]" --> ç.e_("likes", "cat", .º))-?,
+            .cycle(40)
         )
         
-        outputMustContain("💡 <cat -> (/ likes º [blue])>.") // c should be 0.37%
+        outputMustContain("💡 <[blue] -> (/ likes cat º)>.") // c should be 0.37%
     }
     
     func testLang() {
-        nars.perform((*["cat", "animal"] --> "is")-*)
-        nars.perform(("cat" --> "animal")-*)
-        nars.perform((*["dog", "animal"] --> "is")-*)
-        nars.perform(("dog" --> "animal")-?)
+        narsy.perform((*["cat", "animal"] --> "is")-*)
+        narsy.perform(("cat" --> "animal")-*)
+        narsy.perform((*["dog", "animal"] --> "is")-*)
+        narsy.perform(("dog" --> "animal")-?)
         
         outputMustContain("<dog -> animal>.")
         
@@ -86,20 +80,20 @@ class Experimental: XCTestCase {
     }
     
     func testPattern() {
-        nars.perform((*[*["1","0","0","0","0","0","0","0","0","0"], "left"] --> "is")-*)
-        nars.perform((*["1","0","0","0","0","0","0","0","0","0"] --> "left")-*)
-        nars.perform((*[*["1","1","0","0","0","0","0","0","0","0"], "left"] --> "is")-*)
+        narsy.perform((*[*["1","0","0","0","0","0","0","0","0","0"], "left"] --> "is")-*)
+        narsy.perform((*["1","0","0","0","0","0","0","0","0","0"] --> "left")-*)
+        narsy.perform((*[*["1","1","0","0","0","0","0","0","0","0"], "left"] --> "is")-*)
         
         
-        nars.perform((*[*["0","0","0","0","0","0","0","0","0","1"], "right"] --> "is")-*)
-        nars.perform((*["0","0","0","0","0","0","0","0","0","1"] --> "right")-*)
-        nars.perform((*[*["0","0","0","0","0","0","1","0","1","1"], "right"] --> "is")-*)
+        narsy.perform((*[*["0","0","0","0","0","0","0","0","0","1"], "right"] --> "is")-*)
+        narsy.perform((*["0","0","0","0","0","0","0","0","0","1"] --> "right")-*)
+        narsy.perform((*[*["0","0","0","0","0","0","1","0","1","1"], "right"] --> "is")-*)
         
         
-        nars.perform((*["1","1","1","0","0","0","0","0","0","0"] --> "left")-?)
-        nars.perform(.cycle(100))
-        nars.perform((*["0","0","0","0","0","0","1","0","1","0"] --> "right")-?)
-        nars.perform(.cycle(200))
+        narsy.perform((*["1","1","1","0","0","0","0","0","0","0"] --> "left")-?)
+        narsy.perform(.cycle(500))
+        narsy.perform((*["0","0","0","0","0","0","1","0","1","0"] --> "right")-?)
+        narsy.perform(.cycle(200))
         //        nars.perform((*["0","0","0","0","0","0","0","1","1","1"] --> "right")-?)
         //        nars.perform(.cycle(200))
         //        nars.perform((*["0","0","0","0","0","0","0","1","1","1"] --> "right")-?)
@@ -120,21 +114,32 @@ class Experimental: XCTestCase {
     }
     
     func testSymbolic() {
-        let relation = *["C", "subset"] --> "represent"
-        //        let image = "C" --> ç.e_("represent", .º, "subset")
+//        let relation = *["C", "subset"] --> "represent"
+                let image = "C" --> ç.e_("represent", .º, "subset")
         
         let knowledge = *[.var("x"), "C", .var("y")] --> ç.e_("represent", .º, *[.var("x"), .var("y")] --> "subset")
         
-        nars.perform(
-            relation-*,
+        narsy.perform(
+            image-*,
             knowledge-*,
             .cycle(50),
-            //            (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
+                        (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
             //            .cycle(50),
-            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?,
+//            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?,
             .cycle(50)
         )
         //        print(nars.memory)
+//        print(
+//            Term.match(t: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"), s: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))
+//        )
+    }
+    
+    func testLookup() {
+        narsy.perform(
+            (("dog" --> "$x") => ("$x" --> "[live]"))-*,
+            ("dog" --> "animal")-*,
+            .cycle(10)
+        )
     }
     
     /*
@@ -270,7 +275,7 @@ class Experimental: XCTestCase {
             //            (__("translate", "t001", "en"))-!,
             //            .cycle(10),
             //            (__("translate", "t001", "fr"))-*,
-                .cycle(1)
+                .cycle(20)
         )
         
         //        __.perform(
@@ -290,16 +295,11 @@ class Experimental: XCTestCase {
     
     
     func testOp() {
-        nars.perform(
+        narsy.perform(
             ("G")-!, // TODO: make goals sticky so they're recurring
-//              .cycle,
             (("ball" --> "[left]") >>|=> (.operation("move", ["[left]"]) >>|=> "G"))-*,
-//              .cycle(10),
-            ||("G")-!,
             ||("ball" --> "[left]")-*,
-//            .cycle,
-            ||("G")-!,
-            .cycle//(10)
+            .cycle(10)
         )
         outputMustContain("🤖 ^move [left]")
 //        print(nars.memory)

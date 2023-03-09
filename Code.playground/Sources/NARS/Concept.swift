@@ -200,39 +200,25 @@ extension Concept {
                 if case .query = v {
                     // special
                     result = answer { s in
-                        switch s {
-                        case .symbol: fallthrough // TODO: is this accurate?
-                        case .compound:
-                            return predicate == s
-                        case .statement(_, let c, let p):
+                        if case .statement(_, let c, let p) = s {
                             return copula == c && predicate == p
-                        case .variable:
-                            return false // TODO: is this accurate?
-                        case .operation:
-                            return false // TODO: is this accurate?
                         }
+                        return false
                     }
                 } // TODO: handle other cases
             } else if case .variable(let v) = predicate {
                 if case .query = v {
                     // general
                     result = answer { s in
-                        switch s {
-                        case .symbol: fallthrough // TODO: is this accurate?
-                        case .compound:
-                            return subject == s
-                        case .statement(let s, let c, _):
-                            return subject == s && copula == c
-                        case .variable:
-                            return false // TODO: is this accurate?
-                        case .operation:
-                            return false // TODO: is this accurate?
+                        if case .statement(let s, let c, _) = s {
+                            return copula == c && subject == s
                         }
+                        return false
                     }
                 }
             } else { // TODO: handle other cases 
                 result = answer(q.statement)
-                result = result.removeDuplicates()
+//                result = result.removeDuplicates()
             }
         default:
             return [] // TODO: handle other cases
@@ -249,6 +235,14 @@ extension Concept {
     // MARK: Private
     
     private func answer(_ s: Statement) -> [Judgement] {
+//        if term.description == "likes" {
+//            if s == ("[blue]" --> ç.e_("likes", "cat", .º)) {
+//
+//            }
+//        }
+        if s.description == "({sky} -> [blue]) => ([blue] -> (/ likes cat º))" {
+            
+        }
         if let b = beliefs.get(s.description) {
             beliefs.put(b) // put back
             return [b.judgement]
@@ -285,7 +279,7 @@ extension Concept {
                     if theorems.isEmpty && backward.isEmpty {
                         return [] // no clue
                     }
-                    return [b.judgement] + theorems + backward
+                    return [.NULL-*, b.judgement] + theorems + backward
                 }
             }
         }

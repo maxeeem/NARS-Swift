@@ -1,3 +1,6 @@
+/*
+
+
 // NARS Playground
 
 var time: UInt32 = 0
@@ -4388,3 +4391,5 @@ extension FrequencyInterval {
     var frequency: Double { lower / (1 - ignorance) }
     var confidence: Double { 1 - ignorance }
 }
+
+*/

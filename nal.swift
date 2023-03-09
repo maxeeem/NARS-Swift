@@ -1,4 +1,4 @@
-
+/*
 /// Local
 ///
 // TODO: handle variables properly
@@ -2899,3 +2899,4 @@ extension FrequencyInterval {
     var frequency: Double { lower / (1 - ignorance) }
     var confidence: Double { 1 - ignorance }
 }
+*/

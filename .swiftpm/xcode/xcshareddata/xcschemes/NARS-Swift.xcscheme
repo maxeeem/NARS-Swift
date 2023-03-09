@@ -92,6 +92,9 @@
                   Identifier = "Experimental/testSample()">
                </Test>
                <Test
+                  Identifier = "Experimental/testSymbolic()">
+               </Test>
+               <Test
                   Identifier = "Single_Step/test4()">
                </Test>
                <Test
@@ -117,12 +120,6 @@
                </Test>
                <Test
                   Identifier = "Single_Step/testNal2_02()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testNal3_10()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testNal3_11()">
                </Test>
                <Test
                   Identifier = "Single_Step/testPattern()">

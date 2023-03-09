@@ -49,8 +49,8 @@ class Single_Step: XCTestCase {
         let y = Term.variable(.independent("y"))
         nars.perform(
             (((x * "room_101") --> "enter") <<|=> ((x * "door_101") --> "open"))-*(0.9),
-            (((x * "door_101") --> "open") <<|=> ((x * "key_101") --> "hold"))-*(0.8)
-//            .cycle(10)
+            (((x * "door_101") --> "open") <<|=> ((x * "key_101") --> "hold"))-*(0.8),
+            .cycle(20)
         )
         /*
          '********** temporal deduction/explification
@@ -76,8 +76,8 @@ class Single_Step: XCTestCase {
         let x = Term.variable(.independent("x"))
         nars.perform(
             (((x * "door_101") --> "open") >>|=> ((x * "room_101") --> "enter"))-*(0.9),
-            (((x * "door_101") --> "open") <<|=> ((x * "key_101") --> "hold"))-*(0.8)
-//            .cycle(10)
+            (((x * "door_101") --> "open") <<|=> ((x * "key_101") --> "hold"))-*(0.8),
+            .cycle(20)
         )
 
         /*
@@ -134,9 +134,9 @@ class Single_Step: XCTestCase {
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "room_101") --> "enter"))-*,
 //            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9),
 //            ((("John" * "room_101") --> "enter") <<|=> (("John" * "door_101") --> "open"))-*,
+            .cycle(20),
             ||(("John" * "door_101") --> "open")-*,
-            .cycle(10)
-//            .cycle(50)
+            .cycle(20)
 //            ||(("John" * "room_101") --> "enter")-*,
         )
         /*
@@ -163,6 +163,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ||("M" >>|=> "P")-*,
             ||("M" >>|=> "S")-*,
+              .cycle(10),
             ||("P")-*,
               ||("S")-*,
               .cycle(20)
@@ -255,7 +256,8 @@ class Single_Step: XCTestCase {
         /// revision
         nars.perform(
             ("bird" --> "swimmer")-*,
-            ("bird" --> "swimmer")-*(0.1, 0.6)
+            ("bird" --> "swimmer")-*(0.1, 0.6),
+            .cycle(10)
         )
         outputMustContain("<bird -> swimmer>. %0.87;0.91%")
     }
@@ -264,7 +266,8 @@ class Single_Step: XCTestCase {
         /// deduction
         nars.perform(
             ("bird" --> "animal")-*,
-            ("robin" --> "bird")-*
+            ("robin" --> "bird")-*,
+            .cycle(10)
         )
         outputMustContain("<robin -> animal>. %1.00;0.81%")
         nars.perform(
@@ -277,7 +280,8 @@ class Single_Step: XCTestCase {
         /// abduction
         nars.perform(
             ("sport" --> "competition")-*,
-            ("chess" --> "competition")-*(0.9, 0.9)
+            ("chess" --> "competition")-*(0.9, 0.9),
+            .cycle(20)
         )
         outputMustContain("<sport -> chess>. %1.00;0.42%")
         outputMustContain("<chess -> sport>. %0.90;0.45%")
@@ -287,7 +291,8 @@ class Single_Step: XCTestCase {
         /// induction
         nars.perform(
             ("swan" --> "swimmer")-*(0.9),
-            ("swan" --> "bird")-*
+            ("swan" --> "bird")-*,
+            .cycle(20)
         )
         outputMustContain("<bird -> swimmer>. %0.90;0.45%")
         outputMustContain("<swimmer -> bird>. %1.00;0.42%")
@@ -297,7 +302,8 @@ class Single_Step: XCTestCase {
         /// exemplification
         nars.perform(
             ("robin" --> "bird")-*,
-            ("bird" --> "animal")-*
+            ("bird" --> "animal")-*,
+            .cycle(10)
         )
         outputMustContain("<animal -> robin>. %1.00;0.45%")
     }
@@ -344,7 +350,8 @@ class Single_Step: XCTestCase {
         /// revision
         nars.perform(
             ("robin" <-> "swan")-*,
-            ("robin" <-> "swan")-*(0.1, 0.6)
+            ("robin" <-> "swan")-*(0.1, 0.6),
+            .cycle(20)
         )
         outputMustContain("<robin <–> swan>. %0.87;0.91%")
     }
@@ -353,7 +360,8 @@ class Single_Step: XCTestCase {
         /// comparison
         nars.perform(
             ("swan" --> "swimmer")-*(0.9),
-            ("swan" --> "bird")-*
+            ("swan" --> "bird")-*,
+            .cycle(20)
         )
         outputMustContain("<bird <–> swimmer>. %0.90;0.45%")
     }
@@ -373,7 +381,8 @@ class Single_Step: XCTestCase {
        /// comparison
        nars.perform(
            ("sport" --> "competition")-*,
-           ("chess" --> "competition")-*(0.9)
+           ("chess" --> "competition")-*(0.9),
+           .cycle(20)
        )
        outputMustContain("<chess <–> sport>. %0.90;0.45%")
     }
@@ -382,7 +391,8 @@ class Single_Step: XCTestCase {
        /// analogy
        nars.perform(
            ("swan" --> "swimmer")-*,
-           ("gull" <-> "swan")-*
+           ("gull" <-> "swan")-*,
+           .cycle(10)
        )
        outputMustContain("<gull -> swimmer>. %1.00;0.81%")
     }
@@ -391,7 +401,8 @@ class Single_Step: XCTestCase {
        /// analogy
        nars.perform(
            ("gull" --> "swimmer")-*,
-           ("gull" <-> "swan")-*
+           ("gull" <-> "swan")-*,
+           .cycle(10)
        )
        outputMustContain("<swan -> swimmer>. %1.00;0.81%")
     }
@@ -439,7 +450,7 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-           .cycle,
+           .cycle(10),
            ("[smart]" --> "[bright]")-?
        )
        outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
@@ -512,7 +523,7 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("{Tweety}" --> "{Birdie}")-*,
-           .cycle(50)
+           .cycle(10)
        )
        outputMustContain("<{Birdie} <–> {Tweety}>.")// %1.00;0.90%")
     }
@@ -521,7 +532,7 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("[smart]" --> "[bright]")-*,
-           .cycle(50)
+           .cycle(10)
        )
        outputMustContain("<[bright] <–> [smart]>.")// %1.00;0.90%")
     }
@@ -530,7 +541,7 @@ class Single_Step: XCTestCase {
        /// set definition
         nars.perform(
            ("{Birdie}" <-> "{Tweety}")-*,
-           .cycle
+           .cycle(10)
         )
         outputMustContain("<Birdie <–> Tweety>.")// %1.00;0.90%")
         outputMustContain("<{Tweety} -> {Birdie}>.")// %1.00;0.90%")
@@ -551,7 +562,8 @@ class Single_Step: XCTestCase {
         /// compound composition, two premises
         nars.perform(
             ("swan" --> "swimmer")-*(0.9),
-            ("swan" --> "bird")-*(0.8)
+            ("swan" --> "bird")-*(0.8),
+            .cycle(20)
         )
         outputMustContain("<swan -> (bird ⋃ swimmer)>. %0.98;0.81%")
         outputMustContain("<swan -> (bird ⋂ swimmer)>. %0.72;0.81%")
@@ -561,7 +573,8 @@ class Single_Step: XCTestCase {
         /// compound composition, two premises
         nars.perform(
             ("sport" --> "competition")-*(0.9),
-            ("chess" --> "competition")-*(0.8)
+            ("chess" --> "competition")-*(0.8),
+            .cycle(20)
         )
         outputMustContain("<(chess ⋃ sport) -> competition>. %0.72;0.81%")
         outputMustContain("<(sport ⋂ chess) -> competition>. %0.98;0.81%")
@@ -595,7 +608,8 @@ class Single_Step: XCTestCase {
         let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
         nars.perform(
             ("planetX" --> t1)-*(0.9),
-            ("planetX" --> t2)-*(0.7)
+            ("planetX" --> t2)-*(0.7),
+            .cycle(20)
         )
         outputMustContain("<planetX -> (⋃ {Mars} {Pluto} {Saturn} {Venus})>. %0.97;0.81%")
         outputMustContain("<planetX -> (⋂ {Pluto})>. %0.63;0.81%")
@@ -607,7 +621,8 @@ class Single_Step: XCTestCase {
         let t2 = Term.compound(.U, ["{Pluto}", "{Saturn}"])
         nars.perform(
             ("planetX" --> t1)-*(0.9),
-            ("planetX" --> t2)-*(0.1)
+            ("planetX" --> t2)-*(0.1),
+            .cycle(20)
         )
         outputMustContain("<planetX -> (⋃ {Mars} {Pluto} {Saturn} {Venus})>. %0.91;0.81%")
         outputMustContain("<planetX -> ({Mars} ⋃ {Venus})>. %0.81;0.81%")
@@ -665,7 +680,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "bird")-*(0.9),
             ("swan" --> t1)-?,
-            .cycle(150)
+            .cycle(20)
         )
         outputMustContain("💡 <swan -> (swimmer – bird)>. %0.10;0.73%")
     }
@@ -676,7 +691,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "bird")-*(0.9),
             (t1 --> "bird")-?,
-            .cycle(150)
+            .cycle(20)
         )
         outputMustContain("💡 <(swimmer ø swan) -> bird>. %0.10;0.73%")
     }
@@ -684,7 +699,8 @@ class Single_Step: XCTestCase {
     func testVari() {
         nars.perform(
             ((.variable(.independent("x")) --> "_M") => (.variable(.independent("x")) --> "_P"))-*,
-            ((.variable(.independent("x")) --> "_S") => (.variable(.independent("x")) --> "_M"))-*
+            ((.variable(.independent("x")) --> "_S") => (.variable(.independent("x")) --> "_M"))-*,
+            .cycle(10)
         ) /// <(#x -> S) => (#x -> P)>. %1.00;0.81%.ded
         outputMustContain("⏱ <(#x -> _S) => (#x -> _P)>. %1.00;0.81%")
     }
@@ -692,7 +708,8 @@ class Single_Step: XCTestCase {
     func testVari3() {
         nars.perform(
             ("_M" --> "_T1")-*,
-            (&&[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*
+            (&&[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*,
+            .cycle(100)
         ) /// <_M -> _T2. %1.00;0.42%.ana
         outputMustContain("⏱ <_M -> _T2>.")
     }
@@ -700,7 +717,8 @@ class Single_Step: XCTestCase {
     func testVari2() {
         nars.perform(
             ("{Tweety}" --> "_P")-*,
-            ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*
+            ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*,
+            .cycle(10)
         ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
         outputMustContain("⏱ <{Tweety} -> _Q>. %1.00;0.81%")
     }
