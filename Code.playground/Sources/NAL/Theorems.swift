@@ -83,11 +83,8 @@ extension Term {
     
     static func match2(t: Statement, s: Statement, r: Statement) -> Statement? {
         var results = [Term]()
-//        let goal = t.terms.map({ $0.logic() === s.logic() }).reduce(success, ||)
 //        print("\n\n--", t.logic(), "\n", s.logic())
-//        if s == "[blue]" --> ç.e_("likes", "cat", .º) {
-//
-//        }
+
         for sol in solve(t.logic() === s.logic()) {
 //            print(sol)
             let solutionVars = sol.map({ $0.LogicVariable.name })
@@ -102,16 +99,6 @@ extension Term {
                 if result != r {
                     results.append(result)
                 }
-//                if s == "cat" --> ç.e_("likes", .º, "[blue]") {
-//                    print("\n", t)
-//                    print("YAY")
-//                }
-            } else {
-//                if s == "cat" --> ç.e_("likes", .º, "[blue]") {
-//                    print("\n", t)
-//                    print("SOL:", Set(solutionVars))
-//                    print("THEO:", Set(theoremVars))
-//                }
             }
         }
         

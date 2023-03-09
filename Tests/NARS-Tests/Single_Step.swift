@@ -193,13 +193,14 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("bird" --> "animal")-*,
             ("dog" --> "person")-?,
-            .cycle,
+            .cycle(10),
             ("o" --> "x")-?,
+            .cycle(10),
             ("bird" --> "[flying]")-*,
             ("bird" --> "animal")-?,
-            .cycle,
+            .cycle(10),
             ("dog" --> "person")-*,
-            .cycle
+            .cycle(10)
         )
         outputMustContain("💡 <bird -> animal>.")
         outputMustContain("💡 <dog -> person>. %1.00;0.90%.")

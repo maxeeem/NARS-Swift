@@ -62,9 +62,7 @@ extension Concept {
     func accept(_ j: Judgement, derive: Bool) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
 //        lastInput = j
-        if j.statement.description == "[blue] -> (/ likes cat º)" {
-            
-        }
+
         var j = j
         var originalPriority: Double?
         var derived: [Judgement] = []
@@ -85,16 +83,9 @@ extension Concept {
                 let r2 = b.judgement.truthValue.rule
                 if (r1 == nil && r2 == nil) {
                     return false // both user input – revise
-//                } else if (r1 == nil || r2 == nil) {
-//                    return true // one is input, another derived – choose best
                 }
                 return r1 == r2
             }()
-//            let guess: Bool = {
-//                let t1 = j.truthValue
-//                let t2 = b.judgement.truthValue
-//                return t1 == t2 && t1 == .guess
-//            }()
             if sameRule || j.evidenceOverlap(b.judgement) {
                 judgement = choice(j1: j, j2: b.judgement)
             } else {
@@ -103,9 +94,6 @@ extension Concept {
                 } else if b.judgement.truthValue.rule == .conversion {
                     judgement = j
                 } else {
-                    if j.statement == ("{Sandy}" --> "dog") {
-                        
-                    }
                     judgement = revision(j1: b.judgement, j2: j)
                 }
             }
@@ -124,18 +112,15 @@ extension Concept {
             store(j) // store original belief
         }
 
-        
+
         /*
          * EXIT – return if no recursion
          */
         guard derive else { return derived }
         
+        
         /// apply theorems
         derived.append(contentsOf: Theorems.apply(j))
-        
-//        if j.statement == "P" {
-//            _ = anticipations(for: j)
-//        }
         
         /// apply two-premise rules
         twoPremiseRules:
@@ -235,14 +220,6 @@ extension Concept {
     // MARK: Private
     
     private func answer(_ s: Statement) -> [Judgement] {
-//        if term.description == "likes" {
-//            if s == ("[blue]" --> ç.e_("likes", "cat", .º)) {
-//
-//            }
-//        }
-        if s.description == "({sky} -> [blue]) => ([blue] -> (/ likes cat º))" {
-            
-        }
         if let b = beliefs.get(s.description) {
             beliefs.put(b) // put back
             return [b.judgement]
@@ -276,10 +253,10 @@ extension Concept {
                     let backward = Rules.allCases.flatMap { r in
                         r.backward((s-*, b.judgement))
                     }.compactMap { $0 }
-                    if theorems.isEmpty && backward.isEmpty {
-                        return [] // no clue
+                    if !(theorems.isEmpty && backward.isEmpty) {
+                        // .NULL is a separator for derived questions
+                        return [.NULL-*, b.judgement] + theorems + backward
                     }
-                    return [.NULL-*, b.judgement] + theorems + backward
                 }
             }
         }
@@ -299,29 +276,7 @@ extension Concept {
         return winner == nil ? [] : [winner!]
     }
 }
-//
-//<(*, a, singular) --> represent>.
-//<(*, (*, a, $1), <$1 --> singular>) --> represent>.
-//<(*, ?, (*, a, dog)) --> represent>?
-//
-//
-//
-//<(*, {C}, {subset}) --> represent>.
-//<(*, (*, {#x}, {C}, {#y}), <(*, {#x}, {#y}) --> {subset}>) --> represent>.
-//<{(*, (*, {dog}, {C}, {animal}), {?1})} --> represent>?
-//
-//
-//
-//<{(*, C, subset)} --> represent>.
-//<(*, {(*, $x, C, $y)}, {<(*, $x, $y) --> subset>}) --> represent>.
-//<{(*, (*, dog, C, animal), ?1)} --> represent>?
-//
-//<<(C * ($x * $y)) --> SetTheoryExpression> ==> <($x * $y) --> Subset>>.
-//<(C * (dog * animal)) --> SetTheoryExpression>.
 
-
-
-//<(dog * animal) --> ?1>?
 
 extension Concept {
     func anticipations(for j: Judgement) -> [String : (Term, TruthValue)] {

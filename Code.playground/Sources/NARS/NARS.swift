@@ -232,30 +232,7 @@ extension NARS {
             }
         }
     }
-    /*
-     Test Case '-[NARS_Tests.Single_Step testSample]' started.
-     • <{tom} -> cat>. %1.00;0.90%.
-     • <{tom} -> (/ likes º {sky})>. %1.00;0.90%.
-     +•  ⏱ <cat -> (/ likes º {sky})>. %1.00;0.45%.ind
-     +•  ⏱ <(/ likes º {sky}) <–> cat>. %1.00;0.45%.com
-     +•  ⏱ <({tom} ⨯ {sky}) -> likes>. %1.00;0.81%.ana
-     +•  ⏱ <cat <–> (/ likes º {sky})>. %1.00;0.45%.com
-     +•  ⏱ <{tom} -> ((/ likes º {sky}) ⋃ cat)>. %1.00;0.81%.uni
-     +•  ⏱ <{tom} -> (cat – (/ likes º {sky}))>. %0.00;0.81%.dif
-     +•  ⏱ <{tom} -> (cat ⋂ (/ likes º {sky}))>. %1.00;0.81%.int
-     +•  ⏱ <{tom} -> (cat ⋃ (/ likes º {sky}))>. %1.00;0.81%.uni
-     +•  ⏱ <{sky} -> (/ likes {tom} º)>. %1.00;0.81%.ana
-     +•  ⏱ <{tom} -> ((/ likes º {sky}) ⋂ cat)>. %1.00;0.81%.int
-     +•  ⏱ <(/ likes º {sky}) -> cat>. %1.00;0.45%.ind
-     +•  ⏱ <{tom} -> ((/ likes º {sky}) – cat)>. %0.00;0.81%.dif
-     • <{sky} -> [blue]>. %1.00;0.90%.
-     •  ⏱ <(/ likes {tom} º) -> [blue]>. %1.00;0.45%.ind
-     •  ⏱ <[blue] <–> (/ likes {tom} º)>. %1.00;0.45%.com
-     •  ⏱ <(/ likes {tom} º) <–> [blue]>. %1.00;0.45%.com
-     •  ⏱ <[blue] -> (/ likes {tom} º)>. %1.00;0.45%.ind
-     • <cat -> (/ likes º [blue])>?
-     /Users/maximvt/Documents/devel/madmachine/NARS-Swift/Tests/NARS-Tests/Single_Step.swift:41: error: -[NARS_Tests.Single_Step testSample] : XCTAssertTrue failed
-     */
+
     fileprivate func process(recent j: Judgement) -> [Judgement] {
         guard recent.peek(j.identifier) == nil else {
             return []// no need to process what we already know
@@ -459,6 +436,9 @@ extension NARS {
                     // TODO: additionally process sentence *["SELF", question.statement] --> -("[know]")
                     
                 }
+            } else {
+                    //output("\t(3)I don't know 🤷‍♂️")
+                    derivedBuffer.insert(input, at: 0)
             }
             
         /// CYCLE
