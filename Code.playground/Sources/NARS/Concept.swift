@@ -175,51 +175,18 @@ extension Concept {
     // TODO: account for tense in question answering
     //
     
-    
-    // returns relevant belief or derived judgements if any
-    public func answer(_ q: Question) -> [Judgement] {
-        var result: [Judgement] = []
-        switch q.statement {
-        case .statement(let subject, let copula, let predicate):
-            if case .variable(let v) = subject {
-                if case .query = v {
-                    // special
-                    result = answer { s in
-                        if case .statement(_, let c, let p) = s {
-                            return copula == c && predicate == p
-                        }
-                        return false
-                    }
-                } // TODO: handle other cases
-            } else if case .variable(let v) = predicate {
-                if case .query = v {
-                    // general
-                    result = answer { s in
-                        if case .statement(let s, let c, _) = s {
-                            return copula == c && subject == s
-                        }
-                        return false
-                    }
-                }
-            } else { // TODO: handle other cases 
-                result = answer(q.statement)
-//                result = result.removeDuplicates()
-            }
-        default:
-            return [] // TODO: handle other cases
-        }
+
+// TODO: handle other cases
 //        if q == lastQuestion &&
 //            Set(result) == lastAnswered {
 //            return []
 //        }
 //        lastQuestion = q
 //        lastAnswered = Set(result)
-        return result
-    }
+//        return result
+//    }
     
-    // MARK: Private
-    
-    private func answer(_ s: Statement) -> [Judgement] {
+    public func answer(_ s: Statement) -> [Judgement] {
         if let b = beliefs.get(s.description) {
             beliefs.put(b) // put back
             return [b.judgement]
@@ -230,8 +197,25 @@ extension Concept {
             return [conv]
             
         } else {
+            
+            let answer = beliefs.items.filter { b in
+                let t1 = b.value.judgement.statement
+                return Term.logic_match(t1: t1, t2: s)
+            }.map { b in
+                b.value.judgement
+            }.max { j1, j2 in
+                let c = choice(j1: j1, j2: j2)
+                return c.statement == j2.statement
+            }
+            
+            if let ans = answer {
+                if let solution = Term.logic_solve(t1: ans.statement, t2: s) {
+                    return [Judgement(solution, ans.truthValue, ans.derivationPath, tense: ans.tense, timestamp: ans.timestamp)]
+                }
+            }
+            
             // apply term decomposition
-            let judgement = Judgement(s, TruthValue(1.0, reliance)) // TODO: should we handle this better an pass actual timestamp?
+            let judgement = Judgement(s, TruthValue(1.0, reliance)) // TODO: should we handle this better and pass actual timestamp?
             let decomposed = Theorems.apply(judgement)
                 .filter { beliefs.peek($0.identifier) != nil }
             if let answer = decomposed.first,
@@ -261,19 +245,6 @@ extension Concept {
             }
         }
         return [] // no results found
-    }
-    
-    private func answer(_ f: (Statement) -> Bool) -> [Judgement] {
-        let winner = beliefs.items
-            .filter { b in
-                f(b.value.judgement.statement)
-            }.map { b in
-                b.value.judgement
-            }.max { j1, j2 in
-                let c = choice(j1: j1, j2: j2)
-                return c.statement == j2.statement
-            }
-        return winner == nil ? [] : [winner!]
     }
 }
 

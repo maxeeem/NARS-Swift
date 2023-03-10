@@ -1,5 +1,8 @@
 public protocol AbstractBag {
     associatedtype I: Item
+    
+    var items: [String: I] { get }
+
     @discardableResult
     func put(_ item: I) -> I?
     func get() -> I?

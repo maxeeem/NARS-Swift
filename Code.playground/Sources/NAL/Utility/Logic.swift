@@ -92,3 +92,30 @@ extension Copula: LogicTerm {
         return false
     }
 }
+
+
+extension Term {
+    public static func logic_match(t1: Term, t2: Term) -> Bool {
+        let l1 = t1.logic()
+        let l2 = t2.logic()
+        return solve(l1 === l2).makeIterator().next() != nil
+    }
+
+    public static func logic_solve(t1: Term, t2: Term) -> Term? {
+        var result = ç.connect(t1, .c, t2)
+        for sol in solve(t1.logic() === t2.logic()) {
+            for item in sol {
+                result = result!.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
+            }
+        }
+        if result == ç.connect(t1, .c, t2) {
+            return nil
+        }
+        if result?.terms.count == 2 {
+            if result?.terms[0] == result?.terms[1] {
+                return result?.terms[0]
+            }
+        }
+        return nil
+    }
+}

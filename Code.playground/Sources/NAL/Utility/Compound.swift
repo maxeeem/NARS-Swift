@@ -4,8 +4,8 @@ public typealias ç = Connector /// shorthand
 extension Connector {
     var term: Term { Term.symbol(rawValue) }
     
-    public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, (t1 * t2)) }
-    public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, (t1 * t2)) }
+    public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, .compound(.x, [t1, t2])) }
+    public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, .compound(.x, [t1, t2])) }
 
     internal func connect(_ ts: [Term]) -> Term! {
         var ts = ts

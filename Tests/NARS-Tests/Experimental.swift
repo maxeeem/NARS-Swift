@@ -106,32 +106,39 @@ class Experimental: XCTestCase {
         //        let compare = Term.operation("compare", ["$a", "$b"])
         let compare = Term.operation("compare", [])
         let less = Term.operation("compare", ["<"])
-        *["{x}", "{1}"] --> compare
-        *["{y}", "{2}"] --> compare
-        *["{1}", "{2}"] --> less
+        _ = *["{x}", "{1}"] --> compare
+        _ = *["{y}", "{2}"] --> compare
+        _ = *["{1}", "{2}"] --> less
         // =>
-        *["{x}", "{y}"] --> less
+        _ = *["{x}", "{y}"] --> less
     }
     
     func testSymbolic() {
 //        let relation = *["C", "subset"] --> "represent"
-                let image = "C" --> ç.e_("represent", .º, "subset")
-        
-        let knowledge = *[.var("x"), "C", .var("y")] --> ç.e_("represent", .º, *[.var("x"), .var("y")] --> "subset")
+        let image = "C" --> ç.e_("represent", .º, "subset")
+
+        let knowledge = *[.var("x"), "C", .var("y")] --> ç.e_("represent", .º, (*[.var("x"), .var("y")] --> "subset"))
         
         narsy.perform(
             image-*,
             knowledge-*,
-            .cycle(50),
-                        (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-            //            .cycle(50),
+            
+//            .cycle(50),
+            (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
+//                        .cycle(50),
 //            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?,
-            .cycle(50)
+            .cycle(10)
         )
-        //        print(nars.memory)
+//                print(narsy.memory)
 //        print(
 //            Term.match(t: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"), s: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))
 //        )
+        outputMustContain("💡 <(⨯ dog C animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
+    }
+    
+    func testLogicMatch() {
+        let res = Term.logic_match(t1: *["dog", "C", "animal"], t2: *["$x", "C", "$y"])
+        XCTAssertTrue(res)
     }
     
     func testLookup() {
@@ -141,6 +148,14 @@ class Experimental: XCTestCase {
             .cycle(10)
         )
     }
+    
+    func testSimpleQuestion() {
+        narsy.perform(
+            ("dog" --> "animal")-*,
+            ("dog" --> "?")-?
+        )
+    }
+    
     
     /*
      func testik() {
@@ -299,7 +314,7 @@ class Experimental: XCTestCase {
             ("G")-!, // TODO: make goals sticky so they're recurring
             (("ball" --> "[left]") >>|=> (.operation("move", ["[left]"]) >>|=> "G"))-*,
             ||("ball" --> "[left]")-*,
-            .cycle(10)
+            .cycle(20)
         )
         outputMustContain("🤖 ^move [left]")
 //        print(nars.memory)

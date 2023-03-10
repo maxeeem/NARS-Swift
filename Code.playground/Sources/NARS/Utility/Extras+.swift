@@ -167,9 +167,10 @@ extension Array where Element == Sentence {
 }
 
 extension Array where Element == Judgement {
-    func remove(matching sentence: Sentence) -> [Judgement] {
+    func remove(matching sentence: Sentence, keepOrder: Bool = true) -> [Judgement] {
         //TODO: use choice to additionally resolve duplicates
-        Array(Set(filter { j in
+        
+        let filtered = filter { j in
             if j.truthValue.confidence == 0 {
                 return false
             }
@@ -178,6 +179,11 @@ extension Array where Element == Judgement {
                 return false
             }
             return true
-        }))
+        }
+        if keepOrder {
+            return filtered
+        } else {
+            return Array(Set(filtered)) // TODO: not a good way to do this
+        }
     }
 }

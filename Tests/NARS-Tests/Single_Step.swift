@@ -692,7 +692,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "bird")-*(0.9),
             (t1 --> "bird")-?,
-            .cycle(20)
+            .cycle(100)
         )
         outputMustContain("💡 <(swimmer ø swan) -> bird>. %0.10;0.73%")
     }

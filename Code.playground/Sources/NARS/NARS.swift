@@ -114,9 +114,9 @@ public final class NARS: Item {
 
     private func processRecent(_ s: Sentence) {
         if case .judgement(let j) = s {
-            for j in process(recent: j) {
+            for ju in process(recent: j) {
                 // add stable patterns from recent memory
-                process(.judgement(j), recurse: false)
+                process(.judgement(ju), recurse: false)
 //                _ = {
 //                    do {
 //                        try self.throwing()
@@ -379,6 +379,9 @@ extension NARS {
                     } else {
                         output("Unknown operation \(op)")
                     }
+                } else {
+                    // TODO: process derived questions for `? =/> g`
+                    derivedBuffer.insert(input, at: 0)
                 }
                 
             } else {
@@ -389,16 +392,11 @@ extension NARS {
         case .question(let question):
             // consider a question
             if case .statement(let s, _, let p) = question.statement, !derived.isEmpty {
-                if case .variable = s {
-                    output(label + "💡 \(derived.first!)")
-                } else if case .variable = p {
-                    output(label + "💡 \(derived.first!)")
-
-                } else if let winner = derived.first(where: { $0.statement == question.statement }) {
-
+                if let winner = derived.first(where: { $0.statement == question.statement }) {
+                    
                     // cancel in-flight activities
                     derivedBuffer.cleanup(winner.statement)
-
+                    
                     if let (source, rule) = derivedQuestions[winner.statement] {
                         derivedQuestions.removeValue(forKey: winner.statement)
                         
@@ -409,11 +407,24 @@ extension NARS {
                     output(label + "💡 \(winner)")
                     print("}}", winner.derivationPath)
                     
-                /*
-                 * IMAGINATION -- derived questions
-                 */
+                } else if let winner = derived.first(where: { Term.logic_match(t1: $0.statement, t2: question.statement) }) {
+                    // cancel in-flight activities
+                    derivedBuffer.cleanup(question.statement)
+
+                    if let (source, rule) = derivedQuestions[question.statement] {
+                        derivedQuestions.removeValue(forKey: question.statement)
+                        
+                        let answers = rule.apply((source, winner)) .compactMap {$0} .map {Sentence($0)}
+                        derivedBuffer.append(contentsOf: answers)
+                    }
+
+                    output(label + "💡 \(winner)")
+                    print("}}", winner.derivationPath)
 
                 } else {
+                    /*
+                     * IMAGINATION -- derived questions
+                     */
                     // maybe?
                     var buff: [Sentence] = []
                     for var chunk in derived.split(separator: .NULL-*) {
