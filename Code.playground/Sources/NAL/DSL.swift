@@ -39,7 +39,7 @@ public extension Statement {
         case .variable:
             return s + (1.0, 0.9, ETERNAL) // TODO: is this accurate?
         case .operation:
-            return .NULL + (1.0, 0.9, ETERNAL)
+            return s + (1.0, 0.9, ETERNAL)
         }
     }
 }

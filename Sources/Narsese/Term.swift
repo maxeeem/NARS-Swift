@@ -63,6 +63,15 @@ public extension Term {
                     let connector = Connector(rawValue: canonical)!
                     let term = try convert(tree: children[3])
                     return .compound(connector, [term])
+                case "operation":
+                    let op = try convert(tree: children[2])
+                    if children.count <= 4 { // no arguments
+                        return .operation(op.description, [])
+                    }
+                    let terms = try children[4].children?
+                                    .map({ try convert(tree: $0) })
+                                    .filter { $0 != .NULL }
+                    return .operation(op.description, terms ?? [])
                 case "variable":
                     let word = String(s[tree.leafs.first!.lowerBound ..< tree.leafs.last!.upperBound])
                     let vari = Variable(word)!

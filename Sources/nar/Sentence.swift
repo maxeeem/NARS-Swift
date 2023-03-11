@@ -32,6 +32,11 @@ extension Sentence {
                 self = .question(term-?)
                 return
             }
+            
+            if s.hasSuffix(">!") {
+                self = .goal(term-!)
+                return
+            }
             return nil
         } catch {
             print(error)

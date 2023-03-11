@@ -20,6 +20,8 @@ public struct Narsese {
                            | '•->' | '->•' | '•->•'
                            | '/=>' | '\\\\=>' | '|=>' | '/<=>' | '|<=>'
         ;
+        
+        operation        = '(', '^', word, [seq, terms], ')';
 
         compound         = compound-set
                            | compound-prefix
@@ -55,7 +57,7 @@ public struct Narsese {
         seq-comma        = space, ',', space;
         seq-space        = space, ' ', space;
 
-        term             = word | variable | exp | statement | compound;
+        term             = word | variable | exp | statement | compound | operation;
 
         variable         = indep-var | dep-var | query-var;
         
