@@ -75,11 +75,15 @@ public final class NARS: Item {
     public init(timeProviderMs: @escaping () -> UInt32, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
         self.timeProviderMs = timeProviderMs
+        
+        Theorems.cache.removeAll() // TODO: temporary workaround, needs better implementation
     }
     
     public func reset() {
         derivedBuffer.removeAll()
         derivedQuestions.removeAll()
+        
+        Theorems.cache.removeAll() // TODO: temporary workaround, needs better implementation
         
         memory = Bag<Concept>()
         recent = Bag<Belief>(4,40)
@@ -456,7 +460,6 @@ extension NARS {
         
         case .cycle(let n):
             for _ in 0 ..< n {
-//                print("Count:", imaginationBuffer.count)
                 if let s = derivedBuffer.popLast() {
                     process(s, recurse: false)
                 } else {

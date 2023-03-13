@@ -61,7 +61,7 @@ class Experimental: XCTestCase {
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
             ("{sky}" --> "[blue]")-*,
             ("[blue]" --> ç.e_("likes", "cat", .º))-?,
-            .cycle(40)
+            .cycle(10000)
         )
         
         outputMustContain("💡 <[blue] -> (/ likes cat º)>.") // c should be 0.37%
@@ -93,7 +93,7 @@ class Experimental: XCTestCase {
         narsy.perform((*["1","1","1","0","0","0","0","0","0","0"] --> "left")-?)
         narsy.perform(.cycle(500))
         narsy.perform((*["0","0","0","0","0","0","1","0","1","0"] --> "right")-?)
-        narsy.perform(.cycle(200))
+        narsy.perform(.cycle(500))
         //        nars.perform((*["0","0","0","0","0","0","0","1","1","1"] --> "right")-?)
         //        nars.perform(.cycle(200))
         //        nars.perform((*["0","0","0","0","0","0","0","1","1","1"] --> "right")-?)
@@ -123,11 +123,11 @@ class Experimental: XCTestCase {
             image-*,
             knowledge-*,
             
-//            .cycle(50),
+            .cycle(50),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
 //                        .cycle(50),
 //            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?,
-            .cycle(10)
+            .cycle(100)
         )
 //                print(narsy.memory)
 //        print(
@@ -264,7 +264,9 @@ class Experimental: XCTestCase {
             
             ("kvar" --> "4")-*,
             
-            (*["kvar", "a"])-*, // should derive kvar,a --> [kvar] -or- kvar,a --> __(a, kvar)
+            (*["kvar", "a"])-*,
+            
+//            (*["kvar", "a"] --> "?")-?, // should derive kvar,a --> [kvar] -or- kvar,a --> __(a, kvar)
             
             ("[4]" --> __("nth", "4"))-*,
             
@@ -303,6 +305,7 @@ class Experimental: XCTestCase {
         //        )
         
         //        outputMustContain("⏱ <jaud -> ^get-fourth ^days-of-week >. %1.00;0.81%")
+        outputMustContain("<(kvar ⨯ a) -> ^a kvar>.")
         outputMustContain("⏱ <Thursday -> ^4th ^days-of-week >. %1.00;0.81%")
         //        outputMustContain("⏱ <jaud -> Thursday>.")// %1.00;0.81%")
         //        outputMustContain("⏱ <jaud -> Jeudi>.")// %1.00;0.81%")

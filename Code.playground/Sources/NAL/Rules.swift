@@ -62,13 +62,13 @@ extension Rules {
 //                print("q:", m, "?")
                 let rule = tf(.tautology, .tautology).rule
                 let evidence = Judgement.mergeEvidence(q, j)
-                x.append(Judgement(statement: m, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), tense: nil, derivationPath: evidence))
+                x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }
             if let m = Term.match2(t: p2 => c, s: j.statement => q.statement, r: p1) {
 //                print("q:", m, "?")
                 let rule = tf(.tautology, .tautology).rule
                 let evidence = Judgement.mergeEvidence(q, j)
-                x.append(Judgement(statement: m, truthValue: TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), tense: nil, derivationPath: evidence))
+                x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }
 //            print("<<<")
         }
@@ -82,10 +82,12 @@ extension Rules {
 //        }
         return unique
     }
-    
-    public func apply(_ judgements: (Judgement, Judgement)) -> [Judgement?] {
+//    static var count = 0
+    public func apply(_ judgements: (Judgement, Judgement), file: String = #file, line: Int = #line) -> [Judgement?] {
         var (j1, j2) = judgements
         //            print("\n>>>", j)
+//        Self.count += 1
+//        print("<\(Self.count)>", file.suffix(from: file.lastIndex(of: "/")!), line, self, judgements)
         
         var t1 = j1.statement // test
         var t2 = j2.statement // test
@@ -112,18 +114,26 @@ extension Rules {
         //
         //            }
         
+
         /// variable elimination
-//                        print("before")
-//                        print("t1", t1)
-//                       print("t2", t2)
-//                       print("")
+        
+        var x: [Judgement?] = []
+        
         /// independent
-        t1 = variableEliminationIndependent(t1, t2)
-        t2 = variableEliminationIndependent(t2, t1)
-//                        print("after")
-//                         print("t1", t1)
-//                        print("t2", t2)
-//                        print("")
+        func variableEliminationIndependent(_ j1: Judgement, _ j2: Judgement) -> Statement {
+            if let sub = Term.match(t: j1.statement, s: j2.statement) {
+                let jsub = Judgement(sub, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
+                x.append(jsub)
+                if case .statement(_, let cop1, _) = j1.statement, cop1.atemporal == .implication || cop1.atemporal == .equivalence {
+                    return sub
+                }
+            }
+            return j1.statement
+        }
+        
+        t1 = variableEliminationIndependent(j1, j2)
+        t2 = variableEliminationIndependent(j2, j1)
+
         /// dependent
         if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
             return result
@@ -135,9 +145,7 @@ extension Rules {
         
         j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
         j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-        
-        var x: [Judgement?] = []
-        
+                
         // apply rules
         self.allRules.forEach { r in
             x.append(rule_generator(r)((j1, j2)))
@@ -450,13 +458,6 @@ public var rule_generator: (_ rule: Rule) -> Apply {
 
 
 // MARK: - Variable introduction and elimination
-
-private func variableEliminationIndependent(_ t1: Statement, _ t2: Statement) -> Statement {
-    if case .statement(_, let cop1, _) = t1, cop1.atemporal == .implication || cop1.atemporal == .equivalence {
-        return Term.match(t: t1, s: t2) ?? t1
-    }
-    return t1
-}
 
 private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?]? {
     if case .compound(let conn, _) = t1, conn == .c || conn == .U || conn == .Ω {
