@@ -161,11 +161,11 @@ public final class NARS: Item {
         }
     
         // TODO: finish this implementation
-        if case .goal(let g) = s {
-            for t in g.statement.terms {
-                self.process(t-*, recurse: true)
-            }
-        }
+//        if case .goal(let g) = s {
+//            for t in g.statement.terms {
+//                self.process(t-*, recurse: true)
+//            }
+//        }
         
         /// SENTENCE
         process(s, label: "•") // process in main memory
@@ -259,8 +259,25 @@ extension NARS {
         
         while let b = recent.get() {
             derived.append(b)
+            var j = j
+            if j.timestamp == 0 {
+                j = .updateTimestamp(j, timeProviderMs)
+            }
             // only process direct experiences
-            if b.judgement.truthValue.rule == nil, b.judgement.timestamp != ETERNAL, j.timestamp != ETERNAL {
+            if b.judgement.truthValue.rule == nil, // TODO: MAYBE: remove condition?
+                b.judgement.timestamp != ETERNAL, j.timestamp != ETERNAL,
+               
+                /*
+                 --- REMOVE
+                 */
+                
+                (j.timestamp - b.judgement.timestamp) < 40 { // TODO: REMOVE: hardcoded value
+               
+                /*
+                 --- REMOVE
+                 */
+                
+                
                 // process temporal
                 Rules.allCases.flatMap { rs in
                     rs.variable_and_temporal.flatMap { r in
@@ -271,14 +288,9 @@ extension NARS {
                     if var el = $0 {
 //                        print(">>--", el)
 //                        // set time stamp if not yet set
-//                        if el.timestamp == 0 {
-//                            let now = DispatchWallTime.now()
-//                            if el.derivationPath.count == 1 { // also update derivationPath
-//                                el = el.statement + (el.truthValue.f, el.truthValue.c, now.rawValue)
-//                            } else {
-//                                el.timestamp = now.rawValue
-//                            }
-//                        }
+                        if el.timestamp == 0 {
+                            el = .updateTimestamp(el, timeProviderMs)
+                        }
                         
                         chooseBestAndAppend()
                         
@@ -296,7 +308,8 @@ extension NARS {
                             // TODO: figure out how to accomplish evidence accumulation
                             // because as it stands, there is evidence overlap
                             // so choice rule will be used instead of revision
-//                            stable.append(el)
+                            // TODO: QUESTION: is this evidence overlap still happening?
+                            stable.append(el)
 //                        }
                         
                         func chooseBestAndAppend() {
@@ -315,15 +328,10 @@ extension NARS {
                     r.apply((b.judgement, j)) +
                     variants.flatMap({ r.apply((b.judgement, $0)) })
                 }.forEach {
-                    if let el = $0 {
-                        //                    if el.timestamp == 0 {
-                        //                        let now = DispatchWallTime.now()
-                        //                        if el.derivationPath.count == 1 { // also update derivationPath
-                        //                            el = el.statement + (el.truthValue.f, el.truthValue.c, now.rawValue)
-                        //                        } else {
-                        //                            el.timestamp = now.rawValue
-                        //                        }
-                        //                    }
+                    if var el = $0 {
+                        if el.timestamp == 0 {
+                            el = .updateTimestamp(el, timeProviderMs)
+                        }
                         if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
                             derived.append(choice(j1: d.judgement, j2: el) + 0.9)
                         } else {
@@ -365,33 +373,57 @@ extension NARS {
          */
         switch input {
             
-        case .judgement:
+        case .judgement(let j):
+            if case .operation(let op, let args) = j.statement {
+                output(label + "🤖 \(j.statement)")
+                if let operation = operations[op] {
+                    let result = operation(args) // execute
+                    output(result.description)
+                } else {
+                    output("Unknown operation \(op)")
+                }
+            }
             // clean up duplicates and tautologies
             derived = derived.remove(matching: input)
             derivedBuffer.enqueue(derived)
             
         case .goal(let g):
-            // TODO: take desireValue into account
-            if let action = derived.first {
-                //                print("ac", action)
-                if case .statement(let s, let c, let p) = action.statement,
-                   case .operation(let op, let args) = s, c == .predictiveImp, p == g.statement {
-                    output(label + "🤖 \(action.statement)")
-                    if let operation = operations[op] {
-                        let result = operation(args) // execute
-                        output(result.description)
+            for d in derived { // process statements
+                if case .statement(let s, let c, let p) = d.statement,
+                   /*case .operation(let op, let args) = s,*/ c == .predictiveImp, p == g.statement {
+                    if case .operation(let op, let args) = s {
+                        output(label + "🤖 \(s)")
+                        if let operation = operations[op] {
+                            let result = operation(args) // execute
+                            output(result.description)
+                        } else {
+                            output("Unknown operation \(op)")
+                        }
+                    } else if case .statement(let ops, let opc, let opp) = s,
+                              opc == .predictiveImp { // need to verify the the other term?
+                        if case .operation(let op, let args) = opp {
+                            output(label + "🤖 \(opp)")
+                            if let operation = operations[op] {
+                                let result = operation(args) // execute
+                                output(result.description)
+                            } else {
+                                output("Unknown operation \(op)")
+                            }
+                        }
                     } else {
-                        output("Unknown operation \(op)")
+                        let qs = Question("?" >>|=> s)
+                        if derivedQuestions[qs.statement] == nil {
+                            derivedQuestions[qs.statement] = (d, d.truthValue.rule ?? .deduction)
+                            derivedBuffer.insert(contentsOf: [input, .question(qs)], at: 0)
+                        }
                     }
-                } else {
-                    // TODO: process derived questions for `? =/> g`
-                    derivedBuffer.insert(input, at: 0)
                 }
-                
-            } else {
-                //output("\t(3)I don't know 🤷‍♂️")
-                derivedBuffer.insert(input, at: 0)
             }
+            
+            // TODO: take desireValue into account
+            
+            // re-process goal
+            derivedBuffer.insert(input, at: 0)
             
         case .question(let question):
             // consider a question
@@ -411,7 +443,17 @@ extension NARS {
                     output(label + "💡 \(winner)")
                     print("}}", winner.derivationPath)
                     
-                } else if let winner = derived.first(where: { Term.logic_match(t1: $0.statement, t2: question.statement) }) {
+                    derivedBuffer.append(.judgement(winner))
+                    
+                } else if let winner = derived.first(where: {
+                    let match = Term.logic_match(t1: $0.statement, t2: question.statement)
+                    if match {
+                        let request = Term.getTerms(question.statement).filter({ $0 != "º" && !$0.description.hasPrefix("?") })
+                        let result = Term.getTerms($0.statement)
+                        return request.allSatisfy({result.contains($0)})
+                    }
+                    return match
+                }) {
                     // cancel in-flight activities
                     derivedBuffer.cleanup(question.statement)
 
@@ -419,12 +461,74 @@ extension NARS {
                         derivedQuestions.removeValue(forKey: question.statement)
                         
                         let answers = rule.apply((source, winner)) .compactMap {$0} .map {Sentence($0)}
+                        
+                        if case .goal(let goal) = derivedBuffer.last {
+                            if case .judgement(let jud) = answers.first {
+                                if case .statement(let sub, let cop, let pre) = jud.statement {
+                                    if cop == .predictiveImp, pre == goal.statement {
+                                        // subject is the subgoal
+                                        if case .statement(let s, let c, let p) = sub {
+                                            // TODO: how to check preconditions?
+                                            if c == .predictiveImp { // `s` precondition need to be checked
+                                                if case .operation(let op, let ts) = p {
+                                                    _ = derivedBuffer.removeLast()
+                                                    
+                                                    output(label + "🤖 \(p)")
+                                                    if let operation = operations[op] {
+                                                        let result = operation(ts) // execute
+                                                        output(result.description)
+                                                    } else {
+                                                        output("Unknown operation \(op)")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        return // EXIT
+                                    }
+                                }
+                            }
+                        }
+                        
                         derivedBuffer.append(contentsOf: answers)
                     }
 
                     output(label + "💡 \(winner)")
                     print("}}", winner.derivationPath)
+//                    print("--", Set(derived).filter({Term.logic_match(t1: $0.statement, t2: question.statement)}).map({$0.description}))
 
+                    derivedBuffer.append(.judgement(winner))
+                    
+                    if case .statement(let s, let c, let p) = winner.statement, c == .inheritance {
+                        if case .compound(let con, let terms) = p, con == .e, terms.count > 2, terms.first == "represent" {
+                            let op = terms.filter {
+                                if case .operation = $0 {
+                                    return true
+                                }
+                                return false
+                            }
+                            
+                            if op.isEmpty {
+                                let relation = terms[2] // kiu -> [dormas]
+                                let followUp = relation --> ç.e_("represent", .º, "?")
+                                derivedBuffer.append(.question(.init(followUp)))
+
+                            } else {
+                                for o in op {
+                                    if case .operation(let op, let args) = o {
+                                        output(label + "🤖 \(s)")
+                                        if let operation = operations[op] {
+                                            let result = operation(args) // execute
+                                            output(result.description)
+                                        } else {
+                                            output("Unknown operation \(op)")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                 } else {
                     /*
                      * IMAGINATION -- derived questions

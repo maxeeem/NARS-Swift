@@ -24,16 +24,18 @@ extension Sentence {
 }
 
 extension Judgement {
-    var flipped: Judgement? {
-        var flipped: Statement?
-        if case .statement(let sub, let cop, let pre) = statement, (cop == .equivalence || cop == .similarity) {
-            flipped = .statement(pre, cop, sub)
-        }
-        if case .compound(let conn, let terms) = statement, conn == .c || conn == .U || conn == .Ω {
-            if terms.count == 2 { // TODO: handle compounds with multiple terms
-                flipped = .compound(conn, terms.reversed())
+    func represent(_ j: Judgement) -> Judgement? {
+        var rep: Statement?
+        if case .statement(let s, let c, let p) = statement, c == .inheritance, s == j.statement {
+            if case .compound(let con, let ts) = p, con == .e {
+                if ts.count == 3, ts[0] == "represent", ts[1] == .º {
+                    if ts[2].terms.contains(where: {if case .variable = $0 { return true } else {return false}}) {
+                        return nil
+                    }
+                    rep = ts[2]
+                }
             }
         }
-        return (flipped == nil) ? nil : Judgement(flipped!, truthValue, derivationPath, tense: tense, timestamp: timestamp)
+        return (rep == nil) ? nil : Judgement(rep!, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
     }
 }

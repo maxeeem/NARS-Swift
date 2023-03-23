@@ -126,6 +126,8 @@ extension Term {
             return .statement(sub.replace(termName: termName, indepVarName: indepVarName), cop, pre.replace(termName: termName, indepVarName: indepVarName))
         case .compound(let c, let terms):
             return .compound(c, terms.map{$0.replace(termName: termName, indepVarName: indepVarName)})
+        case .operation(let op, let terms):
+            return .operation(op, terms.map{ $0.replace(termName: termName, indepVarName: indepVarName)})
         default: // TODO: properly handle all cases
             return self
         }
@@ -138,10 +140,12 @@ extension Term {
                 return .variable(.dependent(depVarName, []))
             }
             return self
-        case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, depVarName: depVarName), cop, pre.replace(termName: termName, depVarName: depVarName))
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
+        case .operation(let op, let terms):
+            return .operation(op, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
         default: // TODO: properly handle all cases
             return self
         }
@@ -154,18 +158,16 @@ extension Term {
                 return term
             }
             return self
-        case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(termName: termName, term: term)})
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, term: term), cop, pre.replace(termName: termName, term: term))
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(termName: termName, term: term)})
+        case .operation(let name, let terms):
+            return .operation(name, terms.map{$0.replace(termName: termName, term: term)})
         case .variable:
             if description == termName {
                 return term
             }
-            return self
-        case .operation(let name, let terms):
-            return .operation(name, terms.map{$0.replace(termName: termName, term: term)})
-        default: // TODO: properly handle all cases
             return self
         }
     }

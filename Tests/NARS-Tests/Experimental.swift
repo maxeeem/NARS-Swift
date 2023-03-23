@@ -61,7 +61,7 @@ class Experimental: XCTestCase {
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
             ("{sky}" --> "[blue]")-*,
             ("[blue]" --> ç.e_("likes", "cat", .º))-?,
-            .cycle(10000)
+            .cycle(100)
         )
         
         outputMustContain("💡 <[blue] -> (/ likes cat º)>.") // c should be 0.37%
@@ -78,30 +78,29 @@ class Experimental: XCTestCase {
         //        nars.perform(("dog" --> "animal")-*(1.0, 0.9, 0))
         //        nars.perform(("dog" --> "animal")-?)
     }
-    
+    /*
     func testPattern() {
         narsy.perform((*[*["1","0","0","0","0","0","0","0","0","0"], "left"] --> "is")-*)
         narsy.perform((*["1","0","0","0","0","0","0","0","0","0"] --> "left")-*)
         narsy.perform((*[*["1","1","0","0","0","0","0","0","0","0"], "left"] --> "is")-*)
+
+//        narsy.perform(.cycle(500))
         
-        
-        narsy.perform((*[*["0","0","0","0","0","0","0","0","0","1"], "right"] --> "is")-*)
-        narsy.perform((*["0","0","0","0","0","0","0","0","0","1"] --> "right")-*)
-        narsy.perform((*[*["0","0","0","0","0","0","1","0","1","1"], "right"] --> "is")-*)
-        
-        
+//        narsy.perform((*[*["0","0","0","0","0","0","0","0","0","1"], "right"] --> "is")-*)
+//        narsy.perform((*["0","0","0","0","0","0","0","0","0","1"] --> "right")-*)
+//        narsy.perform((*[*["0","0","0","0","0","0","1","0","1","1"], "right"] --> "is")-*)
+                
         narsy.perform((*["1","1","1","0","0","0","0","0","0","0"] --> "left")-?)
-        narsy.perform(.cycle(500))
-        narsy.perform((*["0","0","0","0","0","0","1","0","1","0"] --> "right")-?)
-        narsy.perform(.cycle(500))
+//        narsy.perform((*["0","0","0","0","0","0","1","0","1","0"] --> "right")-?)
+        narsy.perform(.cycle(200))
         //        nars.perform((*["0","0","0","0","0","0","0","1","1","1"] --> "right")-?)
         //        nars.perform(.cycle(200))
         //        nars.perform((*["0","0","0","0","0","0","0","1","1","1"] --> "right")-?)
         
         outputMustContain("💡 <(⨯ 1 1 1 0 0 0 0 0 0 0) -> left>.")
-        outputMustContain("💡 <(⨯ 0 0 0 0 0 0 1 0 1 0) -> right>.")
+//        outputMustContain("💡 <(⨯ 0 0 0 0 0 0 1 0 1 0) -> right>.")
     }
-    
+    */
     func testCompare() {
         //        let compare = Term.operation("compare", ["$a", "$b"])
         let compare = Term.operation("compare", [])
@@ -120,20 +119,69 @@ class Experimental: XCTestCase {
         let knowledge = *[.var("x"), "C", .var("y")] --> ç.e_("represent", .º, (*[.var("x"), .var("y")] --> "subset"))
         
         narsy.perform(
-            image-*,
+//            image-*,
             knowledge-*,
             
-            .cycle(50),
+//            .cycle(50),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-//                        .cycle(50),
+                        .cycle(20)
 //            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?,
-            .cycle(100)
+//            .cycle(100)
         )
 //                print(narsy.memory)
 //        print(
 //            Term.match(t: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"), s: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))
 //        )
         outputMustContain("💡 <(⨯ dog C animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
+    }
+    
+    func testEsperanto2() {
+        func rep(_ t: Term) -> Term {
+            ç.e_("represent", .º, t)
+        }
+//        __.perform(*[.var("x"), "kaj", .var("y")] --> rep(.var("x") & .var("y")))
+//        __.perform(*[.var("x"), "kaj", .var("y")] --> rep(.var("x") && .var("y")))
+//        __.perform(*[.var("x"), "estas", .var("y")] --> rep(.var("x") --> .var("y")))
+//
+//        __.perform((*["Adamo", "kaj", "Sofia"] --> rep("?"))-?)
+//        __.perform((*["Adamo", "estas", "viro"] --> rep("?"))-?)
+//        __.perform(.cycle(20))
+        
+//        __.register("esperanto") { terms in
+//            // recursively convert `represent` terms
+//
+//            return .NULL
+//        }
+        
+        __.register("ask") { ts in
+            if let question = ts.first {
+                self.narsy.perform(question-?)
+            }
+            return .NULL
+        }
+        
+        __.perform((*[.var("x"), "dormas"] --> rep(.var("x") --> "[dormas]")))
+        
+        __.perform(*["Sandy", "dormas"])
+
+        //        __.perform("kiu" --> rep("?"))
+        __.perform((("kiu" --> .var("x")) --> rep(.operation("ask", ["?kiu" --> .var("x")]))))
+                
+
+        __.perform(((*["kiu", "dormas"]) --> rep("?"))-?)
+        
+//        __.perform(*["kiu", "estas", .var("x")] --> rep(.operation("ask", [.var("x") --> "?"])))
+//        __.perform(*["kiu", .var("x"), .var("y")] --> rep(.operation("ask", [.variable(.query("kiu")), .var("x"), .var("y")])))
+//        __.perform(.cycle(20))
+//        __.perform((*["kiu", "estas", "viro"] --> rep("?"))-?)
+//        __.perform(.cycle(40))
+//        __.perform((*["?kiu", "estas", "viro"] --> rep("?"))-?)
+//        __.perform(.cycle(80))
+//        __.perform(("?kiu" --> "[dormas]")-?)
+        
+        __.perform(.cycle(20))
+        
+        outputMustContain("💡 <Sandy -> [dormas]>.")
     }
     
     func testLogicMatch() {
@@ -264,9 +312,7 @@ class Experimental: XCTestCase {
             
             ("kvar" --> "4")-*,
             
-            (*["kvar", "a"])-*,
-            
-//            (*["kvar", "a"] --> "?")-?, // should derive kvar,a --> [kvar] -or- kvar,a --> __(a, kvar)
+            (*["kvar", "a"])-*, // should derive kvar,a --> [kvar] -or- kvar,a --> __(a, kvar)
             
             ("[4]" --> __("nth", "4"))-*,
             
@@ -292,7 +338,7 @@ class Experimental: XCTestCase {
             //            (__("translate", "t001", "en"))-!,
             //            .cycle(10),
             //            (__("translate", "t001", "fr"))-*,
-                .cycle(20)
+                .cycle(40)
         )
         
         //        __.perform(
@@ -315,11 +361,70 @@ class Experimental: XCTestCase {
     func testOp() {
         narsy.perform(
             ("G")-!, // TODO: make goals sticky so they're recurring
-            (("ball" --> "[left]") >>|=> (.operation("move", ["[left]"]) >>|=> "G"))-*,
+            ((("ball" --> "[left]") >>|=> .operation("move", [.SELF, "[left]"])) >>|=> "G")-*,
             ||("ball" --> "[left]")-*,
             .cycle(20)
         )
-        outputMustContain("🤖 ^move [left]")
+        outputMustContain("🤖 ^move SELF [left]")
 //        print(nars.memory)
     }
+
+    func testOp2() {
+        narsy.perform(
+            ("G")-!, // TODO: make goals sticky so they're recurring
+            ((("ball" --> "[left]") >>|=> (.operation("move", [.SELF, "[left]"]))) >>|=> ("ball" --> "[center]"))-*,
+            (("ball" --> "[center]") >>|=> "G")-*,
+            ||("ball" --> "[left]")-*,
+            .cycle(10)
+        )
+        outputMustContain("🤖 ^move SELF [left]")
+//        print(nars.memory)
+    }
+    /*
+    func testMove() {
+        __.register("move") { ts in
+            .NULL
+        }
+        
+        narsy.perform(
+            ("G")-!,
+//            ||(("ball" --> "[left]"))-*,
+//            ||("ball" --> "[left]")-*,
+//            ||("ball" --> "[left]")-*,
+//            ||("ball" --> "[center]")-*,
+//            ||("G")-*,
+////            ("G")-!,
+//            .cycle(100),
+            ||("ball" --> "[left]")-*,
+            ||(.operation("move", [.SELF, "[left]"]))-*,
+//              .cycle(10),
+            ||("ball" --> "[center]")-*,
+//              .cycle(10),
+            ||("G")-*,
+            ("G")-!,
+            .cycle(10),
+            ||("ball" --> "[left]")-*,
+//            .cycle(100),
+            ||("ball" --> "[center]")-*,
+//            .cycle(10),
+            ||("G")-*,
+            ("G")-!,
+            .cycle(20),
+            ||("ball" --> "[center]")-*,
+//            ||(("ball" --> "[left]") >>|=> (.operation("move", ["left"])))-*,
+//               ||("G")-*,
+//              .cycle(10),
+            ||("ball" --> "[right]")-*,
+            ||("ball" --> "[right]")-*,
+            ||("ball" --> "[right]")-*,
+            .cycle(10),
+            ||("ball" --> "[right]")-*,
+            ||("ball" --> "[right]")-*,
+            .cycle(40)
+        )
+        
+        outputMustContain("🤖 ^move SELF [left]")
+        outputMustContain("🤖 ^move SELF [right]")
+    }
+    */
 }

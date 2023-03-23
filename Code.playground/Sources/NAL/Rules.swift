@@ -496,8 +496,8 @@ private func variableIntroductionDependent(_ t1: Statement, _ t2: Statement, _ j
 
 private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
     var x: [Judgement?] = []
-    if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
-       case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
+//    if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
+//       case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
         
         let common = Set(t1.terms).intersection(t2.terms)
         
@@ -522,6 +522,12 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
             let rep: [Judgement] = vari.compactMap { j in
                 var r = j.statement
                 for (i, c) in common.enumerated() {
+                    var c = c
+                    if case .compound(let con, let terms) = c {
+                        if (con == .intSet || con == .extSet) && terms.count == 1 { // TODO: handle multiple
+                            c = terms[0]
+                        }
+                    }
                     if dependent {
                         r = r.replace(termName: c.description, depVarName: "x\(i)")
                     } else {
@@ -535,7 +541,7 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
             }
             
             x.append(contentsOf: rep)
-        }
+//        }
     }
     return x
 }

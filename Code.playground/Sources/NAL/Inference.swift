@@ -223,6 +223,8 @@ public extension Rules {
         switch self {
         case .induction:
             return [(P,  S,  S  => P, tf)]
+            // TODO: need to get temporal information from premises during inference
+//            return [(P,  S,  S  >>|=> P, tf)]
         case .comparison:
             return [(S,  P,  S <=> P, tf)]
         default:

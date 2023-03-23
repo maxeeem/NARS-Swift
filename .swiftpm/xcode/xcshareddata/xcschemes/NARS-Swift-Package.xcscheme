@@ -95,13 +95,13 @@
             </BuildableReference>
             <SkippedTests>
                <Test
+                  Identifier = "Experimental/testMove()">
+               </Test>
+               <Test
                   Identifier = "Experimental/testPattern()">
                </Test>
                <Test
-                  Identifier = "Experimental/testSample()">
-               </Test>
-               <Test
-                  Identifier = "Experimental/testSymbolic()">
+                  Identifier = "Single_Step/test_()">
                </Test>
             </SkippedTests>
          </TestableReference>

@@ -103,10 +103,7 @@ extension Concept {
                 derived.append(judgement)
             }
         }
-        
-        if let jf = j.flipped, beliefs.peek(jf.identifier) == nil {
-            store(jf) // store symmetrical belief
-        }
+
         
         defer {
             store(j) // store original belief
@@ -124,19 +121,7 @@ extension Concept {
         
         /// apply two-premise rules
         twoPremiseRules:
-        if var b = beliefs.get() {
-            
-            if b.judgement.statement == j.flipped?.statement {
-                if let b1 = beliefs.get() {
-                    beliefs.put(b)
-                    b = b1 // use another belief
-                } else {
-                    beliefs.put(b)
-                    break twoPremiseRules
-                }
-            }
-            
-            
+        if var b = beliefs.get() {            
             // apply rules
             let results = Rules.allCases
                 .flatMap { r in
@@ -163,6 +148,14 @@ extension Concept {
             beliefs.peek($0.identifier) == nil
         }//&& $0.statement != j.statement }
 
+        
+        derived.compactMap { $0.represent(j) }
+            .filter {
+                beliefs.peek($0.identifier) == nil
+            }.forEach { jr in
+                derived.append(jr) // add represented belief
+        }
+        
         // TODO: process `values`
         // like rules but modifiable by the system
         // statements using variables
@@ -233,7 +226,7 @@ extension Concept {
                     .filter { beliefs.peek($0.identifier) == nil }
                 if let answer = theorems.first(where: { $0.statement == s }) {
                     return [answer]
-                } else {
+                } else if case .statement(let qs, let qc, _) = s, !(qc == .predictiveImp && qs.description.hasPrefix("?")) {
                     let backward = Rules.allCases.flatMap { r in
                         r.backward((s-*, b.judgement))
                     }.compactMap { $0 }

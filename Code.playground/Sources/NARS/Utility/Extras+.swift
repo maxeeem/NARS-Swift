@@ -158,6 +158,11 @@ extension Array where Element == Sentence {
                     return true
                 }
             }
+            if case .goal(let g) = s {
+                if g.statement == statement {
+                    return true
+                }
+            }
             return false
         })
         if let i = idx {
