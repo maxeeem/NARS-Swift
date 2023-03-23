@@ -185,8 +185,6 @@ extension Rules {
 
 // MARK: Rule application
 
-private var checkOverlap = false // TODO: dirty trick to get dependent-variable introduction to work
-
 public var rule_generator: (_ rule: Rule) -> Apply {
     { (arg) -> ((Judgement, Judgement)) -> Judgement? in
         // premise (p1) premise (p2) conclusion (c) truth-function (tf)
@@ -342,7 +340,7 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                         }
                         return nil
                     }
-                    if checkOverlap && j1.evidenceOverlap(j2) {
+                    if j1.evidenceOverlap(j2) {
                         return nil
                     }
                     if connector == .x || connector == .i || connector == .e {
@@ -503,8 +501,6 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
         
         if !common.isEmpty {
             
-            if dependent { checkOverlap = false }
-            
             var vari = r.conditional.flatMap { r in
                 [rule_generator(r)((j1, j2)),
                  rule_generator(r)((j2, j1))] // switch order of premises
@@ -516,9 +512,7 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
                      rule_generator(r)((j2, j1))] // switch order of premises
                 }.compactMap { $0 })
             }
-            
-            if dependent { checkOverlap = true }
-            
+                        
             let rep: [Judgement] = vari.compactMap { j in
                 var r = j.statement
                 for (i, c) in common.enumerated() {
