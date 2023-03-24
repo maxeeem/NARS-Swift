@@ -6,7 +6,8 @@ final class Parsing_Tests: XCTestCase {
     var narsese: Narsese!
     
     override func setUpWithError() throws {
-        narsese = try Narsese()
+        // Put setup code here. This method is called before the invocation of each test method in the class.
+        narsese = try Narsese(dialect: .swift)
     }
 
     func testExample() throws {

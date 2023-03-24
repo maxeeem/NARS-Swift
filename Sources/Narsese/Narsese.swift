@@ -2,18 +2,28 @@ import NAL
 
 public struct Narsese {
     public let parser: Parser
-    public init() throws {
-        let grammar = try Grammar(ebnf: grammar, start: "exp")
-        parser = EarleyParser(grammar: grammar)
+    public let dialect: Dialect
+    
+    public init(dialect: Dialect) throws {
+        self.dialect = dialect
+
+        try Connector.validate(dialect)
+        // TODO: perform validation for copulas
+        
+        let ebnf = Narsese.grammar(dialect)
+        let grammar = try Grammar(ebnf: ebnf, start: "exp")
+        
+        self.parser = EarleyParser(grammar: grammar)
     }
     
     public func parse(_ s: String) throws -> ParseTree {
         try parser.syntaxTree(for: s)
     }
     
-    public let grammar = """
+    public static func grammar(_ dialect: Dialect) -> String {
+        """
         exp              = '<', (statement | term), '>';
-
+        
         statement        = term, space, copula, space, term;
         
         copula           = '->' | '<->' | '=>' | '<=>'
@@ -37,7 +47,7 @@ public struct Narsese {
         ;
         
         compound-infix   = '(', term, seq, (connector|connector-diff), seq, term, ')';
-        compound-neg     = '(', \(ç.n.all), seq, term, ')';
+        compound-neg     = '(', \(ç.neg(dialect)), (seq|space), term, ')';
         
         compound-image   = '(',
                                ('/' | '\\\\'), seq, term,
@@ -47,10 +57,10 @@ public struct Narsese {
                            ,')'
         ;
         
-        connector        = \([ç.Ω, .U, .x, .c, .d, .s, .p].map(\.all).joined(separator: "|"));
+        connector        = \(ç.primary(dialect));
         
-        connector-diff   = \([ç.l, .ø].map(\.all).joined(separator: "|"));
-
+        connector-diff   = \(ç.diff(dialect));
+        
         terms            = term, [{seq-comma, term}|{seq-space, term}];
         
         seq              = seq-comma | seq-space;
@@ -65,10 +75,11 @@ public struct Narsese {
         dep-var          = '#', [word, '(', [{indep-var|','|space}], ')'];
         query-var        = '?', [word];
         
-        word             = {letter|digit|_};
-
+        word             = {letter|digit|'_'};
+        
         space            = [{' '}];
         digit            = '0' ... '9';
         letter           = 'A' ... 'Z' | 'a' ... 'z';
         """
+    }
 }

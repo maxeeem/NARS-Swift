@@ -36,8 +36,7 @@ public extension Term {
                     return .compound(connector, [t1])
                 case "compound-prefix":
                     let con = String(s[children[1].leafs.first!])
-                    let canonical = ç.canonical(con)!
-                    let connector = Connector(rawValue: canonical)!
+                    let connector = try ç.canonical(con, dialect: parser.dialect)
                     let first = children[3].children!.first!
                     let t1 = try convert(tree: first)
                     let terms = children[5]
@@ -52,15 +51,13 @@ public extension Term {
                     return .compound(connector, [t1, t2])
                 case "compound-infix":
                     let con = String(s[children[3].leafs.first!])
-                    let canonical = ç.canonical(con)!
-                    let connector = Connector(rawValue: canonical)!
+                    let connector = try ç.canonical(con, dialect: parser.dialect)
                     let t1 = try convert(tree: children[1])
                     let t2 = try convert(tree: children[5])
                     return .compound(connector, [t1, t2])
                 case "compound-neg":
                     let con = String(s[children[1].leafs.first!])
-                    let canonical = ç.canonical(con)!
-                    let connector = Connector(rawValue: canonical)!
+                    let connector = try ç.canonical(con, dialect: parser.dialect)
                     let term = try convert(tree: children[3])
                     return .compound(connector, [term])
                 case "operation":
