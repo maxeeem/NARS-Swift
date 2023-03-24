@@ -83,6 +83,12 @@ tagger.enumerateTags(in: tagger.string!.range, unit: .word, scheme: .lemma) { ta
     return true
 }
 
+
+extension String {
+    var range: Range<String.Index> {
+        startIndex..<endIndex
+    }
+}
 /*
 
 <(*,cat,animal) --> is>.

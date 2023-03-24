@@ -90,6 +90,10 @@ public final class NARS: Item {
     }
     
     public func perform(_ script: Sentence...) { // blocking
+        perform(script)
+    }
+
+    public func perform(_ script: [Sentence]) { // blocking
         for s in script {
             processRecent(s)
             
@@ -379,13 +383,15 @@ extension NARS {
             derived = derived.remove(matching: input)
             derivedBuffer.enqueue(derived)
             
-        case .goal(let g):
-            // process statements
-            for d in derived {
+        case .goal(let g): // TODO: take desireValue into account
+            var accomplished = false
+            
+            for d in derived { // process statements
                 if case .statement(let s, let c, let p) = d.statement,
                    /*case .operation(let op, let args) = s,*/ c == .predictiveImp, p == g.statement {
                     if case .operation(let op, let args) = s {
                         output(label + "🤖 \(s)")
+                        accomplished = true
                         if let operation = operations[op] {
                             let result = operation(args) // execute
                             output(result.description)
@@ -396,6 +402,7 @@ extension NARS {
                               opc == .predictiveImp { // need to verify the the other term?
                         if case .operation(let op, let args) = opp {
                             output(label + "🤖 \(opp)")
+                            accomplished = true
                             if let operation = operations[op] {
                                 let result = operation(args) // execute
                                 output(result.description)
@@ -413,10 +420,10 @@ extension NARS {
                 }
             }
             
-            // TODO: take desireValue into account
-            
-            // re-process goal
-            derivedBuffer.insert(input, at: 0)
+            if !accomplished {
+                // re-process goal
+                derivedBuffer.insert(input, at: 0) // TODO: need to only do this if goal has not been achieved yet
+            }
             
         case .question(let question):
             // consider a question
@@ -433,7 +440,7 @@ extension NARS {
                         derivedBuffer.append(contentsOf: answers)
                     }
                     
-                    output(label + "💡 \(winner)")
+                    output("• 💡 \(winner)")
                     print("}}", winner.derivationPath)
                     
                     derivedBuffer.append(.judgement(winner))
@@ -486,7 +493,7 @@ extension NARS {
                         derivedBuffer.append(contentsOf: answers)
                     }
 
-                    output(label + "💡 \(winner)")
+                    output("• 💡 \(winner)")
                     print("}}", winner.derivationPath)
 //                    print("--", Set(derived).filter({Term.logic_match(t1: $0.statement, t2: question.statement)}).map({$0.description}))
 

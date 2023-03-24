@@ -1,17 +1,18 @@
-import Dispatch
 import PlaygroundSupport
 
 PlaygroundPage.current.needsIndefiniteExecution = true
 
-var verbose = true
+var verbose = false
 var history = [String]()
 
-let nars = NARS(cycle: false) { s in
-    if !verbose && (s.contains("⏱") || s.contains("💤")) { return }
+var time: UInt32 = 0
+let timeProviderMs: () -> UInt32 = { time += 1 ; return time }
+
+let nars = NARS(timeProviderMs: timeProviderMs) { s in
+    if !verbose && (s.hasPrefix(".") || s.contains("💤")) { return }
     history.append(s); print(s)
 }
 
-Sentence.defaultPause = 1000 // set default pause duration (ms)
 
 let robin = Term.word("robin")
 let bird = Term.word("bird")
@@ -21,23 +22,16 @@ let mammal = Term.word("mammal")
 let defaultScript = [
     ("bird" --> "animal")-*, // (1, 0.9)
     ( robin -->  bird   )-*,
-    .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
-//    .pause(3000),
-    .cycle,
+    .cycle(100),
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
-    .pause,
+//    .cycle(10),
     ("bird" --> "?")-?,
-    ("?"    -->  mammal)-?,
+    ("?"    -->  mammal)-?
 //    ("?"    --> "?")-?,
-    .pause
 ]
-
-// dispatch execution to background thread
-// to update the user interface
-DispatchQueue.global().async { 
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
     /*
@@ -357,7 +351,6 @@ DispatchQueue.global().async {
     let result = Theorems.apply(test-*)
     print("2.", result)
  */
-}
 
 // MARK: Tests
 // print(history)

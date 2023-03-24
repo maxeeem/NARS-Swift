@@ -93,9 +93,9 @@ extension AbstractBag where I == Concept {
                     result.append(filtered)
                 }
                 return result.flatMap({ [.NULL-*] + $0 })
+            } else {
+                return derivedJudgements.removeDuplicates()
             }
-            
-            return derivedJudgements
         }
         
         var concept = get(s.description) ?? Concept(term: s)

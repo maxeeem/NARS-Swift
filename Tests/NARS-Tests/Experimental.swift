@@ -430,4 +430,136 @@ class Experimental: XCTestCase {
         outputMustContain("🤖 ^move SELF [right]")
     }
     */
+    
+    func testMultiply() {
+        // full syntax for more complex operations
+        func multiply(_ terms: [Term]) -> Term {
+            guard terms.count == 2,
+                  let a = Int(terms[0].description),
+                  let b = Int(terms[1].description) else {
+                return .NULL
+            }
+            let result = a * b
+            return .symbol("\(result)")
+        }
+        narsy.register("__mul__", multiply(_:))
+
+        // multiplication is a sequence of the form `a times b`
+        // sequences are represented as compounds with ⨯ connector
+        // *[a, b, c] is a shortcut for Term.compound(.x, [a, b, c])
+        // Note: * and ⨯ are symbols of compound product, not multiplication
+
+        let a: Term = .var("a")
+        let b: Term = .var("b")
+         
+        /* condition */
+        /// given a statement `a times b`
+        let mul: Term = *[a, "times", b]
+
+        /* operation */
+        /// executing an operation __mul__ with `a` and `b`
+        let op: Term = .operation("__mul__", [a, b])
+         
+        /* result */
+        /// leads to achieving the goal `multiply a times b`
+        /// && is a shortcut for conjunction Term.compound(.c, [a, b, c])
+        let res: Term = ("multiply" && *[a, "times", b])
+
+        /// we define the rule in reverse
+        /// (condition, operation) |- result
+        /// -or-
+        /// condition >> (operation >> result)
+
+        let multiplication_rule: Term = ((mul >>|=> op) >>|=> res)
+
+        /// narsy uses sentences as input
+        /// -* is a judgement
+        /// -? is a question
+        /// -! is a goal
+        narsy.perform( multiplication_rule-* )
+
+        /// goals are something narsy should strive to achieve
+        let goal_two_times_four: Sentence = ("multiply" && *["2", "times", "4"])-!
+
+        narsy.perform(goal_two_times_four)
+        
+        narsy.perform(.cycle(10))
+
+        narsy.reset()
+
+        /*
+         ALTERNATIVE SYNTAX
+         */
+
+        print("\nALTERNATIVE SOLUTION\n")
+         
+        /// you can skip the intermediate variables
+        /// and just express what you need directly
+
+        narsy.perform(
+            // input the rule
+            ((*[a, "times", b] >>|=>
+                .operation("__mul__", [a, b])) >>|=>
+                    ("multiply" && *[a, "times", b])
+            )-*,
+            // ask it to do `multiply`
+            ("multiply" && *["2", "times", "4"])-!,
+            // ask it to multiply again
+            ("multiply" && *["5", "times", "8"])-!,
+            // ask it to multiply again
+            ("multiply" && *["2", "times", "4"])-!,
+            .cycle
+        )
+
+    }
+    
+    func testEval() {
+        
+        func eval(_ terms: [Term]) -> Term {
+            guard terms.count == 1,
+                  case .operation(let op, let ts) = terms.first else {
+                return .NULL
+            }
+            return narsy.operations[op]?(ts) ?? .NULL
+        }
+
+        narsy.register("__eval__", eval(_:))
+
+        func loop(_ terms: [Term]) -> Term {
+            guard terms.count == 2,
+                  let count = Int(terms[0].description),
+                  case .operation = terms[1] else {
+            return .NULL
+            }
+            for i in 0..<count {
+                print("EVAL", // TODO: should be better
+                    eval([terms[1]])
+                )
+            }
+            return .NULL
+        }
+
+        narsy.register("__loop__", loop(_:))
+
+        func _print(_ terms: [Term]) -> Term {
+            print("PRINT", terms)
+            return .NULL
+        }
+
+        narsy.register("__print__", _print(_:))
+
+        var x = Term.var("x")
+
+        narsy.perform(
+            // when asked to evaluate something, performing __eval__ operation, will lead to the goal
+            ((*["evaluate", x] >>|=> .operation("__eval__", [x])) >>|=> ("EVAL" && *["evaluate", x]))-*,
+            
+            ("EVAL" && *["evaluate", .operation("__print__", ["hello", "world"])])-!,
+            .cycle(10)
+        )
+
+        // TODO: what is the expected behavior? need additional triggers to execure operation?
+        let y: Term = *["evaluate", .operation("__print__", ["hello", "world"])]
+        print(y)
+    }
 }
