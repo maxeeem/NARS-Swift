@@ -82,7 +82,7 @@ extension AbstractBag where I == Concept {
             
             // TODO: MAYBE: if question was instantiating a variable, filter out
             
-            // remove duplicates within .NULL separate blocks
+            // remove duplicates within .NULL separated blocks
             if derivedJudgements.contains(.NULL-*) {
                 var result: [[Judgement]] = []
                 for chunk in derivedJudgements.split(separator: .NULL-*) {

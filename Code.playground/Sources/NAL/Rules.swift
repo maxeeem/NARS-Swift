@@ -58,13 +58,13 @@ extension Rules {
 //            print("--J", j)
 //            print(tf(TruthValue(1.0, 0.9), TruthValue(1.0, 0.9)).rule)
 //            print("q:>>>", q)
-            if let m = Term.match2(t: p1 => c, s: j.statement => q.statement, r: p2) {
+            if let m = Term.match_backward(t: p1 => c, s: j.statement => q.statement, r: p2) {
 //                print("q:", m, "?")
                 let rule = tf(.tautology, .tautology).rule
                 let evidence = Judgement.mergeEvidence(q, j)
                 x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }
-            if let m = Term.match2(t: p2 => c, s: j.statement => q.statement, r: p1) {
+            if let m = Term.match_backward(t: p2 => c, s: j.statement => q.statement, r: p1) {
 //                print("q:", m, "?")
                 let rule = tf(.tautology, .tautology).rule
                 let evidence = Judgement.mergeEvidence(q, j)

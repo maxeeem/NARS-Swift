@@ -598,13 +598,6 @@ func === (u: LogicTerm, v: LogicTerm) -> LogicGoal {
     return u ≡ v
 }
 
-let x = fresh({ x in
-    x === LogicVariable(named: "a")
-})
-
-let v = freshn({ v in
-    v["x"] === v["y"]
-})
 
 /// Takes a LogicGoal constructor and returns a LogicGoal with fresh LogicVariables.
 ///

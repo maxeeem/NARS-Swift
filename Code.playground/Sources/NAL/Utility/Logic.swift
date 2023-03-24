@@ -97,7 +97,7 @@ extension Copula: LogicTerm {
 extension Term {
     public static func logic_match(t1: Term, t2: Term) -> Bool {
         // TODO: need to add some sort of filtering to prevent infinite recursion bug
-        // t1:  (#x1() <–> (swimmer – #x1()) ∧ (swimmer – #x1()) -> #x1())
+        // t1: (#x1() <–> (swimmer – #x1()) ∧ (swimmer – #x1()) -> #x1())
         // t2: ((swimmer – #x0()) <–> #x0() ∧ (swimmer – #x0()) -> #x0())
         return solve(t1.logic() === t2.logic()).makeIterator().next() != nil
     }

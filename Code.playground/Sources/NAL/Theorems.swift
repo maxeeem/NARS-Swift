@@ -89,7 +89,7 @@ extension Term {
     }
     
     
-    static func match2(t: Statement, s: Statement, r: Statement) -> Statement? {
+    static func match_backward(t: Statement, s: Statement, r: Statement) -> Statement? {
         var results = [Term]()
 //        print("\n\n--", t.logic(), "\n", s.logic())
 

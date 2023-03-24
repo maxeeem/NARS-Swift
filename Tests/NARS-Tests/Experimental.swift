@@ -51,8 +51,9 @@ class Experimental: XCTestCase {
             ("{Sandy}" --> "dog")-*(0.1, 0.9),
             ("{Sandy}" --> "dog")-*(0.1, 0.9),
             ("{Sandy}" --> "dog")-*,
-            ("{Sandy}" --> "dog")-*
+            ("{Sandy}" --> "dog")-?
         )
+        outputMustContain("💡 <{Sandy} -> dog>. %0.55;0.95%")
     }
     
     func testSample() {
@@ -181,7 +182,7 @@ class Experimental: XCTestCase {
         
         __.perform(.cycle(20))
         
-        outputMustContain("💡 <Sandy -> [dormas]>.")
+        outputMustContain("💡 <Sandy -> [dormas]>.")        
     }
     
     func testLogicMatch() {
@@ -195,6 +196,7 @@ class Experimental: XCTestCase {
             ("dog" --> "animal")-*,
             .cycle(10)
         )
+        outputMustContain("<animal -> [live]>.")
     }
     
     func testSimpleQuestion() {
@@ -202,6 +204,7 @@ class Experimental: XCTestCase {
             ("dog" --> "animal")-*,
             ("dog" --> "?")-?
         )
+        outputMustContain("💡 <dog -> animal>.")
     }
     
     
@@ -360,7 +363,7 @@ class Experimental: XCTestCase {
     
     func testOp() {
         narsy.perform(
-            ("G")-!, // TODO: make goals sticky so they're recurring
+            ("G")-!,
             ((("ball" --> "[left]") >>|=> .operation("move", [.SELF, "[left]"])) >>|=> "G")-*,
             ||("ball" --> "[left]")-*,
             .cycle(20)
@@ -371,7 +374,7 @@ class Experimental: XCTestCase {
 
     func testOp2() {
         narsy.perform(
-            ("G")-!, // TODO: make goals sticky so they're recurring
+            ("G")-!,
             ((("ball" --> "[left]") >>|=> (.operation("move", [.SELF, "[left]"]))) >>|=> ("ball" --> "[center]"))-*,
             (("ball" --> "[center]") >>|=> "G")-*,
             ||("ball" --> "[left]")-*,

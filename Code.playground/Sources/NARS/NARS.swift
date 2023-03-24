@@ -93,7 +93,7 @@ public final class NARS: Item {
         for s in script {
             processRecent(s)
             
-            process(anticipations: s) // TODO: should be done inside MEMORY to avoid extra read/write on concepts
+            process(anticipations: s)
             
             processInput(s)
         }
@@ -118,9 +118,9 @@ public final class NARS: Item {
 
     private func processRecent(_ s: Sentence) {
         if case .judgement(let j) = s {
-            for ju in process(recent: j) {
+            for j in process(recent: j) {
                 // add stable patterns from recent memory
-                process(.judgement(ju), recurse: false)
+                process(.judgement(j), recurse: false)
 //                _ = {
 //                    do {
 //                        try self.throwing()
@@ -178,6 +178,7 @@ public final class NARS: Item {
 // MARK: Private
 
 extension NARS {
+    // TODO: should be done inside MEMORY to avoid extra read/write on concepts
     fileprivate func process(anticipations for: Sentence) {
         if case .judgement(let judgement) = `for` {
             if let concept = memory.get(judgement.statement.description) {
@@ -231,7 +232,7 @@ extension NARS {
                         memory.put(pc)
                     }
                     
-                    output(".  ⏱ anticipate " + "<\(p)>.") // add deduction calculation
+                    output(".  ⏱ anticipate " + "<\(p)>.") // TODO: add deduction calculation
                 }
             }
         }
@@ -373,22 +374,14 @@ extension NARS {
          */
         switch input {
             
-        case .judgement(let j):
-            if case .operation(let op, let args) = j.statement {
-                output(label + "🤖 \(j.statement)")
-                if let operation = operations[op] {
-                    let result = operation(args) // execute
-                    output(result.description)
-                } else {
-                    output("Unknown operation \(op)")
-                }
-            }
+        case .judgement:
             // clean up duplicates and tautologies
             derived = derived.remove(matching: input)
             derivedBuffer.enqueue(derived)
             
         case .goal(let g):
-            for d in derived { // process statements
+            // process statements
+            for d in derived {
                 if case .statement(let s, let c, let p) = d.statement,
                    /*case .operation(let op, let args) = s,*/ c == .predictiveImp, p == g.statement {
                     if case .operation(let op, let args) = s {
@@ -469,7 +462,7 @@ extension NARS {
                                         // subject is the subgoal
                                         if case .statement(let s, let c, let p) = sub {
                                             // TODO: how to check preconditions?
-                                            if c == .predictiveImp { // `s` precondition need to be checked
+                                            if c == .predictiveImp { // TODO: `s` precondition need to be checked
                                                 if case .operation(let op, let ts) = p {
                                                     _ = derivedBuffer.removeLast()
                                                     
