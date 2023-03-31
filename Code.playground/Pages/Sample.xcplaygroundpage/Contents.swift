@@ -13,6 +13,28 @@ let nars = NARS(timeProviderMs: timeProviderMs) { s in
     history.append(s); print(s)
 }
 
+var __ : NARS { nars }
+
+func rep(_ t: Term) -> Term {
+    ç.e_("represent", .º, t)
+}
+
+__.register("ask") { ts in
+    if let question = ts.first {
+        nars.perform(question-?)
+    }
+    return .operation("ask", ts)
+}
+        
+__.perform((*["$x", "dormas"] --> rep("$x" --> "[dormas]")))
+        
+__.perform(*["Sandy", "dormas"])
+
+__.perform((("kiu" --> "$x") --> rep(.operation("ask", ["?kiu" --> "$x"]))))
+                
+__.perform(((*["kiu", "dormas"]) --> rep("?"))-?)
+__.perform(.cycle(20))
+
 
 let robin = Term.word("robin")
 let bird = Term.word("bird")
@@ -48,9 +70,11 @@ let defaultScript = [
 //    )
     
 //    output.reset()
+
+
+//    nars.perform(defaultScript)
     
-    nars.perform(defaultScript)
-    
+
     //debugPrint(nars.memory)
         
 //    output.reset()

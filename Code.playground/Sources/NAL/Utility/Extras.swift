@@ -105,7 +105,8 @@ extension Term: CustomStringConvertible {
             if case .statement = predicate {
                 p = "(\(predicate))"
             }
-            return s + " " + copula.rawValue + " " + p
+            let sub = (s == "NULL") ? "" : s + " "
+            return sub + copula.rawValue + " " + p
         case .variable(let variable):
             switch variable {
             case .independent(let word):

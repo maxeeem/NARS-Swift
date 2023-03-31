@@ -764,7 +764,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("{Tweety}" --> "_P")-*,
             ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*,
-            .cycle(10)
+            .cycle(20)
         ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
         outputMustContain("⏱ <{Tweety} -> _Q>. %1.00;0.81%")
     }

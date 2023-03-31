@@ -47,8 +47,11 @@ extension AbstractBag where I == Concept {
             if !matches.isEmpty {
                 for m in matches {
                     var concept = get(m.identifier)!
-                    let derived = f(&concept).filter {
-                        !Term.logic_match(t1: $0.statement, t2: s)
+                    var derived: [Judgement]
+                    if recurse {
+                        derived = f(&concept)
+                    } else { // TODO: pass real truth value for `s` instead of using default
+                        derived = question ? concept.answer(s) : concept.accept(s-*, derive: true)
                     }
                     derivedJudgements.append(contentsOf: derived)
                     concept.adjustPriority(derived)
@@ -104,6 +107,27 @@ extension AbstractBag where I == Concept {
         derivedJudgements.append(contentsOf: derived)
         concept.adjustPriority(derived)
         put(concept)
+        
+        derivedJudgements = derivedJudgements.removeDuplicates()
+        
+        var otras = [Judgement]()
+        let rel = derivedJudgements.compactMap {
+            if case .statement(let sub, let cop, let pre) = $0.statement, cop == .inheritance {
+                if case .compound(let con, let ts) = pre, con == .e, ts.count == 3, ts[0] == "represent", ts[1] == .º {
+                    return Judgement(sub <-> ts[2], $0.truthValue)
+                }
+            }
+            otras.append($0)
+            return nil
+        }
+        
+        for r in rel {
+            for o in otras {
+                let repl = Rules.analogy.apply((o, r)).compactMap({$0})
+                derivedJudgements.append(contentsOf: repl)
+            }
+        }
+        
         return derivedJudgements.removeDuplicates()
     }
     

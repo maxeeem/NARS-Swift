@@ -68,7 +68,7 @@ extension Connector {
         case .ø: res = t1t.subtracting(t2t); con = .Ω
             
         /// definition 8.1 -- sequence
-        case .x: return .compound(.x, t1.terms + t2.terms)
+        case .x: return .compound(.x, [t1, t2])
 
         /// first term is a relation // TODO: need to validate
         case .e: return .compound(.e, t1.terms + t2.terms)

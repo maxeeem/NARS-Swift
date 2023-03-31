@@ -285,7 +285,7 @@ extension Theorems {
             ]
         case .similarity:
             return [
-                -(-T1) <-> (T1)
+//                -(-T1) <-> (T1)
             ]
         case .implication:
             return [

@@ -140,6 +140,9 @@ class Experimental: XCTestCase {
         func rep(_ t: Term) -> Term {
             ç.e_("represent", .º, t)
         }
+        func rep2(_ t: Term) -> Term {
+            ç.e_("represent", t, .º)
+        }
 //        __.perform(*[.var("x"), "kaj", .var("y")] --> rep(.var("x") & .var("y")))
 //        __.perform(*[.var("x"), "kaj", .var("y")] --> rep(.var("x") && .var("y")))
 //        __.perform(*[.var("x"), "estas", .var("y")] --> rep(.var("x") --> .var("y")))
@@ -160,7 +163,7 @@ class Experimental: XCTestCase {
             }
             return .NULL
         }
-        
+/*
         __.perform((*[.var("x"), "dormas"] --> rep(.var("x") --> "[dormas]")))
         
         __.perform(*["Sandy", "dormas"])
@@ -182,7 +185,44 @@ class Experimental: XCTestCase {
         
         __.perform(.cycle(20))
         
-        outputMustContain("💡 <Sandy -> [dormas]>.")        
+        outputMustContain("💡 <Sandy -> [dormas]>.")
+        
+        __.perform((("Sandy" --> "[dormas]") --> rep2("?"))-?)
+
+        outputMustContain("💡 <(Sandy -> [dormas]) -> (/ represent (Sandy ⨯ dormas) º)>.")
+*/
+        // `as` indicated the present in verbs
+        // TODO:
+        // needs to be handled at the level of judgement to carry tense information
+        // alrernatively can bring in tense into the Term, need to investigate further
+        let `as`: Term = *["$x", "as"] --> rep(||("[$x]"))
+        let `os`: Term = *["$x", "os"] --> rep(>>("[$x]"))
+        let `is`: Term = *["$x", "is"] --> rep(<<("[$x]"))
+
+        __.perform((`as`)-*)
+        __.perform((`os`)-*)
+        __.perform((`is`)-*)
+
+        //        __.perform((*[.var("x"), *[.var("y"), "as"]] --> rep(.var("x") --> .property(.var("y")))))
+
+        __.perform((*["$x", "$y"] --> rep("$x" --> "$y")))
+
+        __.perform((*["Sandy", *["dorm", "as"]]))
+
+        __.perform(.cycle(40))
+//        outputMustContain("<Sandy -> [dorm]>.")
+
+//        __.perform((*["Sandy", *["dorm", "as"]]))
+//
+//        __.perform(.cycle(40))
+
+//        __.perform((*["dorm", "as"] --> rep("?"))-?)
+//        __.perform(.cycle(20))
+
+//        __.perform((epo(["Sandy", ||("[dorm]")]) --> rep("?"))-?)
+//        __.perform(.cycle(20))
+        outputMustContain("<Sandy -> (|=> [dorm])>.")
+
     }
     
     func testLogicMatch() {

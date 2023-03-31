@@ -30,7 +30,7 @@ public extension Rules {
     //TODO: should we add intersection, difference and union to the list?
     
     static func immediate(_ j: Judgement) -> [Judgement] {
-        let immediate: [Infer] = [/*negation(j1:),*/ conversion(j1:), contraposition(j1:)]
+        let immediate: [Infer] = [negation(j1:), conversion(j1:), contraposition(j1:)]
         return immediate.compactMap { $0(j) }
     }
 }
