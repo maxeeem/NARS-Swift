@@ -2,7 +2,7 @@ import PlaygroundSupport
 
 PlaygroundPage.current.needsIndefiniteExecution = true
 
-var verbose = false
+var verbose = true
 var history = [String]()
 
 var time: UInt32 = 0

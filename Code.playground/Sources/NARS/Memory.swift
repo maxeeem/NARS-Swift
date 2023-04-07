@@ -3,9 +3,9 @@ extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
         case .judgement(let j):
-            return consider(j.statement) { c in c.accept(j, derive: derive) }
+            return consider(j.statement, recurse: true) { c, s in c.accept(j, derive: derive, store: s) }
         case .question(let q):
-            return consider(q.statement, true) { c in c.answer(q.statement) }
+            return consider(q.statement, true, recurse: derive) { c, _ in c.answer(q.statement) }
         case .goal(let g):
             return consider(g, derive: derive) // TODO: finish implementation
         case .cycle: return []
@@ -24,7 +24,7 @@ extension AbstractBag where I == Concept {
 
 extension AbstractBag where I == Concept {
     // TODO: this could/should be an asynchronous method delegating processing to each concept independently
-    private func consider(_ s: Statement, _ question: Bool = false, _ f: (inout Concept) -> [Judgement], recurse: Bool = true) -> [Judgement] {
+    private func consider(_ s: Statement, _ question: Bool = false, recurse: Bool = true, _ f: (inout Concept, _ store: Bool) -> [Judgement]) -> [Judgement] {
         switch s {
         case .variable: return []
 //        case .operation: return []
@@ -36,7 +36,7 @@ extension AbstractBag where I == Concept {
         
         if var concept = get(s.description) {
 
-            let derived = f(&concept)
+            let derived = f(&concept, true)
             derivedJudgements.append(contentsOf: derived)
             concept.adjustPriority(derived)
             put(concept)
@@ -49,9 +49,9 @@ extension AbstractBag where I == Concept {
                     var concept = get(m.identifier)!
                     var derived: [Judgement]
                     if recurse {
-                        derived = f(&concept)
+                        derived = f(&concept, false)
                     } else { // TODO: pass real truth value for `s` instead of using default
-                        derived = question ? concept.answer(s) : concept.accept(s-*, derive: true)
+                        derived = question ? concept.answer(s) : concept.accept(s-*, derive: true, store: false)
                     }
                     derivedJudgements.append(contentsOf: derived)
                     concept.adjustPriority(derived)
@@ -65,17 +65,17 @@ extension AbstractBag where I == Concept {
             if s.terms != [s] {
                 let terms = Set(s.terms)
                 for t in terms {
-                    let derived = consider(t, question, f, recurse: false)
+                    let derived = consider(t, question, recurse: false, f)
                     derivedJudgements.append(contentsOf: derived)
                 }
                 let t1terms = Set(terms.flatMap({$0.terms}))
                 for t1 in t1terms.subtracting(terms) {
-                    let derived = consider(t1, question, f, recurse: false)
+                    let derived = consider(t1, question, recurse: false, f)
                     derivedJudgements.append(contentsOf: derived)
                 }
                 let t2terms = Set(t1terms.flatMap({$0.terms}))
                 for t2 in t2terms.subtracting(t1terms) {
-                    let derived = consider(t2, question, f, recurse: false)
+                    let derived = consider(t2, question, recurse: false, f)
                     derivedJudgements.append(contentsOf: derived)
                 }
             }
@@ -103,7 +103,7 @@ extension AbstractBag where I == Concept {
         
         var concept = get(s.description) ?? Concept(term: s)
 
-        let derived = f(&concept)
+        let derived = f(&concept, true)
         derivedJudgements.append(contentsOf: derived)
         concept.adjustPriority(derived)
         put(concept)

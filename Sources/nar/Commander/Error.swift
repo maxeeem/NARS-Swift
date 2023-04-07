@@ -1,9 +1,15 @@
 #if os(Linux)
   import Glibc
+  typealias FilePointer = UnsafeMutablePointer<FILE>
 #elseif os(Windows)
   import CRT
-#else
+  typealias FilePointer = UnsafeMutablePointer<FILE>
+#elseif canImport(Darwin)
   import Darwin
+  typealias FilePointer = UnsafeMutablePointer<FILE>
+#elseif canImport(WASILibc)
+  import WASILibc
+  typealias FilePointer = OpaquePointer
 #endif
 import Foundation
 
@@ -53,7 +59,7 @@ enum ANSI: UInt8, CustomStringConvertible {
     }
   }
 
-  func print(_ string: String, to output: UnsafeMutablePointer<FILE> = stdout) {
+  func print(_ string: String, to output: FilePointer = stdout) {
     if ANSI.isTerminalSupported {
       fputs("\(self)\(string)\(ANSI.reset)\n", output)
     } else {

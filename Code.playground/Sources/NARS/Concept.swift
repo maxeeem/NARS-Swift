@@ -59,20 +59,13 @@ public struct Concept: Item {
 
 extension Concept {
     // returns derived judgements if any
-    func accept(_ j: Judgement, derive: Bool) -> [Judgement] {
+    func accept(_ j: Judgement, derive: Bool, store: Bool = true) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
 //        lastInput = j
 
         var j = j
         var originalPriority: Double?
         var derived: [Judgement] = []
-        
-        /// helper
-        func store(_ j: Judgement) {
-            var b = j + (originalPriority ?? 0.9)
-            b.adjustPriority(derived)
-            beliefs.put(b)
-        }
         
         // revision goes first
         if let b = beliefs.get(j.identifier) {
@@ -106,7 +99,12 @@ extension Concept {
 
         
         defer {
-            store(j) // store original belief
+            if store {
+                // store original belief
+                var b = j + (originalPriority ?? 0.9)
+                b.adjustPriority(derived)
+                beliefs.put(b)
+            }
         }
 
 

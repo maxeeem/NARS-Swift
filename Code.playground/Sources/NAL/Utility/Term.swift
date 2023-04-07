@@ -215,3 +215,62 @@ extension String {
         return words
     }
 }
+
+extension Term {
+    static func validate(_ term: Term) -> Term? {
+        switch term {
+            
+            // TODO: difference connectors take exactly 2 terms
+            
+        case .compound(let connector, let terms):
+            if terms.count == 0 {
+                return nil // empty compound
+            }
+            if terms.count == 1 {
+                if connector == .intSet || connector == .extSet {
+                    if case .compound(let c, let ts) = terms[0] {
+                        if ts.count == 1, c == .intSet || c == .extSet {
+                            return nil // prevent nesting i.e. [{x}], {{x}}, [[x]], {[x]}
+                        }
+                    }
+                    return term // instances and properties are allowed one component
+                }
+                //                    print("here", term)
+                if connector == .x || connector == .i || connector == .e {
+                    return term
+                }
+                return nil
+            }
+//                    if j1.evidenceOverlap(j2) {
+//                        return nil
+//                    }
+            if connector == .x {
+                return term
+            }
+            if connector == .i || connector == .e {
+                if case .symbol = terms.first {
+                    return term
+                } else if case .variable = terms.first {
+                    return term
+                } else {
+                    return nil
+                }
+            }
+            return connector.connect(terms)
+            
+        case .statement(let subject, let cop, let predicate):
+            if let sub = validate(subject), let pre = validate(predicate) {
+                //                    if case .compound(let cs, _) = subject, case .compound(let cp, _) = predicate {
+                //                        if cs == .x && cp == .x {
+                //                            return nil
+                //                        }
+                //                    }
+                return .statement(sub, cop, pre)
+            }
+            return nil
+            
+        default:
+            return term
+        }
+    }
+}

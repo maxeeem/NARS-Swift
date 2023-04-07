@@ -121,7 +121,7 @@ extension Rules {
         
         /// independent
         func variableEliminationIndependent(_ j1: Judgement, _ j2: Judgement) -> Statement {
-            if let sub = Term.match(t: j1.statement, s: j2.statement) {
+            if let sub = Term.match(t: j1.statement, s: j2.statement), Term.validate(sub) != nil {
                 let jsub = Judgement(sub, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
                 x.append(jsub)
                 if case .statement(_, let cop1, _) = j1.statement, cop1.atemporal == .implication || cop1.atemporal == .equivalence {
@@ -230,7 +230,12 @@ public var rule_generator: (_ rule: Rule) -> Apply {
              * MARK: check results
              */
             
-            if let statement = validate(result), !statement.isTautology {
+            if case .compound = result { // TODO: move this check elsewhere
+                if j1.evidenceOverlap(j2) {
+                    return nil
+                }
+            }
+            if let statement = Term.validate(result), !statement.isTautology {
                 //            print("accepted", result)
                 let truthValue = tf(j1.truthValue, j2.truthValue)
                 let derivationPath = Judgement.mergeEvidence(j1, j2)
@@ -314,54 +319,6 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                 //            print("}}}}", j1, j2, result)
                 
                 return (result == t) ? nil : result
-            }
-            
-            func validate(_ term: Term) -> Term? {
-                switch term {
-                    
-                    // TODO: difference connectors take exactly 2 terms
-                    
-                case .compound(let connector, let terms):
-                    if terms.count == 0 {
-                        return nil // empty compound
-                    }
-                    if terms.count == 1 {
-                        if connector == .intSet || connector == .extSet {
-                            if case .compound(let c, let ts) = terms[0] {
-                                if ts.count == 1, c == .intSet || c == .extSet {
-                                    return nil // prevent nesting i.e. [{x}], {{x}}, [[x]], {[x]}
-                                }
-                            }
-                            return term // instances and properties are allowed one component
-                        }
-                        //                    print("here", term)
-                        if connector == .x || connector == .i || connector == .e {
-                            return term
-                        }
-                        return nil
-                    }
-                    if j1.evidenceOverlap(j2) {
-                        return nil
-                    }
-                    if connector == .x || connector == .i || connector == .e {
-                        return term
-                    }
-                    return connector.connect(terms)
-                    
-                case .statement(let subject, let cop, let predicate):
-                    if let sub = validate(subject), let pre = validate(predicate) {
-                        //                    if case .compound(let cs, _) = subject, case .compound(let cp, _) = predicate {
-                        //                        if cs == .x && cp == .x {
-                        //                            return nil
-                        //                        }
-                        //                    }
-                        return .statement(sub, cop, pre)
-                    }
-                    return nil
-                    
-                default:
-                    return term
-                }
             }
             
             func determineOrder() -> Term {

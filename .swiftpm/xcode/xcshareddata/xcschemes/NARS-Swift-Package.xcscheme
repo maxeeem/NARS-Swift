@@ -76,6 +76,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "nars-wasm"
+               BuildableName = "nars-wasm"
+               BlueprintName = "nars-wasm"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -117,6 +131,16 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "nars-wasm"
+            BuildableName = "nars-wasm"
+            BlueprintName = "nars-wasm"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </BuildableProductRunnable>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -133,15 +157,16 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "nar"
-            BuildableName = "nar"
-            BlueprintName = "nar"
+            BlueprintIdentifier = "nars-wasm"
+            BuildableName = "nars-wasm"
+            BlueprintName = "nars-wasm"
             ReferencedContainer = "container:">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

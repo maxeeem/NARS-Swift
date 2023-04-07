@@ -270,13 +270,13 @@ extension NARS {
             }
             // only process direct experiences
             if b.judgement.truthValue.rule == nil, // TODO: MAYBE: remove condition?
-                b.judgement.timestamp != ETERNAL, j.timestamp != ETERNAL,
+               b.judgement.timestamp != ETERNAL, j.timestamp != ETERNAL {
                
                 /*
                  --- REMOVE
                  */
                 
-                (j.timestamp - b.judgement.timestamp) < 40 { // TODO: REMOVE: hardcoded value
+//                (j.timestamp - b.judgement.timestamp) < 40 { // TODO: REMOVE: hardcoded value
                
                 /*
                  --- REMOVE

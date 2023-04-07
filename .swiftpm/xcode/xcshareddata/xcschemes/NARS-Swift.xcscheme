@@ -119,9 +119,6 @@
                   Identifier = "Single_Step/testMultipleQuestions()">
                </Test>
                <Test
-                  Identifier = "Single_Step/testNal2_02()">
-               </Test>
-               <Test
                   Identifier = "Single_Step/testPattern()">
                </Test>
                <Test

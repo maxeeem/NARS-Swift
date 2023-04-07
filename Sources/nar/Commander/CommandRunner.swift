@@ -2,8 +2,10 @@
   import Glibc
 #elseif os(Windows)
   import CRT
-#else
+#elseif canImport(Darwin)
   import Darwin
+#elseif canImport(WASILibc)
+  import WASILibc
 #endif
 
 
@@ -20,7 +22,7 @@ extension CommandType {
       }
     }
 
-    let executableName = parser.shift()!  // Executable Name
+    let executableName = parser.shift() ?? "[executableName]"  // Executable Name
 
     do {
       try run(parser)

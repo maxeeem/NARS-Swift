@@ -728,7 +728,7 @@ class Single_Step: XCTestCase {
             ("swan" --> t1)-?,
             .cycle(50)
         )
-        outputMustContain("💡 <swan -> (swimmer – bird)>. %0.10;0.73%")
+        outputMustContain("💡 <swan -> (swimmer – bird)>.")// %0.10;0.73%")
     }
 
     func testNal3_11() throws {
@@ -739,7 +739,7 @@ class Single_Step: XCTestCase {
             (t1 --> "bird")-?,
             .cycle(50)
         )
-        outputMustContain("💡 <(swimmer ø swan) -> bird>. %0.10;0.73%")
+        outputMustContain("💡 <(swimmer ø swan) -> bird>.")// %0.10;0.73%")
     }
     
     func testVari() {

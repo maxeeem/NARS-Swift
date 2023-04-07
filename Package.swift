@@ -1,6 +1,10 @@
 // swift-tools-version:5.6
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
+// NOTE:
+// when building for WASM, increase default stack size of 64KB
+// swift build --triple wasm32-unknown-wasi -Xlinker -z -Xlinker stack-size=131072
+
 import PackageDescription
 
 let package = Package(

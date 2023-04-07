@@ -96,10 +96,21 @@ extension Copula: LogicTerm {
 
 extension Term {
     public static func logic_match(t1: Term, t2: Term) -> Bool {
-        // TODO: need to add some sort of filtering to prevent infinite recursion bug
-        // t1: (#x1() <–> (swimmer – #x1()) ∧ (swimmer – #x1()) -> #x1())
-        // t2: ((swimmer – #x0()) <–> #x0() ∧ (swimmer – #x0()) -> #x0())
-        return solve(t1.logic() === t2.logic()).makeIterator().next() != nil
+        let sol = solve(t1.logic() === t2.logic()).makeIterator().next()
+        
+        if sol == nil {
+            return false
+        }
+        
+        for item in sol! {
+            let t = Term.from(logic: item.LogicTerm)
+            let v = Term.from(logic: item.LogicVariable)
+            if Term.getTerms(t).contains(v) {
+                return false
+            }
+        }
+        
+        return true
     }
 
     public static func logic_solve(t1: Term, t2: Term) -> Term? {

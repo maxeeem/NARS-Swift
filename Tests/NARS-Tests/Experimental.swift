@@ -133,7 +133,7 @@ class Experimental: XCTestCase {
 //        print(
 //            Term.match(t: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"), s: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))
 //        )
-        outputMustContain("💡 <(⨯ dog C animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
+        outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }
     
     func testEsperanto2() {
@@ -208,20 +208,13 @@ class Experimental: XCTestCase {
         __.perform((*["$x", "$y"] --> rep("$x" --> "$y")))
 
         __.perform((*["Sandy", *["dorm", "as"]]))
+        
+        __.perform((*["Adamo", *["log", "as"]]))
 
-        __.perform(.cycle(40))
-//        outputMustContain("<Sandy -> [dorm]>.")
+        __.perform(.cycle(100))
 
-//        __.perform((*["Sandy", *["dorm", "as"]]))
-//
-//        __.perform(.cycle(40))
-
-//        __.perform((*["dorm", "as"] --> rep("?"))-?)
-//        __.perform(.cycle(20))
-
-//        __.perform((epo(["Sandy", ||("[dorm]")]) --> rep("?"))-?)
-//        __.perform(.cycle(20))
         outputMustContain("<Sandy -> (|=> [dorm])>.")
+        outputMustContain("<Adamo -> (|=> [log])>.")
 
     }
     
