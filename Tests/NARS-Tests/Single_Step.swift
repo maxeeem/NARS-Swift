@@ -166,7 +166,7 @@ class Single_Step: XCTestCase {
               .cycle(20),
             ||("P")-*,
               ||("S")-*,
-              .cycle(40)
+              .cycle(20)
 //            ||(("John" * "room_101") --> "enter")-*,
         )
         /*
@@ -423,8 +423,8 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("robin" <-> "swan")-*,
            ("gull" <-> "swan")-*,
+           .cycle(40),
            ("gull" <-> "robin")-?
-//           .cycle(10)
        )
 //        print(nars.recent)
 //        print(nars.recent.items.contains(where: { $0.value.description.contains("<gull <–> robin>. %1.00;0.81%") }))
@@ -461,8 +461,8 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-           ("[smart]" --> "[bright]")-?,
-           .cycle(20)
+           .cycle(20),
+           ("[smart]" --> "[bright]")-?
        )
        outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
     }
@@ -490,7 +490,7 @@ class Single_Step: XCTestCase {
        /// conversions between inheritance and similarity
         nars.perform(
             ("swan" --> "bird")-*(0.9),
-            .cycle(40),
+            .cycle(10),
             ("bird" <-> "swan")-?
         )
        outputMustContain("💡 <bird <–> swan>.")// %0.90;0.47%")
@@ -501,8 +501,8 @@ class Single_Step: XCTestCase {
         /// conversions between inheritance and similarity
         nars.perform(
             ("bird" <-> "swan")-*(0.9),
-            ("swan" --> "bird")-?,
-            .cycle(20)
+            .cycle(10),
+            ("swan" --> "bird")-?
         )
         outputMustContain("💡 <swan -> bird>.")// %0.90;0.81%")
     }
@@ -535,8 +535,8 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("{Tweety}" --> "{Birdie}")-*,
-           ("{Birdie}" <-> "{Tweety}")-?,
-           .cycle(40)
+           .cycle(20),
+           ("{Birdie}" <-> "{Tweety}")-?
        )
        outputMustContain("<{Birdie} <–> {Tweety}>.")// %1.00;0.90%")
     }
@@ -545,8 +545,8 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("[smart]" --> "[bright]")-*,
-           ("[bright]" <-> "[smart]")-?,
-           .cycle(40)
+           .cycle(20),
+           ("[bright]" <-> "[smart]")-?
        )
        outputMustContain("<[bright] <–> [smart]>.")// %1.00;0.90%")
     }

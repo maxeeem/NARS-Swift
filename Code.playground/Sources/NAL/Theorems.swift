@@ -19,14 +19,14 @@ extension Theorems {
     public static func _apply(_ j: Judgement, file: String = #file, line: Int = #line) -> [Judgement] {
         let res: [[Statement]] = self.allCases.map {
             var results = $0.rules.flatMap { t in [Term.match(t: t, s: j.statement)] + j.statement.terms.map({ s in Term.match(t: t, s: s) }) }.compactMap({$0})
-//            if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-//                results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .statement(p, c, s)) })
-//            }
-//            if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
-//                if terms.count == 2 { // TODO: handle compounds with multiple terms
-//                    results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .compound(conn, terms.reversed())) })
-//                }
-//            }
+            if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
+                results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .statement(p, c, s)) })
+            }
+            if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
+                if terms.count == 2 { // TODO: handle compounds with multiple terms
+                    results.append(contentsOf: $0.rules.compactMap { Term.match(t: $0, s: .compound(conn, terms.reversed())) })
+                }
+            }
             return results
         }
 //        print(file.suffix(from: file.lastIndex(of: "/")!), line, j.description)
@@ -36,22 +36,22 @@ extension Theorems {
                 $0.apply((j, t-*(1.0, reliance, ETERNAL)))
             }.compactMap { $0 }
             
-//            if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
-//                results.append(contentsOf:
-//                    Rules.strong.flatMap {
-//                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
-//                    }.compactMap { $0 }
-//               )
-//            }
-//            if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
-//                if terms.count == 2 { // TODO: handle compounds with multiple terms
-//                    results.append(contentsOf:
-//                        Rules.strong.flatMap {
-//                        $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
-//                        }.compactMap { $0 }
-//                   )
-//                }
-//            }
+            if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
+                results.append(contentsOf:
+                    Rules.strong.flatMap {
+                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
+                    }.compactMap { $0 }
+               )
+            }
+            if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
+                if terms.count == 2 { // TODO: handle compounds with multiple terms
+                    results.append(contentsOf:
+                        Rules.strong.flatMap {
+                        $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
+                        }.compactMap { $0 }
+                   )
+                }
+            }
             return results
         }
         

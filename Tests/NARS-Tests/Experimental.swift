@@ -62,7 +62,7 @@ class Experimental: XCTestCase {
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
             ("{sky}" --> "[blue]")-*,
             ("[blue]" --> ç.e_("likes", "cat", .º))-?,
-            .cycle(100)
+            .cycle(200)
         )
         
         outputMustContain("💡 <[blue] -> (/ likes cat º)>.") // c should be 0.37%

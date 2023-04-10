@@ -107,15 +107,18 @@ extension Concept {
             }
         }
 
+        /// apply theorems
+        derived.append(contentsOf: Theorems.apply(j))
+        derived = derived.removeDuplicates().filter {
+            beliefs.peek($0.identifier) == nil
+        }
+
 
         /*
          * EXIT – return if no recursion
          */
         guard derive else { return derived }
         
-        
-        /// apply theorems
-        derived.append(contentsOf: Theorems.apply(j))
         
         /// apply two-premise rules
         twoPremiseRules:

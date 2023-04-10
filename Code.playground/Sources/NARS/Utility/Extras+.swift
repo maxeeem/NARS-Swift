@@ -179,10 +179,19 @@ extension Array where Element == Judgement {
             if j.truthValue.confidence == 0 {
                 return false
             }
+            if j.statement.isTautology {
+                return false
+            }
             if case .judgement(let judgement) = sentence,
                 j == judgement || judgement.statement.isTautology {
                 return false
             }
+//            if case .question(let question) = sentence, question.statement.isTautology {
+//                return false
+//            }
+//            if case .goal(let goal) = sentence, goal.statement.isTautology {
+//                return false
+//            }
             return true
         }
         if keepOrder {
