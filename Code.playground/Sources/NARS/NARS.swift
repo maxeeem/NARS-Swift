@@ -1,5 +1,5 @@
 
-public enum Sentence {
+public enum Sentence: Hashable {
     case judgement(Judgement)
     case goal(Goal)
     case question(Question)
@@ -48,9 +48,6 @@ public final class NARS: Item {
     // TODO: rename to stdout and add stderr
     public var output: (String) -> Void
     
-//    private var factor = 4 // cycles per pause // TODO: dynamically adjust per system
-//    fileprivate lazy var cycleLength = (Sentence.defaultPause / factor) * 1000000 // 0.001 second
-
     //    fileprivate var lastPerformance = DispatchWallTime.now()
 
     public typealias Op = ([Term]) -> Term
@@ -97,9 +94,9 @@ public final class NARS: Item {
         for s in script {
             processRecent(s)
             
-            process(anticipations: s)
-            
             processInput(s)
+            
+            process(anticipations: s)
         }
     }
     
@@ -117,21 +114,11 @@ public final class NARS: Item {
     
     // MARK: Recent
 
-//    func throwing() throws {}
-//    // _ = { do { try self.throwing() } catch { /*_*/ }}
-
     private func processRecent(_ s: Sentence) {
         if case .judgement(let j) = s {
             for j in process(recent: j) {
                 // add stable patterns from recent memory
                 process(.judgement(j), recurse: false)
-//                _ = {
-//                    do {
-//                        try self.throwing()
-//                    } catch {
-//                        //
-//                    }
-//                }
             }
         }
     }
@@ -163,13 +150,6 @@ public final class NARS: Item {
                 }
             }
         }
-    
-        // TODO: finish this implementation
-//        if case .goal(let g) = s {
-//            for t in g.statement.terms {
-//                self.process(t-*, recurse: true)
-//            }
-//        }
         
         /// SENTENCE
         process(s, label: "•") // process in main memory
@@ -187,7 +167,6 @@ extension NARS {
         if case .judgement(let judgement) = `for` {
             if let concept = memory.get(judgement.statement.description) {
                 for ant in concept.anticipations {
-//                                        print("ANT1", ant)
                     let st = ant.value.0
                     let tv = ant.value.1
                     if case .statement(let s, _, let p) = st {
@@ -198,27 +177,23 @@ extension NARS {
                             break // no history of this term
                         }
                         if tail.contains(s) {
-//                        if recent.items.contains(where: { $0.key == "|| " + s.description }) { // TODO: handle tense correctly
-                            // TODO: do an appropriate check to make sure preconditions have been met
-                            
-                            // check if it applies based on the temporal window
-                            // TODO: determine if it is =/>, <=/> or none
-                            
-                            let c = tv.c / (tv.c + k) // new confidence score
-                            let observed = Judgement(st, TruthValue(tv.f, c), tense: judgement.tense, timestamp: judgement.timestamp)
-                            
-                            if concept.term == p { // isPredicate
-                                if let subject = memory.get(s.description) { // get subject concept
-//                                    print("DS",
-                                          subject.accept(observed, derive: false)
-//                                    )
-                                    memory.put(subject)
+                            if recent.items.contains(where: { $0.key == "|| " + s.description }) { // TODO: handle tense correctly
+                                // TODO: do an appropriate check to make sure preconditions have been met
+                                
+                                // check if it applies based on the temporal window
+                                // TODO: determine if it is =/>, <=/> or none
+                                
+                                let c = tv.c / (tv.c + k) // new confidence score
+                                let observed = Judgement(st, TruthValue(tv.f, c), tense: judgement.tense, timestamp: judgement.timestamp)
+                                
+                                if concept.term == p { // isPredicate
+                                    if let subject = memory.get(s.description) { // get subject concept
+                                        subject.accept(observed, derive: false)
+                                        memory.put(subject)
+                                    }
+                                    concept.accept(observed, derive: false)
                                 }
-//                                print("DP",
-                                      concept.accept(observed, derive: false)
-//                                )
                             }
-                            
                         }
                     }
                 }
@@ -227,9 +202,7 @@ extension NARS {
             //
             // store anticipations for later access
             for ant in memory.peek(judgement.statement.description)?.anticipations(for: judgement) ?? [:] {
-                //                print("ANT2", ant)
                 let st = ant.value.0
-                //                let tv = ant.value.1
                 if case .statement(_, _, let p) = st {
                     if var pc = memory.get(p.description) {
                         pc.anticipations[ant.key] = ant.value
@@ -258,8 +231,6 @@ extension NARS {
             }
         }
         
-//        print("D", derived)
-//        print("R", recent)
         var stable: [Judgement] = []
         
         while let b = recent.get() {
@@ -271,58 +242,32 @@ extension NARS {
             // only process direct experiences
             if b.judgement.truthValue.rule == nil, // TODO: MAYBE: remove condition?
                b.judgement.timestamp != ETERNAL, j.timestamp != ETERNAL {
-               
-                /*
-                 --- REMOVE
-                 */
-                
-//                (j.timestamp - b.judgement.timestamp) < 40 { // TODO: REMOVE: hardcoded value
-               
-                /*
-                 --- REMOVE
-                 */
-                
                 
                 // process temporal
                 Rules.allCases.flatMap { rs in
                     rs.variable_and_temporal.flatMap { r in
-                        [rule_generator(r)((j, b.judgement)),
-                         rule_generator(r)((b.judgement, j))] // switch order of premises
+                        [rule_applicator(r)((j, b.judgement)),
+                         rule_applicator(r)((b.judgement, j))] // switch order of premises
                     }
                 }.forEach {
                     if var el = $0 {
-//                        print(">>--", el)
-//                        // set time stamp if not yet set
+                        // set time stamp if not yet set
                         if el.timestamp == 0 {
                             el = .updateTimestamp(el, timeProviderMs)
                         }
                         
-                        chooseBestAndAppend()
-                        
-//                        if el.tense != nil {
-//                            let tv = el.truthValue
-//                            let elc = tv.c / (tv.c + k)
-////                            print("OK", el, el.derivationPath)
-//                            el = Judgement(el.statement, TruthValue(tv.f, elc, el.truthValue.rule), el.derivationPath, tense: nil, timestamp: ETERNAL)
-//                            chooseBestAndAppend()
-//                            if derived.first(where: { $0.judgement.identifier == el.identifier }) == nil {
-//                                stable.append(el)
-//                            }
-
-                            // add to main memory
-                            // TODO: figure out how to accomplish evidence accumulation
-                            // because as it stands, there is evidence overlap
-                            // so choice rule will be used instead of revision
-                            // TODO: QUESTION: is this evidence overlap still happening?
-                            stable.append(el)
-//                        }
-                        
-                        func chooseBestAndAppend() {
-                            if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
-                                el = choice(j1: d.judgement, j2: el)
-                            }
-                            derived.append(el + 0.9)
+                        // chooseBestAndAppend
+                        if let d = derived.first(where: { $0.judgement.identifier == el.identifier }) {
+                            el = choice(j1: d.judgement, j2: el)
                         }
+                        derived.append(el + 0.9)
+                        
+                        // add to main memory
+                        // TODO: figure out how to accomplish evidence accumulation
+                        // because as it stands, there is evidence overlap
+                        // so choice rule will be used instead of revision
+                        // TODO: QUESTION: is this evidence overlap still happening?
+                        stable.append(el)
                     }
                 }
             }
@@ -398,7 +343,7 @@ extension NARS {
                         } else {
                             output("Unknown operation \(op)")
                         }
-                    } else if case .statement(let ops, let opc, let opp) = s,
+                    } else if case .statement(_, let opc, let opp) = s,
                               opc == .predictiveImp { // need to verify the the other term?
                         if case .operation(let op, let args) = opp {
                             output(label + "🤖 \(opp)")
@@ -427,7 +372,7 @@ extension NARS {
             
         case .question(let question):
             // consider a question
-            if case .statement(let s, _, let p) = question.statement, !derived.isEmpty {
+            if case .statement = question.statement, !derived.isEmpty {
                 if let winner = derived.first(where: { $0.statement == question.statement }) {
                     
                     // cancel in-flight activities
@@ -467,7 +412,7 @@ extension NARS {
                                 if case .statement(let sub, let cop, let pre) = jud.statement {
                                     if cop == .predictiveImp, pre == goal.statement {
                                         // subject is the subgoal
-                                        if case .statement(let s, let c, let p) = sub {
+                                        if case .statement(_, let c, let p) = sub {
                                             // TODO: how to check preconditions?
                                             if c == .predictiveImp { // TODO: `s` precondition need to be checked
                                                 if case .operation(let op, let ts) = p {
@@ -495,12 +440,11 @@ extension NARS {
 
                     output("• 💡 \(winner)")
                     print("}}", winner.derivationPath)
-//                    print("--", Set(derived).filter({Term.logic_match(t1: $0.statement, t2: question.statement)}).map({$0.description}))
 
                     derivedBuffer.append(.judgement(winner))
                     
                     if case .statement(let s, let c, let p) = winner.statement, c == .inheritance {
-                        if case .compound(let con, let terms) = p, con == .e, terms.count > 2, terms.first == "represent" {
+                        if case .compound(let con, let terms) = p, con == .e, terms.count > 2, terms.first == .represent {
                             let op = terms.filter {
                                 if case .operation = $0 {
                                     return true
@@ -510,7 +454,7 @@ extension NARS {
                             
                             if op.isEmpty {
                                 let relation = terms[2] // kiu -> [dormas]
-                                let followUp = relation --> ç.e_("represent", .º, "?")
+                                let followUp = relation --> ç.e_(.represent, .º, "?")
                                 derivedBuffer.append(.question(.init(followUp)))
 
                             } else {
@@ -584,17 +528,11 @@ extension NARS {
         //        }
 
         if let c = memory.peek(), let b = c.beliefs.peek() {
-//            c.beliefs.put(b)
-//            memory.put(c)
-//            print("imagining", b.judgement)
+            
             let immediate = Rules.immediate(b.judgement)
             let structural = Theorems.apply(b.judgement)
             
             let results = (immediate + structural)
-//            print("J1", b.judgement)
-//            print("R", results)
-//            print(imagination)
-//            print(results.contains(b.judgement))
             
             results.forEach { j in
                 process(.judgement(j), recurse: true)

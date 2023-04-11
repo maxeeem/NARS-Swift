@@ -1,6 +1,5 @@
-/// Statement is a fundamental type
-public typealias Rule = (Statement, Statement, Statement, TruthFunction)
-public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement? // reduce operation
+public typealias Rule  = (Statement, Statement, Statement, TruthFunction)
+public typealias Apply = (_ judgements: (Judgement, Judgement)) -> Judgement?
 
 public typealias Infer = (Judgement) -> Judgement? /// Single-premise rules
 
@@ -54,66 +53,39 @@ extension Rules {
 
             let q = j1
             let j = j2
-//            print("--Q", q)
-//            print("--J", j)
-//            print(tf(TruthValue(1.0, 0.9), TruthValue(1.0, 0.9)).rule)
-//            print("q:>>>", q)
             if let m = Term.match_backward(t: p1 => c, s: j.statement => q.statement, r: p2) {
-//                print("q:", m, "?")
                 let rule = tf(.tautology, .tautology).rule
                 let evidence = Judgement.mergeEvidence(q, j)
                 x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }
             if let m = Term.match_backward(t: p2 => c, s: j.statement => q.statement, r: p1) {
-//                print("q:", m, "?")
                 let rule = tf(.tautology, .tautology).rule
                 let evidence = Judgement.mergeEvidence(q, j)
                 x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }
-//            print("<<<")
         }
         
         let unique = x.compactMap({$0}).removeDuplicates()
-//            print("+++", x)
-//            print("===", unique)
-//        if !unique.isEmpty {
-//            print(judgements)
-//            print(unique)
-//        }
         return unique
     }
-//    static var count = 0
-    public func apply(_ judgements: (Judgement, Judgement), file: String = #file, line: Int = #line) -> [Judgement?] {
+
+    public func apply(_ judgements: (Judgement, Judgement)) -> [Judgement?] {
         var (j1, j2) = judgements
-        //            print("\n>>>", j)
-//        Self.count += 1
-//        print("<\(Self.count)>", file.suffix(from: file.lastIndex(of: "/")!), line, self, judgements)
         
         var t1 = j1.statement // test
         var t2 = j2.statement // test
         //            print(p1, p2, j1, j2)
-        //        print("=", commonTerms)
-        //        return nil
         
         if case .compound(let conn, let ts1) = t1, conn == .n {
-            //                print("1.", t1, t2)
             if ts1[0] == t2 { // TODO: use similarity helper to account for symmetrical connectors and copulas
                 return [] // no conclusion can be reached if premises are just opposite of each other
             }
         }
         if case .compound(let conn, let ts2) = t2, conn == .n {
-            //                print("2.", t1, t2)
             if ts2[0] == t1 { // TODO: use similarity helper to account for symmetrical connectors and copulas
                 return [] // no conclusion can be reached if premises are just opposite of each other
             }
         }
-        
-        /// temporal
-        
-        //            if j1.truthValue.rule == nil && j2.truthValue.rule == nil {
-        //
-        //            }
-        
 
         /// variable elimination
         
@@ -130,7 +102,6 @@ extension Rules {
             }
             return j1.statement
         }
-        
         t1 = variableEliminationIndependent(j1, j2)
         t2 = variableEliminationIndependent(j2, j1)
 
@@ -141,18 +112,18 @@ extension Rules {
             return result
         }
         
-        /// original code
+        /// rule application
         
         j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
         j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
                 
         // apply rules
         self.allRules.forEach { r in
-            x.append(rule_generator(r)((j1, j2)))
+            x.append(rule_applicator(r)((j1, j2)))
         }
         // switch order of premises
         self.allRules.forEach { r in
-            x.append(rule_generator(r)((j2, j1)))
+            x.append(rule_applicator(r)((j2, j1)))
         }
         
         // MARK: Variable introduction
@@ -177,15 +148,13 @@ extension Rules {
         ///
         
         let unique = x.compactMap({$0}).removeDuplicates()
-//            print("+++", x)
-//            print("===", unique)
         return unique
     }
 }
 
 // MARK: Rule application
 
-public var rule_generator: (_ rule: Rule) -> Apply {
+public var rule_applicator: (_ rule: Rule) -> Apply {
     { (arg) -> ((Judgement, Judgement)) -> Judgement? in
         // premise (p1) premise (p2) conclusion (c) truth-function (tf)
         var (p1, p2, c, tf) = arg
@@ -221,7 +190,6 @@ public var rule_generator: (_ rule: Rule) -> Apply {
             result = determineOrder()
             result = accountForExemplification()
             
-            //        print("here", result)
             
             // TODO: handle temporal compounds
             // TODO: check that compounds do not contain each other
@@ -236,12 +204,8 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                 }
             }
             if let statement = Term.validate(result), !statement.isTautology {
-                //            print("accepted", result)
                 let truthValue = tf(j1.truthValue, j2.truthValue)
                 let derivationPath = Judgement.mergeEvidence(j1, j2)
-//                            print("--")
-//                            print(j1, j2)
-//                            print("accepted", statement, truthValue, c)
                 return Judgement(statement, truthValue, derivationPath, tense: j1.tense ?? j2.tense)
             }
             
@@ -253,7 +217,7 @@ public var rule_generator: (_ rule: Rule) -> Apply {
             func temporalReasoning(_ t: Term) -> Term? {
                 if j1.timestamp != ETERNAL, j2.timestamp != ETERNAL,
                    j1.timestamp != j2.timestamp, // TODO: investigate where is this coming from
-                   case .statement(var cs, var cc, var cp) = t,
+                   case .statement(let cs, var cc, let cp) = t,
                    cc == .implication || cc == .equivalence {
                     let forward = j1.timestamp < j2.timestamp
                     let delta = forward ? j2.timestamp - j1.timestamp : j1.timestamp - j2.timestamp
@@ -300,7 +264,6 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                 // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
                 
                 if let sol = substitution {
-                    //            print("\n---SOL---\n", sol, "\n")
                     let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
                     let valid = sol.allSatisfy { (v, _) in
                         ts.contains { $0.equals(v) }
@@ -308,21 +271,17 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                     
                     if valid {
                         for item in sol {
-                            //                print(item.LogicVariable.name)
-                            //                print(type(of: item.LogicTerm))
                             result = result.replace(termName: item.LogicVariable.name, term: .from(logic: item.LogicTerm))
-                            //                print("result\n", result)
                         }
                     }
                 }
-                
-                //            print("}}}}", j1, j2, result)
-                
+                                
                 return (result == t) ? nil : result
             }
             
             func determineOrder() -> Term {
                 // TODO: get rid of this dirty trick and determine temporal order of the conclusion properly
+                // or is this how it's supposed to be?
                 if case .statement(var cs, var cc, var cp) = result, cc == .equivalence || cc == .implication {
                     if case .statement(let j1s, let j1c, let j1p) = j1.statement,
                        case .statement(let j2s, let j2c, let j2p) = j2.statement {
@@ -386,9 +345,6 @@ public var rule_generator: (_ rule: Rule) -> Apply {
                         }                    
                     }
                 }
-                //            if result == (("John" * "key_101") --> "hold") {
-                //                // set tense for the conclusion
-                //            }
                 return result
             }
             
@@ -424,8 +380,8 @@ private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1
             let res = r.allRules.flatMap { r in
                 h.terms.flatMap { (t: Term) -> [Judgement?] in
                     let j = Judgement(t, tv, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-                    return [rule_generator(r)((j, j2)),
-                            rule_generator(r)((j2, j))]
+                    return [rule_applicator(r)((j, j2)),
+                            rule_applicator(r)((j2, j))]
                 }
             }
             
@@ -451,22 +407,22 @@ private func variableIntroductionDependent(_ t1: Statement, _ t2: Statement, _ j
 
 private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
     var x: [Judgement?] = []
-//    if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
-//       case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
+    if case .statement(_, let cop1, _) = t1, cop1 == .inheritance,
+       case .statement(_, let cop2, _) = t2, cop2 == .inheritance {
         
         let common = Set(t1.terms).intersection(t2.terms)
         
         if !common.isEmpty {
             
             var vari = r.conditional.flatMap { r in
-                [rule_generator(r)((j1, j2)),
-                 rule_generator(r)((j2, j1))] // switch order of premises
+                [rule_applicator(r)((j1, j2)),
+                 rule_applicator(r)((j2, j1))] // switch order of premises
             }.compactMap { $0 }
             
             if dependent == false { // Table 10.3
                 vari.append(contentsOf: r.variable_and_temporal.flatMap { r in
-                    [rule_generator(r)((j1, j2)),
-                     rule_generator(r)((j2, j1))] // switch order of premises
+                    [rule_applicator(r)((j1, j2)),
+                     rule_applicator(r)((j2, j1))] // switch order of premises
                 }.compactMap { $0 })
             }
                         
@@ -492,7 +448,7 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
             }
             
             x.append(contentsOf: rep)
-//        }
+        }
     }
     return x
 }

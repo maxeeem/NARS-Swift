@@ -1,11 +1,7 @@
 
 // Grammar
 
-public typealias __ = Term
-
 public typealias Statement = Term
-
-//public postfix operator .?
 
 @dynamicMemberLookup
 public indirect enum Term: Hashable {

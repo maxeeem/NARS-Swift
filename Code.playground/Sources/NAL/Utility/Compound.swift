@@ -23,7 +23,7 @@ extension Connector {
         let t1t = (c == .c || c == .d) ? Set([Term.symbol(t1.description)]) : Set(t1.terms)
         let t2t = (c == .c || c == .d) ? Set([Term.symbol(t2.description)]) : Set(t2.terms)
         var res = t1t.union(t2t)
-        /*
+        
         if c == .c || c == .d {
             if case .compound(let c1, _) = t1, (c1 == .c || c1 == .d) {
                 return nil
@@ -32,7 +32,7 @@ extension Connector {
                 return nil
             }
         }
-        */
+        
         guard case .compound = t1, case .compound = t2, (c != .c || c != .d) else {
             // at least one term is a simple term
             guard t1t.intersection(t2t).isEmpty else {

@@ -58,12 +58,6 @@ extension Bag: Equatable {
     }
 }
 
-//extension WrappedBag: Equatable {
-//    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
-//        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
-//    }
-//}
-
 extension Concept: Equatable {
     public static func == (lhs: Concept, rhs: Concept) -> Bool {
         lhs.term == rhs.term
@@ -79,11 +73,6 @@ extension NARS: Equatable {
 
 
 /// Convenience
-
-//extension WrappedBag where I == Belief {
-//    /// convenience for iterating over both dictionaries
-//    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
-//}
 
 extension Belief: Comparable {
     public static func < (lhs: Belief, rhs: Belief) -> Bool {
@@ -134,14 +123,6 @@ extension Bag: CustomStringConvertible {
         return String(o.dropLast(x.count))
     }
 }
-
-//extension WrappedBag: CustomStringConvertible {
-//    public var description: String {
-//        let b = "\(bag)"
-//        let w = wrapped == nil ? "" : "\(wrapped!)"
-//        return b + "\n---\n" + w
-//    }
-//}
 
 
 /// Utility

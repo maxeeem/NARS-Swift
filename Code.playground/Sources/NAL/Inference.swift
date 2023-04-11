@@ -81,8 +81,7 @@ public extension Rules {
     }
     
     var firstOrder: [Rule] {
-        let S = __.$S//.var("S")
-//        let S: Term = "$S"//.var("S")
+        let S = Term.var("S")
         let P = Term.var("P")
         let M = Term.var("M")
 
@@ -90,16 +89,6 @@ public extension Rules {
         case .deduction:
             return [(M --> P,     S --> M, S --> P, tf),
                     (P --> M,     M --> S, P --> S, tfi)]
-//            return [
-//                (__ .$m --> __ .$e,
-//                 __ .$a --> __ .$m,
-//                 __ .$a --> __ .$e, tf),
-//
-//                (__ .$a --> __ .$m,
-//                 __ .$m --> __ .$e,
-//                 __ .$e --> __ .$a, tfi)
-//            ]
-
         case .induction:
             return [(M --> P,     M --> S, S --> P, tf),
                     (M --> P,     M --> S, P --> S, tfi)]
@@ -223,8 +212,6 @@ public extension Rules {
         switch self {
         case .induction:
             return [(P,  S,  S  => P, tf)]
-            // TODO: need to get temporal information from premises during inference
-//            return [(P,  S,  S  >>|=> P, tf)]
         case .comparison:
             return [(S,  P,  S <=> P, tf)]
         default:
@@ -285,7 +272,7 @@ extension Theorems {
             ]
         case .similarity:
             return [
-//                -(-T1) <-> (T1)
+                -(-T1) <-> (T1)
             ]
         case .implication:
             return [

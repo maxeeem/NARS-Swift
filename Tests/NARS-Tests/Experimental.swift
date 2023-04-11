@@ -58,9 +58,9 @@ class Experimental: XCTestCase {
     
     func testSample() {
         narsy.perform(
+            ("{sky}" --> "[blue]")-*,
             ("{tom}" --> "cat")-*,
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
-            ("{sky}" --> "[blue]")-*,
             ("[blue]" --> ç.e_("likes", "cat", .º))-?,
             .cycle(200)
         )
@@ -115,24 +115,17 @@ class Experimental: XCTestCase {
     
     func testSymbolic() {
 //        let relation = *["C", "subset"] --> "represent"
-        let image = "C" --> ç.e_("represent", .º, "subset")
+//        let image = "C" --> ç.e_("represent", .º, "subset")
 
         let knowledge = *[.var("x"), "C", .var("y")] --> ç.e_("represent", .º, (*[.var("x"), .var("y")] --> "subset"))
         
         narsy.perform(
 //            image-*,
             knowledge-*,
-            
-//            .cycle(50),
+//            .cycle(20),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-                        .cycle(20)
-//            (*["dog", "C", "animal"] --> ç.e_("represent", .º, *["dog", "animal"] --> "subset"))-?,
-//            .cycle(100)
+            .cycle(40)
         )
-//                print(narsy.memory)
-//        print(
-//            Term.match(t: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"), s: *["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))
-//        )
         outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }
     

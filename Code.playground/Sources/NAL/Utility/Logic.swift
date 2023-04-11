@@ -20,22 +20,8 @@ extension Term {
             return List.cons(c, terms.toList())
         case .statement(let s, let c, let p):
             return List.cons(c, [s, p].toList())
-            
         case .variable:
-            //        switch vari {
-            //        case .independent(let name):
-            //            return List.cons(LogicValue("var-ind"), List.cons(LogicVariable(named: name), List.empty))
-            //        case .dependent(let name, let vars):
-            //            var ll: List = .empty
-            //            for v in vars.reversed() {
-            //                ll = List.cons(LogicVariable(named: v), ll)
-            //            }
-            //            ll = List.cons(LogicValue("var-ind"), ll)
-            //            return List.cons(LogicValue("var-dep"), List.cons(LogicVariable(named: name ?? "x()"), ll))
-            //        }
-            return LogicVariable(named: self.description) // TODO: handle nested variables
-//            return LogicVariable(named: vari.name ?? "x")
-            
+            return LogicVariable(named: self.description)
         case .operation(let op, let terms):
             return List.cons(LogicValue(op), terms.toList())
         }
@@ -101,7 +87,7 @@ extension Term {
         if sol == nil {
             return false
         }
-        
+
         for item in sol! {
             let t = Term.from(logic: item.LogicTerm)
             let v = Term.from(logic: item.LogicVariable)
@@ -109,7 +95,6 @@ extension Term {
                 return false
             }
         }
-        
         return true
     }
 

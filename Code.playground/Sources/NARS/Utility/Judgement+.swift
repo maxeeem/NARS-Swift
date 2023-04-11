@@ -28,7 +28,7 @@ extension Judgement {
         var rep: Statement?
         if case .statement(let s, let c, let p) = statement, c == .inheritance, s == j.statement {
             if case .compound(let con, let ts) = p, con == .e {
-                if ts.count == 3, ts[0] == "represent", ts[1] == .º {
+                if ts.count == 3, ts[0] == .represent, ts[1] == .º {
                     if ts[2].terms.contains(where: {if case .variable = $0 { return true } else {return false}}) {
                         return nil
                     }

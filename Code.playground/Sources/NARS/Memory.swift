@@ -113,7 +113,7 @@ extension AbstractBag where I == Concept {
         var otras = [Judgement]()
         let rel = derivedJudgements.compactMap {
             if case .statement(let sub, let cop, let pre) = $0.statement, cop == .inheritance {
-                if case .compound(let con, let ts) = pre, con == .e, ts.count == 3, ts[0] == "represent", ts[1] == .º {
+                if case .compound(let con, let ts) = pre, con == .e, ts.count == 3, ts[0] == .represent, ts[1] == .º {
                     return Judgement(sub <-> ts[2], $0.truthValue)
                 }
             }

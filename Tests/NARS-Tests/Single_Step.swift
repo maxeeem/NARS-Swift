@@ -159,35 +159,6 @@ class Single_Step: XCTestCase {
         outputMustContain("⏱ anticipate <(John ⨯ room_101) -> enter>.")// %1.00;0.81%")
     }
     
-    func testNal7_X1() {
-        nars.perform(
-            ||("M" >>|=> "P")-*,
-            ||("M" >>|=> "S")-*,
-              .cycle(20),
-            ||("P")-*,
-              ||("S")-*,
-              .cycle(20)
-//            ||(("John" * "room_101") --> "enter")-*,
-        )
-        /*
-         
-         M =/> P
-         M =/> S
-         
-         P =/> S ?
-         S =/> P ?
-         
-         <<(*,John,key_101) --> hold> =/> <(*,John,door_101) --> open>>.
-         <<(*,John,key_101) --> hold> =/> <(*,John,room_101) --> enter>>.
-         10
-         <(*,John,door_101) --> open>. :|:
-         
-         <M =/> P>. :|:
-         <M =/> S>. :|:
-         
-         */
-        outputMustContain("⏱ anticipate <S>.")// %1.00;0.81%")
-    }
     
 //    func testLoop() {
 //        // match> (#x1 <–> #x0) <=> (#x0 -> #x1)  __  ({#x0} <–> {#x1}) <=> ({#x0} -> {#x1})

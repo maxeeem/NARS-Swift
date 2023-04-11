@@ -32,7 +32,6 @@ public struct Concept: Item {
     
     //let tasks = Bag<TermLink>() // sentences
     internal var beliefs = Bag<Belief>()
-//    internal var beliefs: WrappedBag<Belief>
     
     public var anticipations: [String: (Term, TruthValue)] = [:]
 
@@ -42,7 +41,6 @@ public struct Concept: Item {
     
     init(term: Term) {
         self.term = term
-//        self.beliefs = WrappedBag(_beliefs)
     }
     
     // TODO: how much should the input change

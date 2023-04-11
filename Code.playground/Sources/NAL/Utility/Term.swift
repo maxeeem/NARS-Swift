@@ -21,6 +21,7 @@ extension Term {
     public static let º = Term.symbol("º") // image placeholder
     public static let NULL = Term.symbol("NULL")
     public static let SELF = Term.symbol("SELF")
+    public static let represent = Term.symbol("represent")
     
     public static func word(_ w: String) -> Term { .symbol(w) }
     public static func `var`(_ s: String) -> Term { .variable(.independent(s)) }
@@ -260,11 +261,6 @@ extension Term {
             
         case .statement(let subject, let cop, let predicate):
             if let sub = validate(subject), let pre = validate(predicate) {
-                //                    if case .compound(let cs, _) = subject, case .compound(let cp, _) = predicate {
-                //                        if cs == .x && cp == .x {
-                //                            return nil
-                //                        }
-                //                    }
                 return .statement(sub, cop, pre)
             }
             return nil

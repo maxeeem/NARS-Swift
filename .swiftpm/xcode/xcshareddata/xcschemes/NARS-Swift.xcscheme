@@ -86,13 +86,10 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "Experimental/testPattern()">
+                  Identifier = "Experimental/testEsperanto2()">
                </Test>
                <Test
                   Identifier = "Experimental/testSample()">
-               </Test>
-               <Test
-                  Identifier = "Experimental/testSymbolic()">
                </Test>
                <Test
                   Identifier = "Single_Step/test4()">
@@ -114,12 +111,6 @@
                </Test>
                <Test
                   Identifier = "Single_Step/testLogicRules()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testMultipleQuestions()">
-               </Test>
-               <Test
-                  Identifier = "Single_Step/testNal7_X1()">
                </Test>
                <Test
                   Identifier = "Single_Step/testPattern()">
