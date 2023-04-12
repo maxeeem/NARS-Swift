@@ -20,7 +20,7 @@ let package = Package(
             ],
             linkerSettings: [
                 .unsafeFlags(
-                    ["-Xlinker", "-z", "-Xlinker", "stack-size=131072"]
+                    ["-Xlinker", "-z", "-Xlinker", "stack-size=131072"]//16777216
                 )
             ]
         ),

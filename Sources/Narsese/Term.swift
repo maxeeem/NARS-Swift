@@ -49,6 +49,18 @@ public extension Term {
                         return .compound(connector, [t1, t2] + tn)
                     }
                     return .compound(connector, [t1, t2])
+                case "compound-image":
+                    let con = String(s[children[1].leafs.first!])
+                    let connector = try ç.canonical(con, dialect: parser.dialect)
+                    let first = children[3].children!.first!
+                    let r = try convert(tree: first)
+                    if String(s[children[5].leafs.first!]) == "º" {
+                        let t = try convert(tree: children[7])
+                        return connector.image(r, .º, t)
+                    } else {
+                        let t = try convert(tree: children[5])
+                        return connector.image(r, t, .º)
+                    }
                 case "compound-infix":
                     let con = String(s[children[3].leafs.first!])
                     let connector = try ç.canonical(con, dialect: parser.dialect)

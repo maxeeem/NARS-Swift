@@ -50,10 +50,8 @@ public struct Narsese {
         compound-neg     = '(', \(ç.neg(dialect)), (seq|space), term, ')';
         
         compound-image   = '(',
-                               ('/' | '\\\\'), seq, term,
-                                 ((terms, 'º', terms)
-                                 | (terms, 'º', [terms])
-                                 | ([terms], 'º', terms))
+                               ('/' | '\\\\'), seq, term, seq,
+                                 (('º', seq, term) | (term, seq, 'º'))
                            ,')'
         ;
         

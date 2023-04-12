@@ -4,7 +4,7 @@ import NARS
 import Narsese
 
 class NARS_Singleton: ObservableObject {
-    var verbose = true
+    @Published var verbose = false
     @Published var history = [String]()
     
     var narsese: Narsese!
@@ -21,13 +21,18 @@ class NARS_Singleton: ObservableObject {
     var time: UInt32 = 0
     lazy var timeProviderMs: () -> UInt32 = { self.time += 1 ; return self.time }
 
-    lazy var instance = NARS(timeProviderMs: timeProviderMs) { [unowned self] s in
-        if self.verbose == false && s.contains("⏱") { return }
-//        DispatchQueue.main.async {
-            self.count += 1
-            self.history.append("\(self.count) " + s);
-//        }
-//        print(s)
+    lazy var instance = NARS(timeProviderMs: timeProviderMs, output)
+    
+    func output(_ s: String) {
+        print(s)
+        count += 1
+        if verbose == false && s.contains("⏱") { return }
+        history.append("\(count) " + s);
+    }
+    
+    func reset() {
+        instance.reset()
+        output("• 🧨 Reset completed!")
     }
 }
 
@@ -43,7 +48,15 @@ struct TokamakApp: App {
                     nars.instance.perform(
                         ("bird" --> "animal")-*,
                         ("robin" --> "bird")-*,
-                        .cycle(40)
+                        ("robin" --> "animal")-?
+                    )
+                    
+                    nars.reset()
+                    
+                    nars.instance.perform(
+                        ("{sky}" --> "[blue]")-*,
+                        ("{tom}" --> "cat")-*,
+                        ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*
                     )
                 }
         }
@@ -54,49 +67,119 @@ struct TokamakApp: App {
 struct ContentView: View {
     @EnvironmentObject var nars: NARS_Singleton
 
-    @State var input = ""
+    @State var input = "<[blue] -> (/ likes cat º)>?"
     
     var body: some View {
         VStack {
-            Text("Hello, \(nars.instance.name)!")
-            Spacer()
-            ZStack(alignment: .topTrailing) {
-                ScrollView {
-//                    ScrollViewReader { value in
-                        ForEach(nars.history, id: \.self) { line in
-                            Text(line)
-                                .font(.footnote)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-//                        .onChange(of: nars.history.count) { newValue in
-//                            value.scrollTo(nars.history[newValue - 1])
-//                        }
-//                    }
-                }
-                Button("🧨") {
-                    nars.instance.reset()
-                    nars.count += 1
-                    nars.history.append("\(nars.count) .  🧨 Reset completed!")
-                }
-                .font(Font.title)
-                .background(Color.white)
-                .foregroundColor(.red)
-                .clipShape(Circle())
-                .shadow(radius: 1)
-                .padding()
-            }
-            Spacer()
             HStack {
-                TextField("Input", text: $input)
-                Button("Submit") {
-                    do {
-                        let x = try Term(input, parser: nars.narsese)
-                        nars.instance.perform(x)
-                    } catch {
-                        nars.history.append("\(error)")
-                    }
+                Text("NARSY")
+                    .foregroundColor(.orange)
+                    .padding(.all)
+
+                Spacer()
+                
+                Button("🧨 Reset") {
+                    nars.reset()
+                }
+                .frame(maxWidth: 100)
+            }
+
+            VStack { Spacer() }
+
+            ScrollView {
+//                HStack { Spacer() }
+                ForEach(nars.history, id: \.self) { line in
+                    Text(line)
+                        .font(.footnote)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+
+            VStack { Spacer() }
+            
+            HStack {
+                Button(nars.verbose ? "⏱ Verbose" : "⏱ Quiet") {
+                    nars.verbose.toggle()
+                }
+                .frame(maxWidth: 100)
+                
+                Spacer()
+                
+                TextField("Input", text: $input, onCommit: {
+                    process()
+                })
+                
+                Spacer(minLength: 20)
+                
+                Button("Submit") {
+                    process()
+                }
+                .foregroundColor(.blue)
+                
+                Spacer()
+            }
+            
+            VStack { Spacer() }
         }
+        .padding(.all)
+    }
+    
+    func process() {
+        if let x = Sentence(input, parser: nars.narsese) {
+            nars.instance.perform(x)
+        }
+        input = ""
+    }
+}
+
+/*
+<{sky} -> [blue]>.
+<{tom} -> cat>.
+<{tom} -> (/ likes º {sky})>.
+<[blue] -> (/ likes cat º)>?
+ */
+// MARK: - Extensions
+
+func contents(_ s: String) -> String {
+    // TODO: parse :|: and %0.9% etc
+    let start = s.index(s.startIndex, offsetBy: 0)
+    let end = s.index(s.endIndex, offsetBy: -1)
+    let contents = String(s[start..<end])
+    return contents
+}
+
+
+extension Sentence {
+    init?(_ s: String, parser: Narsese) {
+        if let duration = Int(s) {
+            self = .cycle(duration)
+            return
+        }
+        
+        let contents = contents(s)
+
+        do {
+            let term = try Term(contents, parser: parser)
+
+            if s.hasSuffix(">.") {
+                self = .judgement(term-*)
+                return
+            }
+            
+            if s.hasSuffix(">?") {
+                self = .question(term-?)
+                return
+            }
+            
+            if s.hasSuffix(">!") {
+                self = .goal(term-!)
+                return
+            }
+            return nil
+        } catch {
+            print(error)
+        }
+        
+        return nil
     }
 }

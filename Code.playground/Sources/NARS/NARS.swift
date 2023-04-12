@@ -495,7 +495,7 @@ extension NARS {
                     
                     derivedBuffer.insert(contentsOf: buff, at: 0)
                     
-                    output("\t(2)I don't know 🤷‍♂️")
+                    output("\tI don't know 🤷‍♂️")
                     // TODO: additionally process sentence *["SELF", question.statement] --> -("[know]")
                     
                 }
