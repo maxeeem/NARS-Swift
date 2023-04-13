@@ -217,7 +217,7 @@ extension String {
     }
 }
 
-extension Term {
+extension Term { // TODO: needs additional work
     static func validate(_ term: Term) -> Term? {
         switch term {
             
@@ -235,6 +235,14 @@ extension Term {
                         }
                     }
                     return term // instances and properties are allowed one component
+                }
+                if connector == .n {
+                    if case .compound(let c, let ts) = terms[0] {
+                        if ts.count == 1, c == .n {
+                            return nil // prevent double negative
+                        }
+                    }
+                    return term // negation is allowed one component
                 }
                 //                    print("here", term)
                 if connector == .x || connector == .i || connector == .e {

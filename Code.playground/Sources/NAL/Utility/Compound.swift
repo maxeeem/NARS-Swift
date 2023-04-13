@@ -7,9 +7,14 @@ extension Connector {
     public static func e_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .e, .compound(.x, [t1, t2])) }
     public static func i_(_ r: Term, _ t1: Term, _ t2: Term) -> Term { connect(.compound(.x, [r]), .i, .compound(.x, [t1, t2])) }
 
-    public func image(_ r: Term, _ t1: Term, _ t2: Term) -> Term { ç.connect(.compound(.x, [r]), self, .compound(.x, [t1, t2])) }
+    public func image(_ r: Term, _ t1: Term, _ t2: Term) -> Term {
+        if self == .e || self == .i {
+            return ç.connect(.compound(.x, [r]), self, .compound(.x, [t1, t2]))
+        }
+        return .NULL
+    }
     
-    internal func connect(_ ts: [Term]) -> Term! {
+    public func connect(_ ts: [Term]) -> Term! {
         var ts = ts
         if ts.count < 2 {
             return nil // invalid compound
@@ -37,8 +42,10 @@ extension Connector {
         
         guard case .compound = t1, case .compound = t2, (c != .c || c != .d) else {
             // at least one term is a simple term
-            guard t1t.intersection(t2t).isEmpty else {
-                return nil // terms should not contain each other
+            if c != .x { // product can contain subproducts with repeating elements
+                guard t1t.intersection(t2t).isEmpty else {
+                    return nil // terms should not contain each other
+                }
             }
             return validate(res) ? .compound(c, [t1, t2]) : nil
         }

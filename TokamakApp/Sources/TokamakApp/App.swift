@@ -9,19 +9,15 @@ class NARS_Singleton: ObservableObject {
     
     var narsese: Narsese!
     
-    init() {
-        do {
-            narsese = try Narsese.init(dialect: .swift)
-        } catch {
-            history.append("\(error)")
-        }
-    }
+    lazy var instance = NARS(timeProviderMs: timeProviderMs, output)
 
     var count = 0
     var time: UInt32 = 0
-    lazy var timeProviderMs: () -> UInt32 = { self.time += 1 ; return self.time }
 
-    lazy var instance = NARS(timeProviderMs: timeProviderMs, output)
+    func timeProviderMs() -> UInt32 {
+        time += 1
+        return time
+    }
     
     func output(_ s: String) {
         print(s)
@@ -33,6 +29,14 @@ class NARS_Singleton: ObservableObject {
     func reset() {
         instance.reset()
         output("• 🧨 Reset completed!")
+    }
+
+    func defaultDialect(_ dialect: Dialect = .swift) {
+        do {
+            narsese = try Narsese.init(dialect: dialect)
+        } catch {
+            history.append("\(error)")
+        }
     }
 }
 
@@ -125,10 +129,13 @@ struct ContentView: View {
     }
     
     func process() {
-        if let x = Sentence(input, parser: nars.narsese) {
+        if nars.narsese == nil {
+            nars.defaultDialect()
+        }
+        let s = input.trimmingCharacters(in: .whitespaces)
+        if let x = Sentence(s, parser: nars.narsese) {
             nars.instance.perform(x)
         }
-        input = ""
     }
 }
 
@@ -137,6 +144,13 @@ struct ContentView: View {
 <{tom} -> cat>.
 <{tom} -> (/ likes º {sky})>.
 <[blue] -> (/ likes cat º)>?
+ 
+ 
+<{sky} --> [blue]>.
+<{tom} --> cat>.
+<(*,{tom},{sky}) --> likes>.
+<(*,cat,[blue]) --> likes>?
+
  */
 // MARK: - Extensions
 

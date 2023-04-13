@@ -325,6 +325,7 @@ extension NARS {
             
         case .judgement:
             // clean up duplicates and tautologies
+            /// TODO: filter open compound terms: Definition 10.4
             derived = derived.remove(matching: input)
             derivedBuffer.enqueue(derived)
             

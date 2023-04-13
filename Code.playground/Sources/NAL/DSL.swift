@@ -80,7 +80,7 @@ public prefix func << (_ s: Term) -> Statement { .NULL <<|=> s } /// it rained
 public prefix func || (_ s: Term) -> Statement { .NULL   |=> s } /// it's raining
 
 extension Statement {
-    static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
+    public static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
 }
 
 public func  & (_ lhs: Statement, _ rhs: Statement) -> Statement {  +[lhs, rhs] }

@@ -54,12 +54,12 @@ extension Rules {
             let q = j1
             let j = j2
             if let m = Term.match_backward(t: p1 => c, s: j.statement => q.statement, r: p2) {
-                let rule = tf(.tautology, .tautology).rule
+                let rule = tf(.tautology, .tautology).rule // just to get associated rule name
                 let evidence = Judgement.mergeEvidence(q, j)
                 x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }
             if let m = Term.match_backward(t: p2 => c, s: j.statement => q.statement, r: p1) {
-                let rule = tf(.tautology, .tautology).rule
+                let rule = tf(.tautology, .tautology).rule // just to get associated rule name
                 let evidence = Judgement.mergeEvidence(q, j)
                 x.append(Judgement(m, TruthValue(frequency: 1.0, confidence: 0.9, rule: rule), evidence))
             }

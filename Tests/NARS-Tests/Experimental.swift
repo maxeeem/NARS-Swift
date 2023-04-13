@@ -123,8 +123,8 @@ class Experimental: XCTestCase {
 //            image-*,
             knowledge-*,
 //            .cycle(20),
-            (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-            .cycle(40)
+            (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?
+//            .cycle(40)
         )
         outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }

@@ -48,8 +48,8 @@ extension Theorems {
             }
             return results
         }
-        
-        let unique = results.flatMap({$0}).removeDuplicates()
+
+        let unique = results.flatMap({$0})/*.filter({$0.truthValue.rule != nil})*/.removeDuplicates()
         return unique
     }
 }

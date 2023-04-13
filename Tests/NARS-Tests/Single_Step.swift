@@ -577,16 +577,15 @@ class Single_Step: XCTestCase {
 //        outputMustContain("<robin -> bird>. %1.00;0.81%") // c should be 0.81
 //    }
 //
-//    func testNal3_3() throws {
-//        /// compound decomposition, two premises
-//        nars.perform(
-//            ("robin" --> "swimmer")-*(0.00),
-//            ("robin" --> "– mammal swimmer")-*(0.00),
-//            .pause
-//        )
-//        output.forEach { print($0) }
-//        outputMustContain("<robin -> mammal>. %0.00;0.81%") // c should be 0.81
-//    }
+    func testNal3_3() throws {
+        /// compound decomposition, two premises
+        nars.perform(
+            (-("robin" --> "swimmer"))-*,
+            (-("robin" --> ("mammal" - "swimmer")))-*,
+            .cycle
+        )
+        outputMustContain("<¬(robin -> mammal)>. %1.00;0.81%")
+    }
     
 //    func test_() {
 //        /// a:  (#x1() <–> (swimmer – #x1()) ∧ (swimmer – #x1()) -> #x1())
@@ -778,24 +777,33 @@ class Single_Step: XCTestCase {
 //        outputMustContain("<a -> d>.") // should be %0.10;0.73%
 //    }
 
-//    func testNal3_12() throws {
-//        /// compound decomposition, one premise
-//        let t1 = Term.compound(.U, ["bird", "swimmer"])
-//        nars.perform(
-//            ("robin" --> t1)-*(0.9),
-//            .pause(100)
-//        )
-//        output.forEach { print($0) }
-//        outputMustContain("💡 <robin -> bird>.") // should be %0.90;0.73%
-//    }
+    func testNal3_12() throws {
+        /// compound decomposition, one premise
+        let t1 = Term.compound(.Ω, ["bird", "swimmer"])
+        nars.perform(
+            ("robin" --> t1)-*(0.9),
+            .cycle(10)
+        )
+        outputMustContain("<robin -> bird>. %0.90;0.73%")
+    }
     
-//    func testNal4_0() throws {
-//        /// structural transformations
-//        let t1 = Term.compound(.x, ["acid", "base"])
-//        let i1 = Term.compound(.i, <#T##[Term]#>)
-//        nars.perform(
-//            (t1 --> "reaction")-*
-//        )
-//        output.forEach { print($0) }
-//    }
+    func testNal4_0() throws {
+        /// structural transformations
+        let t1 = Term.compound(.x, ["acid", "base"])
+        nars.perform(
+            (t1 --> "reaction")-*,
+            .cycle(10)
+        )
+        outputMustContain("<acid -> (/ reaction º base)>.")
+        outputMustContain("<base -> (/ reaction acid º)>.")
+    }
+    
+    func testNal5_01() throws {
+        nars.perform(
+            (("robin" --> "bird") => ("robin" --> "animal"))-*,
+            (("robin" --> "[flying]") => ("robin" --> "bird"))-*,
+            .cycle(10)
+        )
+        outputMustContain("<(robin -> [flying]) => (robin -> animal)>. %1.00;0.81%")
+    }
 }

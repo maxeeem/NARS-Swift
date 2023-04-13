@@ -67,7 +67,7 @@ public extension Rules {
 
     var allRules: [Rule] {
         let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
-        return rules + permutations(rules)
+        return rules + permutations(rules) + decomposition
     }
 
     var higherOrder: [Rule] {
@@ -146,6 +146,30 @@ public extension Rules {
                 (M --> T1,    M --> T2,    M --> (T2 - T1), tfi),
                 (T1 --> M,    T2 --> M,    (T1 ~ T2) --> M, tf),
                 (T1 --> M,    T2 --> M,    (T2 ~ T1) --> M, tfi)
+            ]
+        default:
+            return []
+        }
+    }
+    
+    var decomposition: [Rule] {
+        let M = Term.var("M")
+        let T1 = Term.var("T1")
+        let T2 = Term.var("T2")
+
+        switch self {
+        case .deduction:
+            return [
+                (-(M --> (T1 & T2)),     (M --> T1),    -(M --> T2), tf),
+                ( (M --> (T1 | T2)),    -(M --> T1),     (M --> T2), tf),
+                (-(M --> (T1 - T2)),     (M --> T1),     (M --> T2), tf),
+                (-(M --> (T2 - T1)),    -(M --> T1),    -(M --> T2), tf),
+                (-((T2 | T1) --> M),     (T1 --> M),    -(T2 --> M), tf),
+                ( ((T2 & T1) --> M),    -(T1 --> M),     (T2 --> M), tf),
+                (-((T1 ~ T2) --> M),     (T1 --> M),     (T2 --> M), tf),
+                (-((T2 ~ T1) --> M),    -(T1 --> M),    -(T2 --> M), tf),
+                (       -(T1 && T2),           (T1),          -(T2), tf),
+                (        (T1 || T2),          -(T1),           (T2), tf)
             ]
         default:
             return []
@@ -255,12 +279,19 @@ extension Theorems {
     public var rules: [Statement] {
         let S = Term.var("S")
         let P = Term.var("P")
+        let M = Term.var("M")
+        
         let S1 = Term.var("S1")
         let S2 = Term.var("S2")
+        let S3 = Term.var("S3")
+        let P1 = Term.var("P1")
+        let P2 = Term.var("P2")
 
         let T1 = Term.var("T1")
         let T2 = Term.var("T2")
+        
         let R = Term.var("R")
+        let T = Term.var("T")
 
         switch self {
         case .inheritance:
@@ -268,17 +299,61 @@ extension Theorems {
                 (T1 & T2) --> (T1),
                 (T1) --> (T1 | T2),
                 (T1 - T2) --> (T1),
-                (T1) --> (T1 ~ T2)
+                (T1) --> (T1 ~ T2),
+                
+                ((ç.e_(R, .º, T) * T) --> R),
+                (R --> (ç.i_(R, .º, T) * T))
             ]
         case .similarity:
             return [
-                -(-T1) <-> (T1)
+                -(-T) <-> (T),
+                 
+                 // TODO: need to verify if this is correct and that it handles multiple components
+                 
+                 .compound(.U, [.instance(T1), .instance(T2)]) <-> .compound(.extSet, [T1, T2]),
+                 .compound(.Ω, [.property(T1), .property(T2)]) <-> .compound(.intSet, [T1, T2]),
+                 
+                 (.compound(.extSet, [T1, T2]) - .instance(T2)) <-> .instance(T1),
+                 (.compound(.intSet, [T1, T2]) ~ .property(T2)) <-> .property(T1),
+
+                 ç.e_((T1 * T2), .º, T2) <-> T1,
+                 ç.i_((T1 * T2), .º, T2) <-> T1
             ]
         case .implication:
             return [
                 (S <-> P) => (S --> P),
                 (S <=> P) => (S => P),
-                (S1 && S2) => (S1)
+                
+                (S1 && S2) => (S1),
+                (S1) => (S1 || S2),
+                
+                (S --> P) => ((S | M) --> (P | M)),
+                (S --> P) => ((S & M) --> (P & M)),
+                (S <-> P) => ((S | M) --> (P | M)),
+                (S <-> P) => ((S & M) --> (P & M)),
+
+                (S  => P) => ((S || M)  => (P || M)),
+                (S  => P) => ((S && M)  => (P && M)),
+                (S <=> P) => ((S || M) <=> (P || M)),
+                (S <=> P) => ((S && M) <=> (P && M)),
+                
+                (S --> P) => ((S - M) --> (P - M)),
+                (S --> P) => ((M - P) --> (M - S)),
+                (S --> P) => ((S ~ M) --> (P ~ M)),
+                (S --> P) => ((M ~ P) --> (M ~ S)),
+
+                (S <-> P) => ((S - M) <-> (P - M)),
+                (S <-> P) => ((M - P) <-> (M - S)),
+                (S <-> P) => ((S ~ M) <-> (P ~ M)),
+                (S <-> P) => ((M ~ P) <-> (M ~ S)),
+
+                (M --> (T1 - T2)) => -(M --> T2),
+                ((T1 ~ T2) --> M) => -(T2 --> M),
+                
+                (S --> P) => (ç.e_(S, .º, M) --> ç.e_(P, .º, M)),
+                (S --> P) => (ç.i_(S, .º, M) --> ç.i_(P, .º, M)),
+                (S --> P) => (ç.e_(M, .º, P) --> ç.e_(M, .º, S)),
+                (S --> P) => (ç.i_(M, .º, P) --> ç.i_(M, .º, S)),
             ]
         case .equivalence:
             return [
@@ -291,9 +366,26 @@ extension Theorems {
                 (S --> .instance(P)) <=> (S <-> .instance(P)),
                 (.property(S) --> P) <=> (.property(S) <-> P),
                 
+                ((S1 * S2) --> (P1 * P2)) <=> ((S1 --> P1) && (S2 --> P2)),
+                ((S1 * S2) <-> (P1 * P2)) <=> ((S1 <-> P1) && (S2 <-> P2)),
+                
+                (S --> P) <=> ((M * S) --> (M * P)),
+                (S --> P) <=> ((S * M) --> (P * M)),
+                (S <-> P) <=> ((M * S) <-> (M * P)),
+                (S <-> P) <=> ((S * M) <-> (P * M)),
+
                 (*[T1, T2] --> R) <=> (T1 --> ç.e_(R, .º, T2)),
                 (*[T1, T2] --> R) <=> (T2 --> ç.e_(R, T1, .º)),
+                (R --> *[T1, T2]) <=> (ç.i_(R, .º, T2) --> T1),
+                (R --> *[T1, T2]) <=> (ç.i_(R, T1, .º) --> T2),
                 
+                ((S1 => (S2 => S3)) <=> ((S1 && S2) => S3)),
+                
+                -(S1 && S2) <=> .compound(.d, [-(S1), -(S2)]),
+                -(S1 || S2) <=> .compound(.c, [-(S1), -(S2)]),
+                
+                (S1 <=> S2) <=> (-(S1) <=> -(S2)),
+
                 // EXTRA RULES
                 // not in the book but
                 // alternative forms and/or derived from above rules
