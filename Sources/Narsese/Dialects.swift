@@ -4,16 +4,67 @@ public enum Dialect: String, CaseIterable {
     case canonical, ona, opennars, swift
 }
 
-extension Copula {
-    // TODO: add dialects for copulas
+// MARK: Copula
+
+extension Copula: Translatable {
+    func variants(_ dialect: Dialect) -> [String] {
+        switch dialect {
+        case .canonical: return [rawValue]
+        case .ona:       return [] // TODO: add mapping
+        case .opennars:  return opennars // TODO: add mapping
+        case .swift:     return swift
+        }
+    }
+
+    var swift: [String] {
+        switch self {
+        case .retrospectiveImp:
+            return ["\\\\=>"]
+        case .retrospectiveEq:
+            return ["\\\\<=>"]
+        default:
+            return [rawValue]
+        }
+    }
+    
+    var opennars: [String] {
+        switch self {
+        case .inheritance:
+            return ["-->"]
+        case .implication:
+            return ["==>"]
+        case .instance:
+            return ["{--"]
+        case .property:
+            return ["--]"]
+        case .insProp:
+            return ["{-]"]
+        case .predictiveImp:
+            return ["=/>"]
+        case .concurrentImp:
+            return ["=|>"]
+        case .retrospectiveImp:
+            return ["=\\\\>"]
+        case .predictiveEq:
+            return ["</>"]
+        case .concurrentEq:
+            return ["<|>"]
+        case .retrospectiveEq:
+            return ["<\\\\>"]
+        default:
+            return [rawValue]
+        }
+    }
 }
 
-extension Connector {
+// MARK: Connector
+
+extension Connector: Translatable {
     func variants(_ dialect: Dialect) -> [String] {
         switch dialect {
         case .canonical: return [rawValue]
         case .ona:       return ona
-        case .opennars:  return [] // TODO: add mapping
+        case .opennars:  return swift // TODO: add mapping
         case .swift:     return swift
         }
     }
@@ -40,15 +91,6 @@ extension Connector {
         }
     }
     
-    // MARK: Variations
-    
-    func all(_ dialect: Dialect) -> String {
-        let vars = variants(dialect)
-            .map { "'\($0)'" }
-            .joined(separator: "|")
-        return "(\(vars))"
-    }
-
     // MARK: Primary
     
     static func primary(_ dialect: Dialect) -> String {
@@ -62,34 +104,52 @@ extension Connector {
     static func diff(_ dialect: Dialect) -> String {
         [ç.l, .ø].all(dialect)
     }
-    
-    // MARK: Canonical
-    
-    static func canonical(_ s: String, dialect: Dialect) throws -> Connector {
+}
+
+
+// MARK: - Translatable
+
+protocol Translatable: CaseIterable {
+    func variants(_ dialect: Dialect) -> [String]
+    func all(_ dialect: Dialect) -> String
+
+    static func canonical(_ s: String, dialect: Dialect) throws -> Self
+    static func validate(_ dialect: Dialect) throws
+}
+
+enum ConnectorParsingError: Error {
+    case invalidInput(String)
+}
+
+enum DialectParsingError: Error {
+    case duplicateConnectors([String])
+}
+
+extension Translatable {
+    func all(_ dialect: Dialect) -> String {
+        let vars = variants(dialect)
+            .map { "'\($0)'" }
+            .joined(separator: "|")
+        return "(\(vars))"
+    }
+
+    static func canonical(_ s: String, dialect: Dialect) throws -> Self {
         let connector = allCases.first { c in
-            c.variants(dialect).contains(s)
+            c.variants(dialect)
+                .map { $0.replacingOccurrences(of: "\\\\", with: "\\") }
+                .contains(s)
         }
-        
         guard let connector = connector else {
-            enum ConnectorParsingError: Error {
-                case invalidInput(String)
-            }
             throw ConnectorParsingError.invalidInput(s)
         }
-        
         return connector
     }
-    
-    // MARK: Validator
     
     static func validate(_ dialect: Dialect) throws {
         let duplicates = allCases
             .flatMap { $0.variants(dialect) }
             .duplicates()
         if !duplicates.isEmpty {
-            enum DialectParsingError: Error {
-                case duplicateConnectors([String])
-            }
             throw DialectParsingError.duplicateConnectors(duplicates)
         }
     }
@@ -108,7 +168,7 @@ extension Array where Element: Hashable {
     }
 }
 
-extension Array where Element == Connector {
+extension Array where Element: Translatable {
     func all(_ dialect: Dialect) -> String {
         map { $0.all(dialect) }.joined(separator: "|")
     }

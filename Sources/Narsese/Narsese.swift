@@ -7,8 +7,8 @@ public struct Narsese {
     public init(dialect: Dialect) throws {
         self.dialect = dialect
 
+        try Copula.validate(dialect)
         try Connector.validate(dialect)
-        // TODO: perform validation for copulas
         
         let ebnf = Narsese.grammar(dialect)
         let grammar = try Grammar(ebnf: ebnf, start: "exp")
@@ -26,10 +26,7 @@ public struct Narsese {
         
         statement        = term, space, copula, space, term;
         
-        copula           = '->' | '<->' | '=>' | '<=>'
-                           | '•->' | '->•' | '•->•'
-                           | '/=>' | '\\\\=>' | '|=>' | '/<=>' | '|<=>'
-        ;
+        copula           = \(Copula.allCases.all(dialect));
         
         operation        = '(', '^', word, [seq, terms], ')';
 
@@ -51,9 +48,11 @@ public struct Narsese {
         
         compound-image   = '(',
                                ('/' | '\\\\'), seq, term, seq,
-                                 (('º', seq, term) | (term, seq, 'º'))
+                                 ((placeholder, seq, term) | (term, seq, placeholder))
                            ,')'
         ;
+        
+        placeholder      = 'º' | '_';
         
         connector        = \(ç.primary(dialect));
         

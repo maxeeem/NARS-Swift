@@ -15,7 +15,7 @@ public extension Term {
                     let sub = try convert(tree: children[0])
                     let pre = try convert(tree: children[4])
                     let cop = String(s[children[2].leafs.first!])
-                    let copula = Copula(rawValue: cop)!
+                    let copula = try Copula.canonical(cop, dialect: parser.dialect)
                     return .statement(sub, copula, pre)
                 case "term":
                     return try convert(tree: children.first!)
@@ -54,7 +54,7 @@ public extension Term {
                     let connector = try ç.canonical(con, dialect: parser.dialect)
                     let first = children[3].children!.first!
                     let r = try convert(tree: first)
-                    if String(s[children[5].leafs.first!]) == "º" {
+                    if ["º", "_"].contains(String(s[children[5].leafs.first!])) {
                         let t = try convert(tree: children[7])
                         return connector.image(r, .º, t)
                     } else {
