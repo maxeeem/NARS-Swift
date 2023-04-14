@@ -73,6 +73,11 @@ struct ContentView: View {
 
     @State var input = "<[blue] -> (/ likes cat º)>?"
     
+    let dialects = Array(Dialect.allCases.reversed())
+        .filter({$0 != .ona}) // TODO: need to add mappings
+    
+    @State var dialect = 0 // swift
+    
     var body: some View {
         VStack {
             HStack {
@@ -80,6 +85,15 @@ struct ContentView: View {
                     .foregroundColor(.orange)
                     .padding(.all)
 
+                Spacer()
+                
+                Picker("Dialect ", selection: $dialect) {
+                    Text("")
+                    ForEach(0..<dialects.count) {
+                        Text(dialects[$0].name + ($0 == 0 ? " (default)" : ""))
+                    }
+                }
+                
                 Spacer()
                 
                 Button("🧨 Reset") {
@@ -91,7 +105,6 @@ struct ContentView: View {
             VStack { Spacer() }
 
             ScrollView {
-//                HStack { Spacer() }
                 ForEach(nars.history, id: \.self) { line in
                     Text(line)
                         .font(.footnote)
@@ -129,8 +142,8 @@ struct ContentView: View {
     }
     
     func process() {
-        if nars.narsese == nil {
-            nars.defaultDialect()
+        if nars.narsese?.dialect != dialects[dialect] {
+            nars.defaultDialect(dialects[dialect])
         }
         let s = input.trimmingCharacters(in: .whitespaces)
         if let x = Sentence(s, parser: nars.narsese) {
@@ -139,19 +152,7 @@ struct ContentView: View {
     }
 }
 
-/*
-<{sky} -> [blue]>.
-<{tom} -> cat>.
-<{tom} -> (/ likes º {sky})>.
-<[blue] -> (/ likes cat º)>?
- 
- 
-<{sky} --> [blue]>.
-<{tom} --> cat>.
-<(*,{tom},{sky}) --> likes>.
-<(*,cat,[blue]) --> likes>?
 
- */
 // MARK: - Extensions
 
 func contents(_ s: String) -> String {
@@ -195,5 +196,21 @@ extension Sentence {
         }
         
         return nil
+    }
+}
+
+
+extension Dialect {
+    var name: String {
+        switch self {
+        case .canonical:
+            return "Canonical"
+        case .ona:
+            return "ONA"
+        case .opennars:
+            return "OpenNARS"
+        case .swift:
+            return "Swift"
+        }
     }
 }

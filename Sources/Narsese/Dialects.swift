@@ -9,22 +9,19 @@ public enum Dialect: String, CaseIterable {
 extension Copula: Translatable {
     func variants(_ dialect: Dialect) -> [String] {
         switch dialect {
-        case .canonical: return [rawValue]
+        case .canonical: return canonical
         case .ona:       return [] // TODO: add mapping
-        case .opennars:  return opennars // TODO: add mapping
+        case .opennars:  return opennars
         case .swift:     return swift
         }
     }
 
+    var canonical: [String] {
+        [rawValue.replacingOccurrences(of: "\\", with: "\\\\")]
+    }
+    
     var swift: [String] {
-        switch self {
-        case .retrospectiveImp:
-            return ["\\\\=>"]
-        case .retrospectiveEq:
-            return ["\\\\<=>"]
-        default:
-            return [rawValue]
-        }
+        canonical // may change if we use unicode for canonical
     }
     
     var opennars: [String] {
@@ -52,7 +49,7 @@ extension Copula: Translatable {
         case .retrospectiveEq:
             return ["<\\\\>"]
         default:
-            return [rawValue]
+            return canonical  // TODO: finish mapping
         }
     }
 }
@@ -62,11 +59,15 @@ extension Copula: Translatable {
 extension Connector: Translatable {
     func variants(_ dialect: Dialect) -> [String] {
         switch dialect {
-        case .canonical: return [rawValue]
+        case .canonical: return canonical
         case .ona:       return ona
         case .opennars:  return swift // TODO: add mapping
         case .swift:     return swift
         }
+    }
+
+    var canonical: [String] {
+        [rawValue.replacingOccurrences(of: "\\", with: "\\\\")]
     }
 
     var swift: [String] {
@@ -79,7 +80,7 @@ extension Connector: Translatable {
         case .n: return ["--", "!"]
         case .c: return ["&&"]
         case .d: return ["||"]
-        default: return [rawValue]
+        default: return canonical
         }
     }
     
@@ -87,7 +88,7 @@ extension Connector: Translatable {
         switch self {
         case .c: return [";"] // TODO: currently conflicts with canonical parallel conjunction
         case .d: return ["_"]
-        default: return [rawValue]
+        default: return canonical
         }
     }
     
