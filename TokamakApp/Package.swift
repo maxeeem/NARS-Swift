@@ -18,6 +18,7 @@ let package = Package(
                 .product(name: "NARS", package: "NARS-Swift"),
                 .product(name: "Narsese", package: "NARS-Swift")
             ],
+            resources: [.copy("icon_sm.png")],
             linkerSettings: [
                 .unsafeFlags(
                     ["-Xlinker", "-z", "-Xlinker", "stack-size=131072"]//16777216

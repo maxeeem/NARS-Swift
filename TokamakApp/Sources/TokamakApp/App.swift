@@ -47,6 +47,8 @@ struct TokamakApp: App {
     var body: some Scene {
         WindowGroup("Tokamak App") {
             ContentView()
+                .padding(.all)
+//                .background(Color.init(hex: "1e212d"))
                 .environmentObject(nars)
                 .onAppear {
                     nars.instance.perform(
@@ -79,11 +81,11 @@ struct ContentView: View {
     @State var dialect = 0 // swift
     
     var body: some View {
-        VStack {
+        Group {
             HStack {
-                Text("NARSY")
-                    .foregroundColor(.orange)
-                    .padding(.all)
+                Image("icon_sm.png")
+                    .frame(width: 40)
+                    .padding(.horizontal)
 
                 Spacer()
                 
@@ -95,50 +97,46 @@ struct ContentView: View {
                 }
                 
                 Spacer()
-                
-                Button("🧨 Reset") {
+                                    
+                Button("🧨") {
                     nars.reset()
                 }
-                .frame(maxWidth: 100)
+                .buttonStyle(BorderlessButtonStyle())
             }
+            .padding(.bottom, 20)
 
-            VStack { Spacer() }
-
-            ScrollView {
-                ForEach(nars.history, id: \.self) { line in
-                    Text(line)
-                        .font(.footnote)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            GeometryReader { _ in
+                ScrollView(showsIndicators: false) {
+                    ForEach(nars.history, id: \.self) { line in
+                        Text(line)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .frame(width: 640, height: 480, alignment: .leading)
+                .padding(.bottom, 20)
             }
-
-            VStack { Spacer() }
             
             HStack {
-                Button(nars.verbose ? "⏱ Verbose" : "⏱ Quiet") {
+                Button(nars.verbose ? "🔈" : "🔇") {
                     nars.verbose.toggle()
+                    nars.output("• Verbose: " + (nars.verbose ? "ON" : "OFF"))
                 }
-                .frame(maxWidth: 100)
-                
+                .buttonStyle(LinkButtonStyle())
                 Spacer()
-                
-                TextField("Input", text: $input, onCommit: {
-                    process()
-                })
-                
-                Spacer(minLength: 20)
-                
-                Button("Submit") {
-                    process()
+                Group {
+                    TextField("Input", text: $input, onCommit: {
+                        process()
+                    })
+                    
+                    Button("↵") {
+                        process()
+                    }
+                    .buttonStyle(BorderedButtonStyle())
                 }
-                .foregroundColor(.blue)
-                
                 Spacer()
             }
-            
-            VStack { Spacer() }
         }
-        .padding(.all)
     }
     
     func process() {
@@ -171,13 +169,35 @@ extension Sentence {
             return
         }
         
+        var s = s
+        
+        var f: Double!
+        var c: Double!
+        
+        if let start = s.firstIndex(of: "%") {
+            let vals = s.suffix(from: start)
+                .replacingOccurrences(of: "%", with: "")
+                .components(separatedBy: ";")
+            if vals.count == 1 {
+                f = Double(vals[0])
+            } else if vals.count == 2 {
+                f = Double(vals[0])
+                c = Double(vals[1])
+            }
+            
+            s = String(s.prefix(upTo: start)).trimmingCharacters(in: .whitespaces)
+        }
+        
         let contents = contents(s)
 
         do {
             let term = try Term(contents, parser: parser)
 
+            f = f ?? 1
+            c = c ?? 0.9
+            
             if s.hasSuffix(">.") {
-                self = .judgement(term-*)
+                self = .judgement(term-*(f, c))
                 return
             }
             
