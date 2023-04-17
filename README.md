@@ -8,7 +8,7 @@ Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com
 
 Assumption of Insufficient Knowledge and Resources, or **AIKR**, is the fundamental feature of NARS — a Non-Axiomatic Reasoning System. 
 
-#Online Demo
+# Online Demo
 You can try the system online [in your browser](https://www.i-m.io).
 
 # Quickstart
