@@ -1,5 +1,4 @@
-# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift)
-[<img align="right" src="https://github.com/maxeeem/NARS-Swift/blob/experimental/docs/assets/online_demo.png">](https://www.intelligentmachines.io/TokamakApp/Bundle/index.html)
+# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="https://github.com/maxeeem/NARS-Swift/blob/experimental/docs/assets/online_demo.png">](https://www.intelligentmachines.io/TokamakApp/Bundle/index.html)
 
 ![one](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
 
