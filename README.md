@@ -1,4 +1,4 @@
-# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="https://github.com/maxeeem/NARS-Swift/blob/experimental/docs/assets/online_demo.png">](https://www.intelligentmachines.io/TokamakApp/Bundle/index.html)
+# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/online_demo.png">](https://www.i-m.io)
 
 ![one](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
 
@@ -7,6 +7,9 @@ Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com
 > Intelligence is the ability for a system to adapt to its environment and to work with insufficient knowledge and resources.
 
 Assumption of Insufficient Knowledge and Resources, or **AIKR**, is the fundamental feature of NARS — a Non-Axiomatic Reasoning System. 
+
+#Online Demo
+You can try the system online [in your browser](https://www.i-m.io).
 
 # Quickstart
 You need to install Swift for your [platform](https://www.swift.org/getting-started/). Supported platforms include macOS, Linux, and Windows. For ARM-based devices like Raspberry Pi, you can use the [Swiftlang.xyz](http://swiftlang.xyz) repo.
@@ -67,6 +70,8 @@ Finally, there is `nar` command line tool that puts all of the above modules tog
 The system consists of two parts – the [logic part](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL) and the [control part](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NARS), with the latter dependent on the logic.
 
 "The representation language of NARS is called *Narsese*, which serves both the roles of internal representation and external communication for NARS." In [NARS-Swift](https://github.com/maxeeem/NARS-Swift), we embed Narsese in the programming language of the system (Swift) as a DSL or Domain Specific Language, so statements in Swift Narsese dialect are both valid Narsese *and* valid Swift code. 
+
+Preprint is [available](https://easychair.org/publications/preprint/6Cdw) on EasyChair.
 
 ## Logic
 In [Narsese](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift), statements represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L33) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
