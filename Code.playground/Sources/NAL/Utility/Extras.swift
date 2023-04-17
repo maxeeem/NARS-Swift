@@ -83,16 +83,17 @@ extension Term: CustomStringConvertible {
         case .symbol(let word):
             return word
         case .compound(let connector, let terms):
-            if terms.count == 2 {
-                return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
-            } else if connector == .intSet || connector == .extSet {
+            if connector == .intSet || connector == .extSet {
                 if connector == .intSet {
                     return "[\(terms.map{$0.description}.joined(separator: " "))]"
                 } else {
                     return "{\(terms.map{$0.description}.joined(separator: " "))}"
                 }
+            } else if terms.count == 2 {
+                return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
             } else if connector == .n {
-                return connector.rawValue + "(\(terms[0].description))"
+                return connector.rawValue +
+                (terms[0].description.hasPrefix("(") ? terms[0].description : "(\(terms[0].description))")
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }

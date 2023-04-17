@@ -313,8 +313,8 @@ extension Theorems {
                  .compound(.U, [.instance(T1), .instance(T2)]) <-> .compound(.extSet, [T1, T2]),
                  .compound(.Ω, [.property(T1), .property(T2)]) <-> .compound(.intSet, [T1, T2]),
                  
-                 (.compound(.extSet, [T1, T2]) - .instance(T2)) <-> .instance(T1),
-                 (.compound(.intSet, [T1, T2]) ~ .property(T2)) <-> .property(T1),
+                 (.compound(.l, [.compound(.extSet, [T1, T2]), .instance(T2)])) <-> .instance(T1),
+                 (.compound(.ø, [.compound(.intSet, [T1, T2]), .property(T2)])) <-> .property(T1),
 
                  ç.e_((T1 * T2), .º, T2) <-> T1,
                  ç.i_((T1 * T2), .º, T2) <-> T1

@@ -515,6 +515,7 @@ extension NARS {
                     mainCycle()
                 }
             }
+            output("Completed \(n) cycles")
         }
     }
     

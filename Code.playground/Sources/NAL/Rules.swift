@@ -92,18 +92,9 @@ extension Rules {
         var x: [Judgement?] = []
         
         /// independent
-        func variableEliminationIndependent(_ j1: Judgement, _ j2: Judgement) -> Statement {
-            if let sub = Term.match(t: j1.statement, s: j2.statement), Term.validate(sub) != nil {
-                let jsub = Judgement(sub, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
-                x.append(jsub)
-                if case .statement(_, let cop1, _) = j1.statement, cop1.atemporal == .implication || cop1.atemporal == .equivalence {
-                    return sub
-                }
-            }
-            return j1.statement
-        }
-        t1 = variableEliminationIndependent(j1, j2)
-        t2 = variableEliminationIndependent(j2, j1)
+
+        t1 = variableEliminationIndependent(j1, j2, &x)
+        t2 = variableEliminationIndependent(j2, j1, &x)
 
         /// dependent
         if let result = variableEliminationDependent(t1, t2, j1, j2, self) {
@@ -125,7 +116,7 @@ extension Rules {
         self.allRules.forEach { r in
             x.append(rule_applicator(r)((j2, j1)))
         }
-        
+        /*
         // MARK: Variable introduction
         // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”
         
@@ -146,7 +137,7 @@ extension Rules {
         ///
         // TODO: multi-variable introduction rules
         ///
-        
+        */
         let unique = x.compactMap({$0}).removeDuplicates()
         return unique
     }
@@ -368,7 +359,18 @@ public var rule_applicator: (_ rule: Rule) -> Apply {
 }
 
 
-// MARK: - Variable introduction and elimination
+// MARK: - Variable elimination
+
+private func variableEliminationIndependent(_ j1: Judgement, _ j2: Judgement, _ x: inout [Judgement?]) -> Statement {
+    if let sub = Term.match(t: j1.statement, s: j2.statement), Term.validate(sub) != nil {
+        let jsub = Judgement(sub, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
+        x.append(jsub)
+        if case .statement(_, let cop1, _) = j1.statement, cop1.atemporal == .implication || cop1.atemporal == .equivalence {
+            return sub
+        }
+    }
+    return j1.statement
+}
 
 private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?]? {
     if case .compound(let conn, _) = t1, conn == .c || conn == .U || conn == .Ω {
@@ -396,7 +398,7 @@ private func variableEliminationDependent(_ t1: Statement, _ t2: Statement, _ j1
     }
     return nil
 }
-
+/*
 private func variableIntroductionIndependent(_ t1: Statement, _ t2: Statement, _ j1: Judgement, _ j2: Judgement, _ r: Rules) -> [Judgement?] {
     variableIntroduction(dependent: false, t1, t2, j1, j2, r)
 }
@@ -452,3 +454,4 @@ private func variableIntroduction(dependent: Bool, _ t1: Statement, _ t2: Statem
     }
     return x
 }
+*/

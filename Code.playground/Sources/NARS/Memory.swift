@@ -3,6 +3,7 @@ extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
         case .judgement(let j):
+            // recurse here means processing elements of judgement
             return consider(j.statement, recurse: true) { c, s in c.accept(j, derive: derive, store: s) }
         case .question(let q):
             return consider(q.statement, true, recurse: derive) { c, _ in c.answer(q.statement) }
