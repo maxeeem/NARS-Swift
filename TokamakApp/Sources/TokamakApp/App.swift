@@ -49,7 +49,7 @@ struct TokamakApp: App {
         WindowGroup("Tokamak App") {
             ContentView()
                 .padding(.all)
-                .background(Color.init(hex: "1e212d"))
+//                .background(Color.init(hex: "1e212d"))
                 .environmentObject(nars)
                 .onAppear {
                     nars.instance.perform(
@@ -87,21 +87,32 @@ struct ContentView: View {
     var h: Double {
         JSObject.global.window.object!.innerHeight.number ?? 480
     }
-
+    
+    @State var scrollView: JSObject? = nil
+    @State var inputView: JSObject? = nil
+    @State var logoView: JSObject? = nil
+    
     var body: some View {
-        Group {
+        VStack {
             HStack {
                 Image("icon_sm.png")
+                    ._domRef($logoView)
                     .frame(width: 40)
                     .padding(.horizontal)
+                    .onAppear {
+                        logoView?.onclick = .object(JSClosure({ _ in
+                            JSObject.global.window.location.href = "https://www.intelligentmachines.io"
+                            return .undefined
+                        }))
+                    }
 
                 Spacer()
                 
                 Picker("Dialect ", selection: $dialect) {
-                    Text("")
                     ForEach(0..<dialects.count) {
                         Text(dialects[$0].name + ($0 == 0 ? " (default)" : ""))
                     }
+                    Text("...")
                 }
                 
                 Spacer()
@@ -113,38 +124,52 @@ struct ContentView: View {
             }
             .padding(.bottom, 20)
 
-            GeometryReader { _ in
-                ScrollView(showsIndicators: false) {
-                    ForEach(nars.history, id: \.self) { line in
-                        Text(line)
-                            .font(.subheadline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.leading)
+            ScrollView(showsIndicators: false) {
+                ForEach(Array(zip(nars.history.indices, nars.history)), id: \.0) { (line, text) in
+                    Text(text)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onAppear {
+                            if line == nars.count-2 {
+                                _ = scrollView?.jsValue.scrollIntoView(false)
+                            }
+                        }
                 }
-                .frame(width: w, height: h - 130, alignment: .leading)
-                .padding(.bottom, 20)
+                ._domRef($scrollView)
+                .padding(.leading)
             }
+            .frame(width: w, height: h - 150, alignment: .leading)
+            .padding(.bottom, 20)
             
-            HStack {
-                Button(nars.verbose ? "🔈" : "🔇") {
+            Group {
+                Button(action: {
                     nars.verbose.toggle()
                     nars.output("• Verbose: " + (nars.verbose ? "ON" : "OFF"))
+                }, label: {
+                    Text(nars.verbose ? "🔈" : "🔇")
+                        .padding(.horizontal)
+                })
+                .buttonStyle(BorderlessButtonStyle())
+
+                TextField("Input", text: $input, onCommit: {
+                    process()
+                })
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                ._domRef($inputView)
+                .onAppear {
+                    _ = inputView?.size = .number(w/10)
                 }
-                .buttonStyle(LinkButtonStyle())
-                Spacer()
-                Group {
-                    TextField("Input", text: $input, onCommit: {
-                        process()
-                    })
-                    
-                    Button("↵") {
-                        process()
-                    }
-                    .buttonStyle(BorderedButtonStyle())
-                }
-                Spacer()
+                
+                Button(action:  {
+                    process()
+                }, label: {
+                    Text("🆗")
+                        .font(.title2)
+                        .padding(.horizontal)
+                })
+                .buttonStyle(BorderlessButtonStyle())
             }
+            .frame(alignment: .center)
             .padding(.bottom, 20)
         }
     }
