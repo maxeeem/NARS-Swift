@@ -82,13 +82,10 @@ struct ContentView: View {
     @State var dialect = 0 // swift
 
     var w: Double {
-        let width = JSObject.global.window.object!.innerWidth.number ?? 640
-        defer { setWidth(width) }
-        return width
+        JSObject.global.window.object!.innerWidth.number ?? 640
     }
     var h: Double {
-        defer { setWidth() }
-        return JSObject.global.window.object!.innerHeight.number ?? 480
+        JSObject.global.window.object!.innerHeight.number ?? 480
     }
     
     @State var scrollView: JSObject? = nil
@@ -104,7 +101,8 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .onAppear {
                         logoView?.onclick = .object(JSClosure({ _ in
-                            return JSObject.global.window.history.back()
+                            JSObject.global.window.location.href = "https://www.intelligentmachines.io"
+                            return .undefined
                         }))
                     }
 
@@ -153,15 +151,13 @@ struct ContentView: View {
                 })
                 .buttonStyle(BorderlessButtonStyle())
 
-                TextField("Input", text: $input, onEditingChanged: { _ in
-                    setWidth()
-                }, onCommit: {
+                TextField("Input", text: $input, onCommit: {
                     process()
                 })
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 ._domRef($inputView)
                 .onAppear {
-                    setWidth()
+                    _ = inputView?.size = .number(w/10)
                 }
                 
                 Button(action:  {
@@ -186,11 +182,6 @@ struct ContentView: View {
         if let x = Sentence(s, parser: nars.narsese) {
             nars.instance.perform(x)
         }
-    }
-    
-    private func setWidth(_ width: Double? = nil) {
-        let size = width ?? w
-        _ = inputView?.size = .number(size/10)
     }
 }
 
