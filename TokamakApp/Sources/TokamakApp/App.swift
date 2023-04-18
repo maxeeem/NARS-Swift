@@ -101,7 +101,12 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .onAppear {
                         logoView?.onclick = .object(JSClosure({ _ in
-                            JSObject.global.window.location.href = "https://www.intelligentmachines.io"
+                            JSObject.global.window.location.href = "https://www.intelligentmachines.io/"
+                            return .undefined
+                        }))
+                        
+                        _ = JSObject.global.document.addEventListener("click", JSClosure({ _ in
+                            nars.output(".") // cause view to re-render to adjust size
                             return .undefined
                         }))
                     }
