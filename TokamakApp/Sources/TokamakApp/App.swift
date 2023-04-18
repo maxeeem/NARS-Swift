@@ -106,7 +106,8 @@ struct ContentView: View {
                         }))
                         
                         _ = JSObject.global.document.addEventListener("click", JSClosure({ _ in
-                            nars.output(".") // cause view to re-render to adjust size
+//                            nars.output(".") // cause view to re-render to adjust size
+                            dialect = dialect
                             return .undefined
                         }))
                     }
