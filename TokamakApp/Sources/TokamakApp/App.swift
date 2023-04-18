@@ -1,4 +1,5 @@
 import TokamakDOM
+import JavaScriptKit
 
 import NARS
 import Narsese
@@ -48,7 +49,7 @@ struct TokamakApp: App {
         WindowGroup("Tokamak App") {
             ContentView()
                 .padding(.all)
-//                .background(Color.init(hex: "1e212d"))
+                .background(Color.init(hex: "1e212d"))
                 .environmentObject(nars)
                 .onAppear {
                     nars.instance.perform(
@@ -56,9 +57,9 @@ struct TokamakApp: App {
                         ("robin" --> "bird")-*,
                         ("robin" --> "animal")-?
                     )
-                    
+
                     nars.reset()
-                    
+
                     nars.instance.perform(
                         ("{sky}" --> "[blue]")-*,
                         ("{tom}" --> "cat")-*,
@@ -79,7 +80,14 @@ struct ContentView: View {
         .filter({$0 != .ona}) // TODO: need to add mappings
     
     @State var dialect = 0 // swift
-    
+
+    var w: Double {
+        JSObject.global.window.object!.innerWidth.number ?? 640
+    }
+    var h: Double {
+        JSObject.global.window.object!.innerHeight.number ?? 480
+    }
+
     var body: some View {
         Group {
             HStack {
@@ -112,8 +120,9 @@ struct ContentView: View {
                             .font(.subheadline)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.leading)
                 }
-                .frame(width: 640, height: 480, alignment: .leading)
+                .frame(width: w, height: h - 130, alignment: .leading)
                 .padding(.bottom, 20)
             }
             
@@ -136,6 +145,7 @@ struct ContentView: View {
                 }
                 Spacer()
             }
+            .padding(.bottom, 20)
         }
     }
     
