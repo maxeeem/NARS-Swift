@@ -88,6 +88,7 @@ struct ContentView: View {
         JSObject.global.window.object!.innerHeight.number ?? 480
     }
     
+    @State var containerView: JSObject? = nil
     @State var scrollView: JSObject? = nil
     @State var inputView: JSObject? = nil
     @State var logoView: JSObject? = nil
@@ -100,17 +101,17 @@ struct ContentView: View {
                     .frame(width: 40)
                     .padding(.horizontal)
                     .onAppear {
+                        // set initial input field size
+                        _ = inputView?.size = .number(w/10)
+                        
                         logoView?.onclick = .object(JSClosure({ _ in
                             _ = JSObject.global.window.location.replace("https://www.intelligentmachines.io/")
                             return .undefined
                         }))
                         
-                        _ = JSObject.global.document.addEventListener("click", JSClosure({ _ in
-                            dialect = dialect // cause view to re-render and adjust size
-                            return .undefined
-                        }))
-                        
-                        _ = JSObject.global.window.addEventListener("orientationchange", JSClosure({ _ in
+                        _ = containerView?.jsValue.addEventListener("click", JSClosure({ a in
+                            // update input field size
+                            _ = inputView?.size = .number(w/10)
                             dialect = dialect // cause view to re-render and adjust size
                             return .undefined
                         }))
@@ -138,7 +139,8 @@ struct ContentView: View {
                 ForEach(Array(zip(nars.history.indices, nars.history)), id: \.0) { (line, text) in
                     Text(text)
                         .font(.caption)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(width: w - 20, alignment: .leading)
+                        .padding(.bottom, 5)
                         .onAppear {
                             if line == nars.count-2 {
                                 _ = scrollView?.jsValue.scrollIntoView(false)
@@ -149,6 +151,7 @@ struct ContentView: View {
                 .padding(.leading)
             }
             .frame(width: w, height: h - 150, alignment: .leading)
+            ._domRef($containerView)
             .padding(.bottom, 20)
             
             Group {
@@ -166,9 +169,6 @@ struct ContentView: View {
                 })
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 ._domRef($inputView)
-                .onAppear {
-                    _ = inputView?.size = .number(w/10)
-                }
                 
                 Button(action:  {
                     process()
