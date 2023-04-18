@@ -114,11 +114,6 @@ struct ContentView: View {
                             dialect = dialect // cause view to re-render and adjust size
                             return .undefined
                         }))
-                        
-                        _ = JSObject.global.screen.orientation.addEventListener("change", JSClosure({ _ in
-                            dialect = dialect // cause view to re-render and adjust size
-                            return .undefined
-                        }))
                     }
 
                 Spacer()
