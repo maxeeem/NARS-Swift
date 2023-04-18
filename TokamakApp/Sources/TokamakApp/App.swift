@@ -101,13 +101,17 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .onAppear {
                         logoView?.onclick = .object(JSClosure({ _ in
-                            JSObject.global.window.location.href = "https://www.intelligentmachines.io/"
+                            _ = JSObject.global.window.location.replace("https://www.intelligentmachines.io/")
                             return .undefined
                         }))
                         
                         _ = JSObject.global.document.addEventListener("click", JSClosure({ _ in
-//                            nars.output(".") // cause view to re-render to adjust size
-                            dialect = dialect
+                            dialect = dialect // cause view to re-render and adjust size
+                            return .undefined
+                        }))
+                        
+                        _ = JSObject.global.window.addEventListener("deviceorientation", JSClosure({ _ in
+                            dialect = dialect // cause view to re-render and adjust size
                             return .undefined
                         }))
                     }
