@@ -150,7 +150,7 @@ struct ContentView: View {
                 ._domRef($scrollView)
                 .padding(.leading)
             }
-            .frame(width: w, height: h - 150, alignment: .leading)
+            .frame(width: w, height: h - 160, alignment: .leading)
             ._domRef($containerView)
             .padding(.bottom, 20)
             
