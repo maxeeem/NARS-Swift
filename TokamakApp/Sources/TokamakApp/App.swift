@@ -233,6 +233,21 @@ extension Sentence {
             s = String(s.prefix(upTo: start)).trimmingCharacters(in: .whitespaces)
         }
         
+        var tense: Tense? = nil
+        
+        if s.hasSuffix(":\\:") {
+            tense = .past
+            s = s.replacingOccurrences(of: ":\\:", with: "").trimmingCharacters(in: .whitespaces)
+        }
+        if s.hasSuffix(":|:") {
+            tense = .present
+            s = s.replacingOccurrences(of: ":|:", with: "").trimmingCharacters(in: .whitespaces)
+        }
+        if s.hasSuffix(":/:") {
+            tense = .future
+            s = s.replacingOccurrences(of: ":/:", with: "").trimmingCharacters(in: .whitespaces)
+        }
+        
         let contents = contents(s)
 
         do {
@@ -242,17 +257,20 @@ extension Sentence {
             c = c ?? 0.9
             
             if s.hasSuffix(">.") {
-                self = .judgement(term-*(f, c))
+                let j = Judgement(term, TruthValue(f, c), tense: tense)
+                self = .judgement(j)
                 return
             }
             
             if s.hasSuffix(">?") {
-                self = .question(term-?)
+                let q = Question(term, .truth, tense)
+                self = .question(q)
                 return
             }
             
             if s.hasSuffix(">!") {
-                self = .goal(term-!)
+                let g = Goal(term, DesireValue(f, c))
+                self = .goal(g)
                 return
             }
             return nil

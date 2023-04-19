@@ -9,7 +9,11 @@ Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com
 Assumption of Insufficient Knowledge and Resources, or **AIKR**, is the fundamental feature of NARS — a Non-Axiomatic Reasoning System. 
 
 # Online Demo
-You can try the system online [in your browser](https://www.i-m.io).
+You can try the system online [in your browser](https://www.i-m.io). It relies on a number of alpha-stage [libraries](https://github.com/TokamakUI/Tokamak) to translate Swift to JavaScript. You can see some of the capabilities in this short video. 
+
+![](docs/assets/online_demo.gif)
+
+The entire system is compiled to [WebAssembly](https://swiftwasm.org/) and loaded in memory. As such it has serious performance limitations and is intended for demonstration purposes only. Enjoy!
 
 # Quickstart
 You need to install Swift for your [platform](https://www.swift.org/getting-started/). Supported platforms include macOS, Linux, and Windows. For ARM-based devices like Raspberry Pi, you can use the [Swiftlang.xyz](http://swiftlang.xyz) repo.
