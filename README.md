@@ -1,4 +1,4 @@
-# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="https://github.com/maxeeem/NARS-Swift/blob/experimental/docs/assets/online_demo.png?raw=true&sanitize=true">](https://www.i-m.io)
+# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="docs/assets/online_demo.png">](https://www.i-m.io)
 
 ![one](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
 
@@ -78,7 +78,7 @@ The system consists of two parts – the [logic part](https://github.com/maxeeem
 Preprint is [available](https://easychair.org/publications/preprint/6Cdw) on EasyChair.
 
 ## Logic
-In [Narsese](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift), statements represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L33) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
+In [Narsese](Code.playground/Sources/NAL/Narsese.swift), statements represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L33) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
 
 <img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_nal1.png?raw=true" width="340">
 
