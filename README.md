@@ -43,8 +43,9 @@ There are three primary ways to use NARS-Swift.
 
 If you have a Mac or an iPad, the easiest way to get started is to run the included `Code.playground` in [Swift Playgrounds](https://www.apple.com/swift/playgrounds/) app. It will allow you to experiment with the system and explore its capabilities without needing to install anything.
 
-![](docs/assets/playground_results.png)
-NOTE: Make sure intermediate results are disabled. Performance will be very slow otherwise.
+<img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/playground_results.png?raw=true" width="140">
+
+Make sure "Enable Results" is disabled. Performance will be very slow otherwise.
 
 ## Command-line tool
 
@@ -54,24 +55,7 @@ You can build `nar` with
 
 Compiled binary is located in the `/.build` folder. 
 
-```
-NARS started. Type 'q' to exit.
-
-<task>          
-    execute narsese  - <bird -> animal>.
-:alias <task>   
-    create new alias - :bird <bird -> animal>.
-$alias          
-    execute an alias - $bird [will execute] <bird -> animal>.
-reset           
-    perform system reset
-10              
-    cycle for 10 seconds
-    
-Ready for input
-```
-
-You can call `nar` with a `--dialect` option to specify what flavor of Narsese it should use.
+You can specify a dialect at startup, for example `nar --dialect opennars`, to use the syntax of OpenNARS.
 
 ```
 Options:
@@ -150,7 +134,7 @@ For external communication, it is often convenient to express Narsese as a strin
 
 <img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_grammar.jpeg?raw=true" width="500">
 
-For additional details regarding the logic, see preprint on [EasyChair](https://easychair.org/publications/preprint/6Cdw).
+For additional details regarding the logic, see the [preprint](https://easychair.org/publications/preprint/6Cdw) on EasyChair.
 
 ## Control
 TBD
