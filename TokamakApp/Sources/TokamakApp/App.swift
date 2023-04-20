@@ -102,28 +102,27 @@ struct ContentView: View {
                             return .undefined
                         }))
                         
-                        _ = JSObject.global.window.matchMedia("(orientation: portrait)").addListener(JSClosure({ _ in
+                        _ = JSObject.global.window.addEventListener("resize", JSClosure({ _ in
                             w = JSObject.global.window.object!.innerWidth.number ?? 640
                             h = JSObject.global.window.object!.innerHeight.number ?? 480
                             // update input field size
                             _ = inputView?.size = .number(w/15)
-                            dialect = dialect // cause view to re-render and adjust size
                             return .undefined
                         }))
+
                     }
 
                 Spacer()
                 
                 Picker("", selection: $dialect) {
+                    Text("Dialect")
                     ForEach(0..<dialects.count) {
                         Text(dialects[$0].name + ($0 == 0 ? " (default)" : ""))
                     }
-                    Text("...")
                 }
-                .foregroundColor(.accentColor)
                 
                 Spacer()
-                                    
+                     
                 Button("🧨") {
                     nars.reset()
                 }
@@ -135,6 +134,7 @@ struct ContentView: View {
                 LazyVGrid(columns: [GridItem()]) {
                     ForEach(nars.history, id: \.self) { text in
                         Text(text)
+                            .font(.system(size: 14))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.bottom, 5)
                             .onAppear {
@@ -145,7 +145,7 @@ struct ContentView: View {
                     .padding(.leading)
                 }
             }
-            .frame(width: w, height: h - 158, alignment: .leading)
+            .frame(width: w, height: h - 156, alignment: .leading)
             .padding(.bottom, 20)
             
             Group {

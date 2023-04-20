@@ -1,6 +1,6 @@
-# [NARS-Swift <sup>![gh](https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/mark-github.svg?raw=true&sanitize=true)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="docs/assets/online_demo.png">](https://www.i-m.io)
+# [NARS-Swift <sup>![gh](docs/assets/mark-github.svg)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="docs/assets/online_demo.png">](https://www.i-m.io)
 
-![one](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
+![](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
 
 Swift implementation of Pei Wang's [Non-Axiomatic Logic](https://books.apple.com/us/book/non-axiomatic-logic-a-model-of-intelligent-reasoning/id666735302).
 
@@ -43,13 +43,40 @@ There are three primary ways to use NARS-Swift.
 
 If you have a Mac or an iPad, the easiest way to get started is to run the included `Code.playground` in [Swift Playgrounds](https://www.apple.com/swift/playgrounds/) app. It will allow you to experiment with the system and explore its capabilities without needing to install anything.
 
+![](docs/assets/playground_results.png)
+NOTE: Make sure intermediate results are disabled. Performance will be very slow otherwise.
+
 ## Command-line tool
 
 You can build `nar` with
 
 ```swift build```
 
-Compiled binary is located in the `/.build` folder.
+Compiled binary is located in the `/.build` folder. 
+
+```
+NARS started. Type 'q' to exit.
+
+<task>          
+    execute narsese  - <bird -> animal>.
+:alias <task>   
+    create new alias - :bird <bird -> animal>.
+$alias          
+    execute an alias - $bird [will execute] <bird -> animal>.
+reset           
+    perform system reset
+10              
+    cycle for 10 seconds
+    
+Ready for input
+```
+
+You can call `nar` with a `--dialect` option to specify what flavor of Narsese it should use.
+
+```
+Options:
+    --dialect [default: swift] - Narsese Dialect [canonical, ona, opennars, swift]
+```
 
 ## Swift Package Manager
 
@@ -75,10 +102,8 @@ The system consists of two parts – the [logic part](https://github.com/maxeeem
 
 "The representation language of NARS is called *Narsese*, which serves both the roles of internal representation and external communication for NARS." In [NARS-Swift](https://github.com/maxeeem/NARS-Swift), we embed Narsese in the programming language of the system (Swift) as a DSL or Domain Specific Language, so statements in Swift Narsese dialect are both valid Narsese *and* valid Swift code. 
 
-Preprint is [available](https://easychair.org/publications/preprint/6Cdw) on EasyChair.
-
 ## Logic
-In [Narsese](Code.playground/Sources/NAL/Narsese.swift), statements represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L33) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
+In [Narsese](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift), statements represent relations between terms, and [inference rules](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Inference.swift#L107) are applied to statements when they share a common term. The simplest type of term is a `word`, a [Copula](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L14) connects two terms to form a `statement`, and you can use a [Connector](https://github.com/maxeeem/NARS-Swift/blob/main/Code.playground/Sources/NAL/Narsese.swift#L33) to create a `compound` containing two or more terms (there are certain cases where compounds consist of only one term). In addition to the types mentioned above, there are `variable` and `operation` terms.
 
 <img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_nal1.png?raw=true" width="340">
 
@@ -124,6 +149,8 @@ During inference, several [extensions](https://github.com/maxeeem/NARS-Swift/blo
 For external communication, it is often convenient to express Narsese as a string of text. While technically not part of the core system, that functionality is highly desirable and is implemented as part of NARS+, extending the system’s capabilities. A third-party library [Covfefe](https://github.com/palle-k/Covfefe) by Palle Klewitz translates Narsese [grammar](https://github.com/maxeeem/NARS-Swift/blob/main/Sources/Narsese/Narsese.swift) defined in Backus-Naur Form into an Abstract Syntax Tree (AST) which we then convert to Narsese data structures. 
 
 <img src="https://github.com/maxeeem/NARS-Swift/blob/main/docs/assets/Narsese_grammar.jpeg?raw=true" width="500">
+
+For additional details regarding the logic, see preprint on [EasyChair](https://easychair.org/publications/preprint/6Cdw).
 
 ## Control
 TBD
