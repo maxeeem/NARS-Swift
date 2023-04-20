@@ -30,16 +30,17 @@ public struct Concept: Item {
     
     let term: Term
     
-    private var _termLinks = Bag<TermLink>()
-    internal var termLinks: WrappedBag<TermLink>
     //let tasks = Bag<TermLink>() // sentences
-    private var _beliefs = Bag<Belief>()
-    internal var beliefs: WrappedBag<Belief>
+    internal var beliefs = Bag<Belief>()
+    
+    public var anticipations: [String: (Term, TruthValue)] = [:]
 
+    init(string: String) {
+        self.init(term: Term(stringLiteral: string))
+    }
+    
     init(term: Term) {
         self.term = term
-        self.termLinks = WrappedBag(_termLinks)
-        self.beliefs = WrappedBag(_beliefs)
     }
     
     // TODO: how much should the input change
@@ -56,21 +57,27 @@ public struct Concept: Item {
 
 extension Concept {
     // returns derived judgements if any
-    func accept(_ j: Judgement, isSubject: Bool = true, derive: Bool) -> [Judgement] {
+    func accept(_ j: Judgement, derive: Bool, store: Bool = true) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
 //        lastInput = j
 
-        var originalPriority: Double?
-        
-        var derived: [Judgement] = []
-
         var j = j
+        var originalPriority: Double?
+        var derived: [Judgement] = []
         
         // revision goes first
         if let b = beliefs.get(j.identifier) {
             originalPriority = b.priority
             var judgement: Judgement
-            if j.evidenceOverlap(b.judgement) {
+            let sameRule: Bool = {
+                let r1 = j.truthValue.rule
+                let r2 = b.judgement.truthValue.rule
+                if (r1 == nil && r2 == nil) {
+                    return false // both user input – revise
+                }
+                return r1 == r2
+            }()
+            if sameRule || j.evidenceOverlap(b.judgement) {
                 judgement = choice(j1: j, j2: b.judgement)
             } else {
                 if j.truthValue.rule == .conversion {
@@ -78,7 +85,7 @@ extension Concept {
                 } else if b.judgement.truthValue.rule == .conversion {
                     judgement = j
                 } else {
-                    judgement = revision(j1: j, j2: b.judgement)
+                    judgement = revision(j1: b.judgement, j2: j)
                 }
             }
             // wait to put back original belief to process another one
@@ -87,71 +94,33 @@ extension Concept {
                 derived.append(judgement)
             }
         }
-        
-        var jflipped: Judgement = j
-        // store symmetrical statement
-        if case .statement(let sub, let cop, let pre) = j.statement, (cop == .equivalence || cop == .similarity) {
-            let flipped: Statement = .statement(pre, cop, sub)
-            jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
-            if beliefs.peek(jflipped.identifier) == nil {
-                derived.append(jflipped)
-            }
-        }
-        
-        // store symmetrical compound
-        if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
-            if terms.count == 2 { // TODO: handle compounds with multiple terms
-                let flipped: Statement = .compound(conn, terms.reversed())
-                jflipped = Judgement(flipped, j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
-                if beliefs.peek(jflipped.identifier) == nil {
-                    derived.append(jflipped)
-                }
-            }
-        }
+
         
         defer {
-            switch j.statement {
-            case .symbol: // TODO: is this accurate?
-                termLinks.put(TermLink(j.statement, 0.9))
-            case .compound(let c, _):
-                if ![.c, .d, .n].contains(c) {
-                    termLinks.put(TermLink(j.statement, 0.9))
-                }
-            case .statement(let subject, _, let predicate):
-                if !j.statement.isTautology {
-                    let term = isSubject ? predicate : subject
-                    termLinks.put(TermLink(term, 0.9))
-                }
-            case .variable:
-                break // TODO: is this accurate?
-            case .operation:
-                break // TODO: is this accurate?
+            if store {
+                // store original belief
+                var b = j + (originalPriority ?? 0.9)
+                b.adjustPriority(derived)
+                beliefs.put(b)
             }
-
-            var b = j + (originalPriority ?? 0.9)
-            b.adjustPriority(derived)
-//            if j.truthValue.rule != .conversion {
-                beliefs.put(b) // store new belief
-//            }
         }
-        
-        // return if no recursion
+
+        /// apply theorems
+        derived.append(contentsOf: Theorems.apply(j))
+        derived = derived.removeDuplicates().filter {
+            beliefs.peek($0.identifier) == nil
+        }
+
+
+        /*
+         * EXIT – return if no recursion
+         */
         guard derive else { return derived }
+        
         
         /// apply two-premise rules
         twoPremiseRules:
-        if var b = beliefs.get() {
-            
-            if b.judgement.statement == jflipped.statement {
-                if let b1 = beliefs.get() {
-                    beliefs.put(b)
-                    b = b1 // use another belief
-                } else {
-                    beliefs.put(b)
-                    break twoPremiseRules
-                }
-            }
-            
+        if var b = beliefs.get() {            
             // apply rules
             let results = Rules.allCases
                 .flatMap { r in
@@ -178,6 +147,14 @@ extension Concept {
             beliefs.peek($0.identifier) == nil
         }//&& $0.statement != j.statement }
 
+        
+        derived.compactMap { $0.represent(j) }
+            .filter {
+                beliefs.peek($0.identifier) == nil
+            }.forEach { jr in
+                derived.append(jr) // add represented belief
+        }
+        
         // TODO: process `values`
         // like rules but modifiable by the system
         // statements using variables
@@ -190,65 +167,18 @@ extension Concept {
     // TODO: account for tense in question answering
     //
     
-    
-    // returns relevant belief or derived judgements if any
-    func answer(_ q: Question) -> [Judgement] {
-        var result: [Judgement] = []
-        switch q.statement {
-        case .statement(let subject, let copula, let predicate):
-            if case .variable(let v) = subject {
-                if case .query = v {
-                    // special
-                    result = answer { s in
-                        switch s {
-                        case .symbol: fallthrough // TODO: is this accurate?
-                        case .compound:
-                            return predicate == s
-                        case .statement(_, let c, let p):
-                            return copula == c && predicate == p
-                        case .variable:
-                            return false // TODO: is this accurate?
-                        case .operation:
-                            return false // TODO: is this accurate?
-                        }
-                    }
-                } // TODO: handle other cases
-            } else if case .variable(let v) = predicate {
-                if case .query = v {
-                    // general
-                    result = answer { s in
-                        switch s {
-                        case .symbol: fallthrough // TODO: is this accurate?
-                        case .compound:
-                            return subject == s
-                        case .statement(let s, let c, _):
-                            return subject == s && copula == c
-                        case .variable:
-                            return false // TODO: is this accurate?
-                        case .operation:
-                            return false // TODO: is this accurate?
-                        }
-                    }
-                }
-            } else { // TODO: handle other cases 
-                result = answer(q.statement)
-                result = result.removeDuplicates()
-            }
-        default:
-            return [] // TODO: handle other cases
-        }
+
+// TODO: handle other cases
 //        if q == lastQuestion &&
 //            Set(result) == lastAnswered {
 //            return []
 //        }
 //        lastQuestion = q
 //        lastAnswered = Set(result)
-        return result
-    }
+//        return result
+//    }
     
-    // MARK: Private
-    
-    private func answer(_ s: Statement) -> [Judgement] {
+    public func answer(_ s: Statement) -> [Judgement] {
         if let b = beliefs.get(s.description) {
             beliefs.put(b) // put back
             return [b.judgement]
@@ -258,37 +188,80 @@ extension Concept {
             beliefs.put(conv + 0.9)
             return [conv]
             
-        } else if let b = beliefs.get() {
-            beliefs.put(b) // put back
-            // all other rules // backwards inference
+        } else {
             
-            let r = Theorems.apply(b.judgement)
-                .filter { beliefs.peek($0.description) == nil }
-
-            if let answer = r.first(where: { $0.statement == s }) {
-                return [answer]
-            }
-            
-            return r +
-             Rules.allCases
-                .flatMap { r in
-                    r.apply((s-*, b.judgement))
-                }
-                .compactMap { $0 }
-        }
-        return [] // no results found
-    }
-    
-    private func answer(_ f: (Statement) -> Bool) -> [Judgement] {
-        let winner = beliefs.items
-            .filter { b in
-                f(b.value.judgement.statement)
+            let answer = beliefs.items.filter { b in
+                let t1 = b.value.judgement.statement
+                return Term.logic_match(t1: t1, t2: s)
             }.map { b in
                 b.value.judgement
             }.max { j1, j2 in
                 let c = choice(j1: j1, j2: j2)
                 return c.statement == j2.statement
             }
-        return winner == nil ? [] : [winner!]
+            
+            if let ans = answer {
+                if let solution = Term.logic_solve(t1: ans.statement, t2: s) {
+                    return [Judgement(solution, ans.truthValue, ans.derivationPath, tense: ans.tense, timestamp: ans.timestamp)]
+                }
+            }
+            
+            // apply term decomposition
+            let judgement = Judgement(s, TruthValue(1.0, reliance)) // TODO: should we handle this better and pass actual timestamp?
+            let decomposed = Theorems.apply(judgement)
+                .filter { beliefs.peek($0.identifier) != nil }
+            if let answer = decomposed.first,
+               let j = beliefs.items.values.first(where: { $0.judgement.statement == answer.statement })?.judgement {
+                let f = and(j.truthValue.f, answer.truthValue.f)
+                let c = and(j.truthValue.c, answer.truthValue.c)
+                let tv = TruthValue(f, c) // intersection
+                return [Judgement(s, tv)]
+            }
+
+            if let b = beliefs.get() {
+                beliefs.put(b) // put back
+                // all other rules // backward inference
+                let theorems = Theorems.apply(b.judgement)
+                    .filter { beliefs.peek($0.identifier) == nil }
+                if let answer = theorems.first(where: { $0.statement == s }) {
+                    return [answer]
+                } else if case .statement(let qs, let qc, _) = s, !(qc == .predictiveImp && qs.description.hasPrefix("?")) {
+                    let backward = Rules.allCases.flatMap { r in
+                        r.backward((s-*, b.judgement))
+                    }.compactMap { $0 }
+                    if !(theorems.isEmpty && backward.isEmpty) {
+                        // .NULL is a separator for derived questions
+                        return [.NULL-*, b.judgement] + theorems + backward
+                    }
+                }
+            }
+        }
+        return [] // no results found
+    }
+}
+
+
+extension Concept {
+    func anticipations(for j: Judgement) -> [String : (Term, TruthValue)] {
+        /// process anticipations
+        let anticipations = beliefs.items.compactMapValues { b in
+            if let ant = b.judgement.statement.anticipation(for: j.statement) {
+                return (ant, b.judgement.truthValue)
+            }
+            return nil
+        }
+        
+//        if !anticipations.isEmpty {
+//            print("anticipate", "from \(term):", anticipations.mapValues({$0}).map({$0.value}))
+//            
+//            let tv = anticipations.first!.value.1
+//            let original = anticipations.first!.value.0 + (tv.f, tv.c, 0)
+//            let c = tv.c / (tv.c + k)
+//            let observed = anticipations.first!.value.0 + (tv.f, c, 0)
+//            let rev = revision(j1: original, j2: observed)
+//            print("anticipate revised", rev)
+//        }
+        
+        return anticipations
     }
 }

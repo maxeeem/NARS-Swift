@@ -19,7 +19,7 @@ infix operator <<|<=> : Copula //  "\<=>"
 infix operator   |<=> : Copula //  "|<=>"
 
 // convenience initializer for Judgement
-public func + (_ s: Statement, fc: (Double, Double, UInt64)) -> Judgement {
+public func + (_ s: Statement, fc: (Double, Double, UInt32)) -> Judgement {
     Judgement(s, TruthValue(fc.0, fc.1), timestamp: fc.2)
 }
 
@@ -39,13 +39,13 @@ public extension Statement {
         case .variable:
             return s + (1.0, 0.9, ETERNAL) // TODO: is this accurate?
         case .operation:
-            return .NULL + (1.0, 0.9, ETERNAL)
+            return s + (1.0, 0.9, ETERNAL)
         }
     }
 }
 
 infix operator -* : Copula
-public func -* (_ s: Statement, _ fc: (Double, Double, UInt64)) -> Judgement {
+public func -* (_ s: Statement, _ fc: (Double, Double, UInt32)) -> Judgement {
     s + fc
 }
 
@@ -80,7 +80,7 @@ public prefix func << (_ s: Term) -> Statement { .NULL <<|=> s } /// it rained
 public prefix func || (_ s: Term) -> Statement { .NULL   |=> s } /// it's raining
 
 extension Statement {
-    static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
+    public static prefix func - (_ s: Statement) -> Statement { .compound(.n, [s]) }
 }
 
 public func  & (_ lhs: Statement, _ rhs: Statement) -> Statement {  +[lhs, rhs] }

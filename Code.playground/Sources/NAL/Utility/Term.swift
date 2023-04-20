@@ -21,6 +21,7 @@ extension Term {
     public static let º = Term.symbol("º") // image placeholder
     public static let NULL = Term.symbol("NULL")
     public static let SELF = Term.symbol("SELF")
+    public static let represent = Term.symbol("represent")
     
     public static func word(_ w: String) -> Term { .symbol(w) }
     public static func `var`(_ s: String) -> Term { .variable(.independent(s)) }
@@ -72,6 +73,10 @@ extension Term {
     
     public static func getTerms(_ t: Term) -> [Term] {
         if t.terms.count == 1 {
+            if case .compound(let c, let terms) = t,
+                c == .intSet || c == .extSet {
+                return terms
+            }
             return t.terms
         }
         return t.terms.flatMap { getTerms($0) }
@@ -82,34 +87,6 @@ extension Term {
 // MARK: Replace
 
 extension Term {
-    func replace(varName: String, termName: String) -> Term {
-        switch self {
-        case .symbol:
-            return self
-        case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(varName: varName, termName: termName)})
-        case .statement(let sub, let cop, let pre):
-            return .statement(sub.replace(varName: varName, termName: termName), cop, pre.replace(varName: varName, termName: termName))
-        case .variable(let vari):
-            switch vari {
-            case .independent(let str):
-                if str == varName {
-                    return .symbol(termName)
-                }
-                return self
-            case .dependent(let str, _):
-                if str == varName {
-                    return .symbol(termName)
-                }
-                return self
-            default: // TODO: how to handle dependent vars?
-                return self
-            }
-        case .operation(let name, let terms):
-            return .operation(name, terms.map{$0.replace(varName: varName, termName: termName)})
-        }
-    }
-    
     func replace(termName: String, indepVarName: String) -> Term {
         switch self {
         case .symbol(let str):
@@ -119,6 +96,10 @@ extension Term {
             return self
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, indepVarName: indepVarName), cop, pre.replace(termName: termName, indepVarName: indepVarName))
+        case .compound(let c, let terms):
+            return .compound(c, terms.map{$0.replace(termName: termName, indepVarName: indepVarName)})
+        case .operation(let op, let terms):
+            return .operation(op, terms.map{ $0.replace(termName: termName, indepVarName: indepVarName)})
         default: // TODO: properly handle all cases
             return self
         }
@@ -131,10 +112,12 @@ extension Term {
                 return .variable(.dependent(depVarName, []))
             }
             return self
-        case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, depVarName: depVarName), cop, pre.replace(termName: termName, depVarName: depVarName))
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
+        case .operation(let op, let terms):
+            return .operation(op, terms.map{$0.replace(termName: termName, depVarName: depVarName)})
         default: // TODO: properly handle all cases
             return self
         }
@@ -147,16 +130,16 @@ extension Term {
                 return term
             }
             return self
-        case .compound(let conn, let terms):
-            return .compound(conn, terms.map{$0.replace(termName: termName, term: term)})
         case .statement(let sub, let cop, let pre):
             return .statement(sub.replace(termName: termName, term: term), cop, pre.replace(termName: termName, term: term))
+        case .compound(let conn, let terms):
+            return .compound(conn, terms.map{$0.replace(termName: termName, term: term)})
+        case .operation(let name, let terms):
+            return .operation(name, terms.map{$0.replace(termName: termName, term: term)})
         case .variable:
             if description == termName {
                 return term
             }
-            return self
-        default: // TODO: properly handle all cases
             return self
         }
     }
@@ -169,17 +152,24 @@ extension Term: ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
         self = {
             if value.first == "{" {
-                return .instance(.symbol(value.word))
+                return .instance(.init(stringLiteral: value.word))
             }
 
             if value.first == "[" {
-                return .property(.symbol(value.word))
+                return .property(.init(stringLiteral: value.word))
             }
 
             if value.first == "?" {
                 let word = value.dropFirst()
                 let name = (word.count == 0) ? nil : String(word)
                 return .variable(.query(name))
+            }
+            
+            if value.first == "$" {
+                let word = value.dropFirst()
+                let name = (word.count == 0) ? "_" : String(word)
+
+                return .variable(.independent(name))
             }
 
             let words = value.words
@@ -224,5 +214,67 @@ extension String {
             words.append(word)
         }
         return words
+    }
+}
+
+extension Term { // TODO: needs additional work
+    static func validate(_ term: Term) -> Term? {
+        switch term {
+            
+            // TODO: difference connectors take exactly 2 terms
+            
+        case .compound(let connector, let terms):
+            if terms.count == 0 {
+                return nil // empty compound
+            }
+            if terms.count == 1 {
+                if connector == .intSet || connector == .extSet {
+                    if case .compound(let c, let ts) = terms[0] {
+                        if ts.count == 1, c == .intSet || c == .extSet {
+                            return nil // prevent nesting i.e. [{x}], {{x}}, [[x]], {[x]}
+                        }
+                    }
+                    return term // instances and properties are allowed one component
+                }
+                if connector == .n {
+                    if case .compound(let c, let ts) = terms[0] {
+                        if ts.count == 1, c == .n {
+                            return nil // prevent double negative
+                        }
+                    }
+                    return term // negation is allowed one component
+                }
+                //                    print("here", term)
+                if connector == .x || connector == .i || connector == .e {
+                    return term
+                }
+                return nil
+            }
+//                    if j1.evidenceOverlap(j2) {
+//                        return nil
+//                    }
+            if connector == .x {
+                return term
+            }
+            if connector == .i || connector == .e {
+                if case .symbol = terms.first {
+                    return term
+                } else if case .variable = terms.first {
+                    return term
+                } else {
+                    return nil
+                }
+            }
+            return connector.connect(terms)
+            
+        case .statement(let subject, let cop, let predicate):
+            if let sub = validate(subject), let pre = validate(predicate) {
+                return .statement(sub, cop, pre)
+            }
+            return nil
+            
+        default:
+            return term
+        }
     }
 }

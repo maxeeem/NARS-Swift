@@ -1,4 +1,3 @@
-import Dispatch
 import PlaygroundSupport
 
 PlaygroundPage.current.needsIndefiniteExecution = true
@@ -6,12 +5,36 @@ PlaygroundPage.current.needsIndefiniteExecution = true
 var verbose = true
 var history = [String]()
 
-let nars = NARS(cycle: false) { s in
-    if !verbose && (s.contains("⏱") || s.contains("💤")) { return }
+var time: UInt32 = 0
+let timeProviderMs: () -> UInt32 = { time += 1 ; return time }
+
+let nars = NARS(timeProviderMs: timeProviderMs) { s in
+    if !verbose && (s.hasPrefix(".") || s.contains("💤")) { return }
     history.append(s); print(s)
 }
 
-Sentence.defaultPause = 1000 // set default pause duration (ms)
+var __ : NARS { nars }
+
+func rep(_ t: Term) -> Term {
+    ç.e_("represent", .º, t)
+}
+
+__.register("ask") { ts in
+    if let question = ts.first {
+        nars.perform(question-?)
+    }
+    return .operation("ask", ts)
+}
+        
+__.perform((*["$x", "dormas"] --> rep("$x" --> "[dormas]")))
+        
+__.perform(*["Sandy", "dormas"])
+
+__.perform((("kiu" --> "$x") --> rep(.operation("ask", ["?kiu" --> "$x"]))))
+                
+__.perform(((*["kiu", "dormas"]) --> rep("?"))-?)
+__.perform(.cycle(20))
+
 
 let robin = Term.word("robin")
 let bird = Term.word("bird")
@@ -21,23 +44,16 @@ let mammal = Term.word("mammal")
 let defaultScript = [
     ("bird" --> "animal")-*, // (1, 0.9)
     ( robin -->  bird   )-*,
-    .pause,
     ( bird  -->  animal )-?,
     ( bird  --> "mammal")-?,
-//    .pause(3000),
-    .cycle,
+    .cycle(100),
     ( bird  -->  mammal )-*(0, 0.9),
     ( bird  -->  mammal )-?,
-    .pause,
+//    .cycle(10),
     ("bird" --> "?")-?,
-    ("?"    -->  mammal)-?,
+    ("?"    -->  mammal)-?
 //    ("?"    --> "?")-?,
-    .pause
 ]
-
-// dispatch execution to background thread
-// to update the user interface
-DispatchQueue.global().async { 
     
 //    var timestamp = Date().timeIntervalSinceReferenceDate
     /*
@@ -54,9 +70,11 @@ DispatchQueue.global().async {
 //    )
     
 //    output.reset()
+
+
+//    nars.perform(defaultScript)
     
-    nars.perform(defaultScript)
-    
+
     //debugPrint(nars.memory)
         
 //    output.reset()
@@ -357,7 +375,6 @@ DispatchQueue.global().async {
     let result = Theorems.apply(test-*)
     print("2.", result)
  */
-}
 
 // MARK: Tests
 // print(history)

@@ -14,6 +14,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "NAL"
+               BuildableName = "NAL"
+               BlueprintName = "NAL"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "NARS"
                BuildableName = "NARS"
                BlueprintName = "NARS"
@@ -41,10 +55,28 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES">
+      codeCoverageEnabled = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "YES">
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "NAL"
+            BuildableName = "NAL"
+            BlueprintName = "NAL"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "NARS"
+            BuildableName = "NARS"
+            BlueprintName = "NARS"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </CodeCoverageTargets>
       <Testables>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            testExecutionOrdering = "random">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "NARS-Tests"
@@ -53,6 +85,12 @@
                ReferencedContainer = "container:">
             </BuildableReference>
             <SkippedTests>
+               <Test
+                  Identifier = "Experimental/testEsperanto2()">
+               </Test>
+               <Test
+                  Identifier = "Experimental/testSample()">
+               </Test>
                <Test
                   Identifier = "Single_Step/test4()">
                </Test>
@@ -73,6 +111,15 @@
                </Test>
                <Test
                   Identifier = "Single_Step/testLogicRules()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testPattern()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testSample()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testSymbolic()">
                </Test>
                <Test
                   Identifier = "Single_Step/testfoo()">

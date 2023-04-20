@@ -3,12 +3,17 @@
 
 public typealias Statement = Term
 
+@dynamicMemberLookup
 public indirect enum Term: Hashable {
     case symbol(String) /// <word>
     case compound(Connector, [Term])
     case statement(Term, Copula, Term)
     case variable(Variable)
     case operation(String, [Term])
+    
+    public static subscript(dynamicMember dynamicMember: String) -> Term {
+        .init(stringLiteral: dynamicMember)
+    }
 }
 
 public enum Copula: String, CaseIterable {
@@ -79,7 +84,7 @@ public struct Judgement: Hashable {
     public let tense: Tense?
     public let derivationPath: [String]
     
-    public var timestamp: UInt64 = 0
+    public var timestamp: UInt32 = 0
     
     // TODO: need to add desireValue
     /*

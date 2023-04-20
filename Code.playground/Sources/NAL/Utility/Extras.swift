@@ -83,16 +83,17 @@ extension Term: CustomStringConvertible {
         case .symbol(let word):
             return word
         case .compound(let connector, let terms):
-            if terms.count == 2 {
-                return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
-            } else if connector == .intSet || connector == .extSet {
+            if connector == .intSet || connector == .extSet {
                 if connector == .intSet {
                     return "[\(terms.map{$0.description}.joined(separator: " "))]"
                 } else {
                     return "{\(terms.map{$0.description}.joined(separator: " "))}"
                 }
+            } else if terms.count == 2 {
+                return "(\(terms[0]) \(connector.rawValue) \(terms[1]))"
             } else if connector == .n {
-                return connector.rawValue + "(\(terms[0].description))"
+                return connector.rawValue +
+                (terms[0].description.hasPrefix("(") ? terms[0].description : "(\(terms[0].description))")
             } else {
                 return "(\(connector.rawValue) \(terms.map{$0.description}.joined(separator: " ")))"
             }
@@ -105,7 +106,8 @@ extension Term: CustomStringConvertible {
             if case .statement = predicate {
                 p = "(\(predicate))"
             }
-            return s + " " + copula.rawValue + " " + p
+            let sub = (s == "NULL") ? "" : s + " "
+            return sub + copula.rawValue + " " + p
         case .variable(let variable):
             switch variable {
             case .independent(let word):
@@ -121,7 +123,7 @@ extension Term: CustomStringConvertible {
                 return (word == nil) ? "?" : "?\(word!)"
             }
         case .operation(let name, let terms):
-            return name + terms.map{$0.description}.joined(separator: " ")
+            return "^\(name) " + terms.map{$0.description}.joined(separator: " ")
         }
     }
 }
@@ -135,8 +137,10 @@ extension Evidence: CustomStringConvertible {
 extension TruthValue: CustomStringConvertible {
     public var description: String {
         let r = rule == nil ? "." : "\(rule!)"
-        let f = "\(f)".count == 3 ? "\(f)0" : "\(f)"
-        let c = "\(c)".count == 3 ? "\(c)0" : "\(c)"
+        let rf = rounded(f)
+        let f = "\(rf)".count == 3 ? "\(rf)0" : "\(rf)"
+        let rc = rounded(c)
+        let c = "\(rc)".count == 3 ? "\(rc)0" : "\(rc)"
         return "%\(f);\(c)%\(r)"
     }
 }

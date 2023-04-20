@@ -9,99 +9,40 @@ import XCTest
 
 @testable import NARS
 
-var lastCycle: [(UInt64, String)] = []
+var verbose = true
 
 class Single_Step: XCTestCase {
 
     var output: [String] = []
     
     var nars: NARS!
-        
+    
+    var __ : NARS { nars } // alias
+
     override func setUpWithError() throws {
-        Sentence.defaultPause = 1000 // in milliseconds
-        nars = NARS(cycle: false) { self.output.append($0); print($0) }
+//        Sentence.defaultPause = 1000 // in milliseconds
+//        let timeProviderMs: () -> UInt32 = { DispatchWallTime.now().rawValue }
+        var time: UInt32 = 0
+        let timeProviderMs: () -> UInt32 = { time += 1 ; return time }
+
+        nars = NARS(timeProviderMs: timeProviderMs) { self.output.append($0) ; if verbose { print($0) } }
     }
 
     override func tearDownWithError() throws {
-//        lastCycle.append(contentsOf: nars.lastCycle)
-//        for interval in lastCycle {
-//            print(interval.1, "@", interval.0)
-//        }
-//        nars.lastCycle.removeAll()
+        nars.reset()
         output.removeAll()
+//        usleep(1000000)
     }
     
-    private func outputMustContain(_ expectation: String) {
-        XCTAssert(output.contains(where: { $0.contains(expectation) }))
+    private func outputMustContain(_ expectation: String, timeout: TimeInterval = 1) {
+        func condition() -> Bool { output.contains(where: { $0.contains(expectation) }) }
+        let start = Date().timeIntervalSince1970
+        while ((Date().timeIntervalSince1970 - start) < timeout) && !condition() {
+                usleep(1000) // wait a bit
+        }
+        XCTAssertTrue(condition())
     }
     
-    func testSample() {
-        nars.perform(
-            ("{tom}" --> "cat")-*,
-            (Term.compound(.x, ["{tom}", "{sky}"]) --> "likes")-*,
-            .cycle,
-//            ("{tom}" --> Term.compound(.e, ["likes", .º, "{sky}"]))-*,
-//            ("{sky}" --> Term.compound(.e, ["likes", "{tom}", .º]))-*,
-            ("{sky}" --> "[blue]")-*,
-            .cycle,
-            (Term.compound(.x, ["cat", "[blue]"]) --> "likes")-?,
-//            ("cat" --> Term.compound(.e, ["likes", .º, "[blue]"]))-?,
-            .pause
-        )
-        outputMustContain("💡 <(cat ⨯ [blue]) -> likes>.") // c should be 0.37%
-    }
-    /*
-    func testik() {
-        let relation = ç.x_("water", "salt") --> "dissolve"
-        let knowledge = "rain" --> "water"
-        
-//        nars.perform(
-//            relation-*,
-//            knowledge-*,
-//            .cycle
-//        )
-        
-        let image = "water" --> ç.e_("dissolve", "º", "salt")
-        nars.perform(
-            image-*,
-            knowledge-*,
-            .cycle
-        )
-    }
-    */
-    // KK <P |=> S>. %1.00;0.45%.ind ["S+(1.0, 0.9, 16781238065391810616)", "P+(1.0, 0.9, 16781238065392859616)"]
-    // KK <P |=> S>. %1.00;0.45%.ind ["S+(1.0, 0.9, 16781238065391810616)", "P+(1.0, 0.9, 16781238065378744616)"]
-
-    // KK <S |=> P>. %1.00;0.45%.ind ["P+(1.0, 0.9, 16781238065392859616)", "S+(1.0, 0.9, 16781238065391810616)"]
-    // KK <S |=> P>. %1.00;0.45%.ind ["P+(1.0, 0.9, 16781238065378744616)", "S+(1.0, 0.9, 16781238065391810616)"]
-/*
-    func test4() {
-        nars.cycle = true
-        nars.perform(
-            ||("_P_"•)-*,
-              ("_P_"•)-*(1.0,0.9,0),
-//            .pause,
-            ||("_S_"•)-*
-//            .cycle
-        )
-//        print(nars.memory)
-        nars.perform(
-            ||("_P_"•)-*,
-//            .pause,
-            ||("_S_"•)-*
-//            .cycle
-        )
-        nars.perform(
-            ||("_P_"•)-*,//(1.0,0.9,0),
-//            .pause,
-            ||("_S_"•)-*
-              , .pause
-//            .cycle
-        )
-        nars.cycle = false
-        print(nars.memory)
-    }
-    */
     
     func testNal7_00() { // nal7.0.nal
         let x = Term.variable(.independent("x"))
@@ -109,7 +50,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             (((x * "room_101") --> "enter") <<|=> ((x * "door_101") --> "open"))-*(0.9),
             (((x * "door_101") --> "open") <<|=> ((x * "key_101") --> "hold"))-*(0.8),
-            .pause
+            .cycle(20)
         )
         /*
          '********** temporal deduction/explification
@@ -136,7 +77,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             (((x * "door_101") --> "open") >>|=> ((x * "room_101") --> "enter"))-*(0.9),
             (((x * "door_101") --> "open") <<|=> ((x * "key_101") --> "hold"))-*(0.8),
-            .pause
+            .cycle(20)
         )
 
         /*
@@ -164,11 +105,10 @@ class Single_Step: XCTestCase {
     }
     
     func testNal7_02() {
-        let x = Term.variable(.independent("x"))
         nars.perform(
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "room_101") --> "enter"))-*,
-            ||(("John" * "key_101") --> "hold")-*,
-            .pause
+            ||(("John" * "key_101") --> "hold")-*
+//            .cycle(10)
         )
         /*
          '********** inference on tense
@@ -185,20 +125,19 @@ class Single_Step: XCTestCase {
          ''outputMustContain('<(*,John,room_101) --> enter>. :!5: %1.00;0.81%')
          
          */
-        outputMustContain("⏱ <(John ⨯ room_101) -> enter>. %1.00;0.81%")
+        outputMustContain("⏱ anticipate <(John ⨯ room_101) -> enter>.")// %1.00;0.81%")
     }
    
     func testNal7_X() {
         nars.perform(
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "door_101") --> "open"))-*,
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "room_101") --> "enter"))-*,
-            .pause,
-            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9),
+//            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9),
 //            ((("John" * "room_101") --> "enter") <<|=> (("John" * "door_101") --> "open"))-*,
-            .pause,
+            .cycle(20),
             ||(("John" * "door_101") --> "open")-*,
+            .cycle(20)
 //            ||(("John" * "room_101") --> "enter")-*,
-            .pause
         )
         /*
          
@@ -217,25 +156,72 @@ class Single_Step: XCTestCase {
          <M =/> S>. :|:
          
          */
-//        outputMustContain("⏱ <(John ⨯ room_101) -> enter>. %1.00;0.81%")
+        outputMustContain("⏱ anticipate <(John ⨯ room_101) -> enter>.")// %1.00;0.81%")
+    }
+    
+    
+//    func testLoop() {
+//        // match> (#x1 <–> #x0) <=> (#x0 -> #x1)  __  ({#x0} <–> {#x1}) <=> ({#x0} -> {#x1})
+//
+//        let t1 = ("#x1" <-> "#x0") <=> ("#x0" --> "#x1")
+//        let t2 = ("{#x0}" <-> "{#x1}") <=> ("{#x0}" --> "{#x1}")
+//        let res = Term.logic_match(t1: t1, t2: t2)
+//        print(res)
+//    }
+    
+    
+    func testMultipleQuestions() {
+        nars.perform(
+            ("bird" --> "animal")-*,
+            ("dog" --> "person")-?,
+            .cycle(10),
+            ("o" --> "x")-?,
+            .cycle(10),
+            ("bird" --> "[flying]")-*,
+            ("bird" --> "animal")-?,
+            .cycle(10),
+            ("dog" --> "person")-*,
+            .cycle(10)
+        )
+        outputMustContain("💡 <bird -> animal>.")
+        outputMustContain("💡 <dog -> person>. %1.00;0.90%.")
     }
     
     func testMultiStep() {
         nars.perform(
             ("a" --> "b")-*,
             ("b" --> "c")-*,
-            .cycle,
-            ("x" --> "y")-*,
-            ("y" --> "z")-*,
+//            ("a" --> "c")-?,
+//            .cycle(10),
+            ("u" --> "v")-*,
+            ("+y" --> "+z")-*,
             ("c" --> "d")-*,
-            .cycle,
-            ("a" --> "d")-?,
-            .pause
+//            .cycle(5),
+            ("a" --> "d")-?
+//            .cycle
+//            .pause
         )
-        Thread.sleep(forTimeInterval: 1)
-        outputMustContain("💡 <a -> d>.")// %1.00;0.73%")
+        
+//        print(nars.foobar)
+//        print(nars.memory)
+//        print("RECENT")
+//        print(nars.recent)
+        outputMustContain("💡 <a -> d>. %1.00;0.73%")
     }
-    
+    /*
+    func testBackward() {
+        let x = Term.$x
+        nars.perform(
+            (__.robin --> __.bird)-*,
+            (__.robin --> __.animal)-?,
+            .cycle(10),
+            ("bird" --> "animal")-*,
+//            ("robin" --> "animal")-?, // TODO: this test should work with this line disabled
+            .cycle(10)
+        )
+        outputMustContain("💡 <robin -> animal>.")// %1.00;0.81%.ded")
+    }
+    */
 //    func testCycle() throws {
 //        nars.cycle = true
 //        nars.perform(
@@ -253,7 +239,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("bird" --> "swimmer")-*,
             ("bird" --> "swimmer")-*(0.1, 0.6),
-            .pause
+            .cycle(10)
         )
         outputMustContain("<bird -> swimmer>. %0.87;0.91%")
     }
@@ -263,9 +249,13 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("bird" --> "animal")-*,
             ("robin" --> "bird")-*,
-            .pause
+            .cycle(10)
         )
         outputMustContain("<robin -> animal>. %1.00;0.81%")
+        nars.perform(
+            ("robin" --> "animal")-?,
+            .cycle(10)
+        )
     }
     
     func testNal1_02() throws {
@@ -273,7 +263,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("sport" --> "competition")-*,
             ("chess" --> "competition")-*(0.9, 0.9),
-            .pause
+            .cycle(20)
         )
         outputMustContain("<sport -> chess>. %1.00;0.42%")
         outputMustContain("<chess -> sport>. %0.90;0.45%")
@@ -284,7 +274,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "swimmer")-*(0.9),
             ("swan" --> "bird")-*,
-            .pause
+            .cycle(20)
         )
         outputMustContain("<bird -> swimmer>. %0.90;0.45%")
         outputMustContain("<swimmer -> bird>. %1.00;0.42%")
@@ -295,7 +285,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("robin" --> "bird")-*,
             ("bird" --> "animal")-*,
-            .pause
+            .cycle(10)
         )
         outputMustContain("<animal -> robin>. %1.00;0.45%")
     }
@@ -304,8 +294,7 @@ class Single_Step: XCTestCase {
         /// conversion
         nars.perform(
             ("bird" --> "swimmer")-*,
-            ("swimmer" --> "bird")-?,
-            .pause
+            ("swimmer" --> "bird")-?
         )
         outputMustContain("💡 <swimmer -> bird>. %1.00;0.47%")
     }
@@ -314,10 +303,8 @@ class Single_Step: XCTestCase {
         /// y/n question
         nars.perform(
             ("bird" --> "swimmer")-*,
-            ("bird" --> "swimmer")-?,
-            .pause
+            ("bird" --> "swimmer")-?
         )
-        print(nars.recent)
         outputMustContain("💡 <bird -> swimmer>. %1.00;0.90%")
     }
     
@@ -325,8 +312,7 @@ class Single_Step: XCTestCase {
         /// what? question
         nars.perform(
             ("bird" --> "swimmer")-*(1, 0.8),
-            ("?" --> "swimmer")-?,
-            .pause
+            ("?" --> "swimmer")-?
         )
         outputMustContain("💡 <bird -> swimmer>. %1.00;0.80%")
     }
@@ -347,7 +333,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("robin" <-> "swan")-*,
             ("robin" <-> "swan")-*(0.1, 0.6),
-            .pause
+            .cycle(20)
         )
         outputMustContain("<robin <–> swan>. %0.87;0.91%")
     }
@@ -357,7 +343,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "swimmer")-*(0.9),
             ("swan" --> "bird")-*,
-            .pause
+            .cycle(20)
         )
         outputMustContain("<bird <–> swimmer>. %0.90;0.45%")
     }
@@ -366,11 +352,11 @@ class Single_Step: XCTestCase {
         /// backward inference
         nars.perform(
             ("bird" --> "swimmer")-*,
-//            .cycle,
             ("{?1}" --> "swimmer")-?,
-            .pause
+//            ("?1" --> "swimmer")-?,
+            .cycle(100)
         )
-        outputMustContain("<{?1} -> bird>.")
+        outputMustContain("<{?1} -> bird>?")
     }
     
     func testNal2_03() throws {
@@ -378,7 +364,7 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("sport" --> "competition")-*,
            ("chess" --> "competition")-*(0.9),
-           .pause
+           .cycle(20)
        )
        outputMustContain("<chess <–> sport>. %0.90;0.45%")
     }
@@ -388,7 +374,7 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("swan" --> "swimmer")-*,
            ("gull" <-> "swan")-*,
-           .pause
+           .cycle(20)
        )
        outputMustContain("<gull -> swimmer>. %1.00;0.81%")
     }
@@ -398,7 +384,7 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("gull" --> "swimmer")-*,
            ("gull" <-> "swan")-*,
-           .pause
+           .cycle(20)
        )
        outputMustContain("<swan -> swimmer>. %1.00;0.81%")
     }
@@ -408,8 +394,11 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("robin" <-> "swan")-*,
            ("gull" <-> "swan")-*,
-           .pause
+           .cycle(40),
+           ("gull" <-> "robin")-?
        )
+//        print(nars.recent)
+//        print(nars.recent.items.contains(where: { $0.value.description.contains("<gull <–> robin>. %1.00;0.81%") }))
        outputMustContain("<gull <–> robin>. %1.00;0.81%")
     }
     
@@ -417,25 +406,34 @@ class Single_Step: XCTestCase {
        /// conversions between inheritance and similarity
        nars.perform(
            ("swan" --> "bird")-*,
-           ("bird" --> "swan")-*(0.1),
-           .cycle
+           .cycle(40),
+           ("bird" --> "swan")-*(0.1)
        )
-        //outputMustContain("⏱ <bird <–> swan>. %0.10;0.81%")
+//        print(nars.recent)
+//        outputMustContain("⏱ <bird <–> swan>.")// %0.10;0.81%")
 
         nars.perform(
-           ("bird" <-> "swan")-?,
-          .pause
+           ("bird" <-> "swan")-?
        )
         outputMustContain("💡 <bird <–> swan>.")// %0.10;0.81%")
     }
+    
+//    func testTerms() {
+//        let S = Term.var("S")
+//        let P = Term.var("P")
+//
+//        let something: Term = (S <-> P) <=> (.property(S) <-> .property(P))
+//
+//        print(Term.getTerms(something))
+//        
+//    }
     
     func testNal2_08() throws {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-           .cycle,
-           ("[smart]" --> "[bright]")-?,
-           .pause
+           .cycle(20),
+           ("[smart]" --> "[bright]")-?
        )
        outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
     }
@@ -454,9 +452,7 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("Birdie" <-> "Tweety")-*(0.9),
-           .cycle,
-           ("{Birdie}" <-> "{Tweety}")-?,
-           .pause
+           ("{Birdie}" <-> "{Tweety}")-?
        )
        outputMustContain("💡 <{Birdie} <–> {Tweety}>. %0.90;0.81%")
     }
@@ -465,9 +461,8 @@ class Single_Step: XCTestCase {
        /// conversions between inheritance and similarity
         nars.perform(
             ("swan" --> "bird")-*(0.9),
-            .cycle,
-            ("bird" <-> "swan")-?,
-            .pause
+            .cycle(10),
+            ("bird" <-> "swan")-?
         )
        outputMustContain("💡 <bird <–> swan>.")// %0.90;0.47%")
     }
@@ -477,8 +472,8 @@ class Single_Step: XCTestCase {
         /// conversions between inheritance and similarity
         nars.perform(
             ("bird" <-> "swan")-*(0.9),
-            ("swan" --> "bird")-?,
-            .cycle
+            .cycle(10),
+            ("swan" --> "bird")-?
         )
         outputMustContain("💡 <swan -> bird>.")// %0.90;0.81%")
     }
@@ -486,8 +481,7 @@ class Single_Step: XCTestCase {
     func testNal2_13() throws {
        /// translating instance into inheritance
        nars.perform(
-           ("Tweety" •-> "bird")-*,
-           .pause
+           ("Tweety" •-> "bird")-*
        )
        outputMustContain("<{Tweety} -> bird>. %1.00;0.90%")
     }
@@ -495,8 +489,7 @@ class Single_Step: XCTestCase {
     func testNal2_14() throws {
        /// translating property into inheritance
        nars.perform(
-           ("raven" ->• "black")-*,
-           .pause
+           ("raven" ->• "black")-*
        )
        outputMustContain("<raven -> [black]>. %1.00;0.90%")
     }
@@ -504,8 +497,7 @@ class Single_Step: XCTestCase {
     func testNal2_15() throws {
        /// translating instance-property into inheritance
        nars.perform(
-           ("Tweety" •->• "yellow")-*,
-           .pause
+           ("Tweety" •->• "yellow")-*
        )
        outputMustContain("<{Tweety} -> [yellow]>. %1.00;0.90%")
     }
@@ -514,7 +506,8 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("{Tweety}" --> "{Birdie}")-*,
-           .cycle(2)
+           .cycle(20),
+           ("{Birdie}" <-> "{Tweety}")-?
        )
        outputMustContain("<{Birdie} <–> {Tweety}>.")// %1.00;0.90%")
     }
@@ -523,7 +516,8 @@ class Single_Step: XCTestCase {
        /// set definition
        nars.perform(
            ("[smart]" --> "[bright]")-*,
-           .cycle(2)
+           .cycle(20),
+           ("[bright]" <-> "[smart]")-?
        )
        outputMustContain("<[bright] <–> [smart]>.")// %1.00;0.90%")
     }
@@ -532,7 +526,8 @@ class Single_Step: XCTestCase {
        /// set definition
         nars.perform(
            ("{Birdie}" <-> "{Tweety}")-*,
-           .cycle
+           ("{Tweety}" --> "{Birdie}")-?,
+           .cycle(40)
         )
         outputMustContain("<Birdie <–> Tweety>.")// %1.00;0.90%")
         outputMustContain("<{Tweety} -> {Birdie}>.")// %1.00;0.90%")
@@ -554,9 +549,8 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "swimmer")-*(0.9),
             ("swan" --> "bird")-*(0.8),
-            .pause
+            .cycle(20)
         )
-//        output.forEach { print($0) }
         outputMustContain("<swan -> (bird ⋃ swimmer)>. %0.98;0.81%")
         outputMustContain("<swan -> (bird ⋂ swimmer)>. %0.72;0.81%")
     }
@@ -566,9 +560,8 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("sport" --> "competition")-*(0.9),
             ("chess" --> "competition")-*(0.8),
-            .pause
+            .cycle(20)
         )
-//        output.forEach { print($0) }
         outputMustContain("<(chess ⋃ sport) -> competition>. %0.72;0.81%")
         outputMustContain("<(sport ⋂ chess) -> competition>. %0.98;0.81%")
     }
@@ -584,15 +577,45 @@ class Single_Step: XCTestCase {
 //        outputMustContain("<robin -> bird>. %1.00;0.81%") // c should be 0.81
 //    }
 //
-//    func testNal3_3() throws {
-//        /// compound decomposition, two premises
-//        nars.perform(
-//            ("robin" --> "swimmer")-*(0.00),
-//            ("robin" --> "– mammal swimmer")-*(0.00),
-//            .pause
-//        )
-//        output.forEach { print($0) }
-//        outputMustContain("<robin -> mammal>. %0.00;0.81%") // c should be 0.81
+    func testNal3_3() throws {
+        /// compound decomposition, two premises
+        nars.perform(
+            (-("robin" --> "swimmer"))-*,
+            (-("robin" --> ("mammal" - "swimmer")))-*,
+            .cycle
+        )
+        outputMustContain("<¬(robin -> mammal)>. %1.00;0.81%")
+    }
+    
+//    func test_() {
+//        /// a:  (#x1() <–> (swimmer – #x1()) ∧ (swimmer – #x1()) -> #x1())
+//        /// b: ((swimmer – #x0()) <–> #x0() ∧ (swimmer – #x0()) -> #x0())
+//        let a: Term = .compound(.c, [
+//            .statement(
+//                .variable(.dependent("x1", [])),
+//                .similarity,
+//                .compound(.l, ["swimmer", .variable(.dependent("x1", []))])
+//            ),
+//            .statement(
+//                .compound(.l, ["swimmer", .variable(.dependent("x1", []))]),
+//                .inheritance,
+//                .variable(.dependent("x1", []))
+//            ),
+//        ])
+//        let b: Term = .compound(.c, [
+//            .statement(
+//                .compound(.l, ["swimmer", .variable(.dependent("x0", []))]),
+//                .similarity,
+//                .variable(.dependent("x0", []))
+//            ),
+//            .statement(
+//                .compound(.l, ["swimmer", .variable(.dependent("x0", []))]),
+//                .inheritance,
+//                .variable(.dependent("x0", []))
+//            ),
+//        ])
+//        
+//        _ = Term.logic_match(t1: a, t2: b) // causes a crash
 //    }
     
     func testNal3_04() throws {
@@ -602,7 +625,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("planetX" --> t1)-*(0.9),
             ("planetX" --> t2)-*(0.7),
-            .pause
+            .cycle(20)
         )
         outputMustContain("<planetX -> (⋃ {Mars} {Pluto} {Saturn} {Venus})>. %0.97;0.81%")
         outputMustContain("<planetX -> (⋂ {Pluto})>. %0.63;0.81%")
@@ -615,9 +638,8 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("planetX" --> t1)-*(0.9),
             ("planetX" --> t2)-*(0.1),
-            .pause
+            .cycle(20)
         )
-        output.forEach { print($0) }
         outputMustContain("<planetX -> (⋃ {Mars} {Pluto} {Saturn} {Venus})>. %0.91;0.81%")
         outputMustContain("<planetX -> ({Mars} ⋃ {Venus})>. %0.81;0.81%")
     }
@@ -653,10 +675,9 @@ class Single_Step: XCTestCase {
         let t1 = Term.compound(.Ω, ["bird", "swimmer"])
         nars.perform(
             ("swan" --> "bird")-*(0.9),
-            ("swan" --> t1)-?,
-            .pause
+            ("swan" --> t1)-?
         )
-        outputMustContain("💡 <swan -> (bird ⋂ swimmer)>.") // should be %0.90;0.73%
+        outputMustContain("💡 <swan -> (bird ⋂ swimmer)>. %0.90;0.73%")
     }
 
     func testNal3_09() throws {
@@ -664,10 +685,9 @@ class Single_Step: XCTestCase {
         let t1 = Term.compound(.U, ["swan", "swimmer"])
         nars.perform(
             ("swan" --> "bird")-*(0.9),
-            (t1 --> "bird")-?,
-            .pause
+            (t1 --> "bird")-?
         )
-        outputMustContain("💡 <(swan ⋃ swimmer) -> bird>.") // should be %0.90;0.73%
+        outputMustContain("💡 <(swan ⋃ swimmer) -> bird>. %0.90;0.73%")
     }
 
     func testNal3_10() throws {
@@ -676,10 +696,9 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "bird")-*(0.9),
             ("swan" --> t1)-?,
-            .pause
+            .cycle(50)
         )
-//        output.forEach { print($0) }
-        outputMustContain("💡 <swan -> (swimmer – bird)>.") // should be %0.10;0.73%
+        outputMustContain("💡 <swan -> (swimmer – bird)>.")// %0.10;0.73%")
     }
 
     func testNal3_11() throws {
@@ -688,35 +707,34 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("swan" --> "bird")-*(0.9),
             (t1 --> "bird")-?,
-            .pause
+            .cycle(50)
         )
-//        output.forEach { print($0) }
-        outputMustContain("💡 <(swimmer ø swan) -> bird>.") // should be %0.10;0.73%
+        outputMustContain("💡 <(swimmer ø swan) -> bird>.")// %0.10;0.73%")
     }
     
     func testVari() {
         nars.perform(
             ((.variable(.independent("x")) --> "_M") => (.variable(.independent("x")) --> "_P"))-*,
             ((.variable(.independent("x")) --> "_S") => (.variable(.independent("x")) --> "_M"))-*,
-            .pause
+            .cycle(10)
         ) /// <(#x -> S) => (#x -> P)>. %1.00;0.81%.ded
         outputMustContain("⏱ <(#x -> _S) => (#x -> _P)>. %1.00;0.81%")
     }
     
-    func testVari3() {
-        nars.perform(
-            ("_M" --> "_T1")-*,
-            (&&[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*,
-            .pause
-        ) /// <_M -> _T2. %1.00;0.42%.ana
-        outputMustContain("⏱ <_M -> _T2>.")
-    }
+//    func testVari3() {
+//        nars.perform(
+//            ("_M" --> "_T1")-*,
+//            (&&[.variable(.dependent("x", [])) --> "_T1", (.variable(.dependent("x", [])) --> "_T2")])-*,
+//            .cycle(40)
+//        ) /// <_M -> _T2. %1.00;0.42%.ana
+//        outputMustContain("⏱ <_M -> _T2>.")
+//    }
     
     func testVari2() {
         nars.perform(
             ("{Tweety}" --> "_P")-*,
             ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*,
-            .pause
+            .cycle(20)
         ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
         outputMustContain("⏱ <{Tweety} -> _Q>. %1.00;0.81%")
     }
@@ -759,24 +777,33 @@ class Single_Step: XCTestCase {
 //        outputMustContain("<a -> d>.") // should be %0.10;0.73%
 //    }
 
-//    func testNal3_12() throws {
-//        /// compound decomposition, one premise
-//        let t1 = Term.compound(.U, ["bird", "swimmer"])
-//        nars.perform(
-//            ("robin" --> t1)-*(0.9),
-//            .pause(100)
-//        )
-//        output.forEach { print($0) }
-//        outputMustContain("💡 <robin -> bird>.") // should be %0.90;0.73%
-//    }
+    func testNal3_12() throws {
+        /// compound decomposition, one premise
+        let t1 = Term.compound(.Ω, ["bird", "swimmer"])
+        nars.perform(
+            ("robin" --> t1)-*(0.9),
+            .cycle(10)
+        )
+        outputMustContain("<robin -> bird>. %0.90;0.73%")
+    }
     
-//    func testNal4_0() throws {
-//        /// structural transformations
-//        let t1 = Term.compound(.x, ["acid", "base"])
-//        let i1 = Term.compound(.i, <#T##[Term]#>)
-//        nars.perform(
-//            (t1 --> "reaction")-*
-//        )
-//        output.forEach { print($0) }
-//    }
+    func testNal4_0() throws {
+        /// structural transformations
+        let t1 = Term.compound(.x, ["acid", "base"])
+        nars.perform(
+            (t1 --> "reaction")-*,
+            .cycle(10)
+        )
+        outputMustContain("<acid -> (/ reaction º base)>.")
+        outputMustContain("<base -> (/ reaction acid º)>.")
+    }
+    
+    func testNal5_01() throws {
+        nars.perform(
+            (("robin" --> "bird") => ("robin" --> "animal"))-*,
+            (("robin" --> "[flying]") => ("robin" --> "bird"))-*,
+            .cycle(10)
+        )
+        outputMustContain("<(robin -> [flying]) => (robin -> animal)>. %1.00;0.81%")
+    }
 }

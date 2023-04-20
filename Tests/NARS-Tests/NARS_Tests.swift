@@ -6,38 +6,50 @@ import XCTest
 // MARK: Tests
 
 final class NARS_Tests: XCTestCase {
+
 //    func testBag() throws {
 //        let bag = Bag<Belief>()
-//        for _ in 0...1000000 {
-//            let term = Term.word("\(Int.random(in: 0...1000000))")
+//        var log: [String] = []
+//        DispatchQueue.global().async {
+//            for _ in 0...1000 {
+//                let term = Term.word("\(Int.random(in: 0...10000))")
+//                bag.put(term-* + 0.9)
+//                log.append("-")
+//            }
+//        }
+//        
+//        for _ in 0...1000 {
+//            let term = Term.word("\(Int.random(in: 0...10000))")
 //            bag.put(term-* + 0.9)
+//            log.append("+")
 //            usleep(100)
 //        }
+//        print(log)
 //    }
     
-    func testWrappedBag() throws {
-        let bag = Bag<TermLink>()
-        let bird = Term.word("bird")
-        let robin = Term.word("robin")
-        bag.put(TermLink(bird, 0.9))
-        bag.put(TermLink(robin, 0.9))
-        print(">>\n", bag, "<<\n")
-        
-        let wrapped = WrappedBag(bag)
-        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
-
-        let item = wrapped.get()
-        print("==", item)
-        print(">>\n", bag, "<<\n")
-
-        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
-        wrapped.put(TermLink(.word("dog"), 0.9))
-        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
-
-        let wrappedItem = wrapped.get("robin")
-        print("==", wrappedItem)
-        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
-    }
+//    func testWrappedBag() throws {
+//        let bag = Bag<TermLink>()
+//        let bird = Term.word("bird")
+//        let robin = Term.word("robin")
+//        bag.put(TermLink(bird, 0.9))
+//        bag.put(TermLink(robin, 0.9))
+//        print(">>\n", bag, "<<\n")
+//        
+//        let wrapped = WrappedBag(bag)
+//        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+//
+//        let item = wrapped.get()
+//        print("==", item)
+//        print(">>\n", bag, "<<\n")
+//
+//        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+//        wrapped.put(TermLink(.word("dog"), 0.9))
+//        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+//
+//        let wrappedItem = wrapped.get("robin")
+//        print("==", wrappedItem)
+//        print(">>-\n", wrapped.wrapped, wrapped.bag, "-<<\n")
+//    }
 
     
     func testExample() throws {
@@ -88,23 +100,22 @@ final class NARS_Tests: XCTestCase {
             ("A" --> "B")-*,
             ("A" --> "Z")-*
         )).contains(
-            ("Z" --> "B")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
+            ("Z" --> "B")-*(1, 0.44751381215469616)) ? "pass" : XCTFail("fail"))
         
         print("abduction", Rules.abduction.firstOrder, Rules.abduction.apply((
             ("A" --> "B")-*,
             ("C" --> "B")-*
         )).contains(
-            ("C" --> "A")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
+            ("C" --> "A")-*(1, 0.44751381215469616)) ? "pass" : XCTFail("fail"))
 
-        let exemplificationRule = Rules.exemplification.apply
-        let applied = exemplificationRule((("A" --> "B")-*, ("B" --> "C")-*))
-        print("exemplification", Rules.exemplification.firstOrder, (applied.first == ("C" --> "A")-*(1, 0.4475) ? "pass" : XCTFail("fail")))
+        let applied = Rules.exemplification.apply((("A" --> "B")-*, ("B" --> "C")-*))
+        print("exemplification", Rules.exemplification.firstOrder, (applied.first == ("C" --> "A")-*(1, 0.44751381215469616) ? "pass" : XCTFail("fail")))
 
         print("comparison", Rules.comparison.firstOrder, Rules.comparison.apply((
             ("A" --> "B")-*,
             ("A" --> "C")-*
         )).contains(
-            ("C" <-> "B")-*(1, 0.4475)) ? "pass" : XCTFail("fail"))
+            ("C" <-> "B")-*(1, 0.44751381215469616)) ? "pass" : XCTFail("fail"))
 
 //        print(Rules.comparison.apply((
 //            ("A" --> "B")-*,

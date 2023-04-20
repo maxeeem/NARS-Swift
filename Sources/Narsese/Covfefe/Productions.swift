@@ -189,7 +189,7 @@ extension Production: Hashable {
 
 extension Production: CustomStringConvertible {
 	public var description: String {
-		return "\(pattern.name) --> \(production.map{$0.description}.joined(separator: " "))"
+		return "\(pattern.name) ~~> \(production.map{$0.description}.joined(separator: " "))"
 	}
 }
 
@@ -210,7 +210,7 @@ precedencegroup ProductionPrecedence {
 	lowerThan: AdditionPrecedence
 }
 
-infix operator --> : ProductionPrecedence
+infix operator ~~> : ProductionPrecedence
 
 /// Generates a production from a given non-terminal and produced sequence of symbols
 ///
@@ -218,7 +218,7 @@ infix operator --> : ProductionPrecedence
 ///   - lhs: Non-terminal pattern
 ///   - rhs: Produced string of symbols
 /// - Returns: Production with the given pattern and generated result
-public func --> (lhs: NonTerminal, rhs: ProductionString) -> Production {
+public func ~~> (lhs: NonTerminal, rhs: ProductionString) -> Production {
 	return Production(pattern: lhs, production: rhs)
 }
 
@@ -228,7 +228,7 @@ public func --> (lhs: NonTerminal, rhs: ProductionString) -> Production {
 ///   - lhs: Non-terminal pattern
 ///   - rhs: Collection of possible produced strings of symbols
 /// - Returns: Productions with the given pattern and generated results
-public func --> (lhs: NonTerminal, rhs: ProductionResult) -> [Production] {
+public func ~~> (lhs: NonTerminal, rhs: ProductionResult) -> [Production] {
 	return rhs.elements.map { producedString in
 		return Production(pattern: lhs, production: producedString)
 	}
@@ -240,7 +240,7 @@ public func --> (lhs: NonTerminal, rhs: ProductionResult) -> [Production] {
 ///   - lhs: Non-terminal pattern
 ///   - rhs: Produced symbol
 /// - Returns: Production with the given pattern generating the given symbol
-public func --> (lhs: NonTerminal, rhs: Symbol) -> Production {
+public func ~~> (lhs: NonTerminal, rhs: Symbol) -> Production {
 	return Production(pattern: lhs, production: [rhs])
 }
 

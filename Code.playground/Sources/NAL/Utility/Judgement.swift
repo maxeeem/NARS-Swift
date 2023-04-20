@@ -14,20 +14,17 @@ public extension Array where Element == Judgement {
 }
 
 extension Judgement {
-    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String] = [], tense: Tense? = nil, timestamp: UInt64 = 0) {
+    public init(_ statement: Statement, _ truthValue: TruthValue, _ derivationPath: [String] = [], tense: Tense? = nil, timestamp: UInt32 = 0) {
         self.statement = statement
         self.truthValue = truthValue
         self.tense = tense
-        self.timestamp = tense == nil ? ETERNAL : timestamp
+        self.timestamp = (tense == nil && timestamp == ETERNAL) ? ETERNAL : timestamp
         if derivationPath.isEmpty {
             let description = Judgement.sortedDescription(statement)
-//            print("--", description)
-            self.derivationPath = ["\(description)+\((truthValue.f, truthValue.c, timestamp))"]
+            self.derivationPath = ["\(description)+\((truthValue.f, truthValue.c, timestamp, truthValue.rule))"]
         } else {
             self.derivationPath = derivationPath
         }
-//        print(statement)
-//        print(derivationPath)
     }
     
     private static func sortedDescription(_ statement: Statement) -> String {
@@ -82,24 +79,17 @@ extension Judgement {
 
         if p1.isEmpty && p2.isEmpty {
             return true // judgements have the same root
+        } else if (p1.isEmpty && !p2.isEmpty) || (p2.isEmpty && !p1.isEmpty) {
+            return false // same root but one is empty indicating user input
         } else if p1.count == 1 && p2.count == 1 {
             if p1[0].hasSuffix("\(ETERNAL))") && p2[0].hasSuffix("\(ETERNAL))") {
                 // judgements are both eternal
-//                print("p1", p1)
-//                print("p2", p2)
                 if p1[0] == p2[0] // same path or one is a theorem which has E as its evidential base
                     || p1[0].hasSuffix("+(1.0, 1.0, \(ETERNAL))") || p2[0].hasSuffix("+(1.0, 1.0, \(ETERNAL))") {
-                
-//                    if p1[0].prefix(while: {$0 != "+"}) == p2[0].prefix(while: {$0 != "+"}) { // NO GOOD
-                        
-//                    || p1[0].hasPrefix("(swan <–> bird) <=> (swan -> bird ∧ bird -> swan)") || p1[0].hasPrefix("(bird <–> swan) <=> (bird -> swan ∧ swan -> bird)") {
 //                    // TODO: do proper comparison taking into account symmetrical statements
 //                    // so <bird <-> swan> should be same as <swan <-> bird>
                     return true // same path
                 } else {
-//                    if p1[0].hasPrefix(statement.description) && p2[0].hasPrefix(j2.statement.description) {
-//                        return false // both statements are user inputs
-//                    }
                     return false // different path
                 }
             }

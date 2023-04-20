@@ -58,16 +58,9 @@ extension Bag: Equatable {
     }
 }
 
-extension WrappedBag: Equatable {
-    public static func == (lhs: WrappedBag<I>, rhs: WrappedBag<I>) -> Bool {
-        lhs.bag == rhs.bag && lhs.wrapped == rhs.wrapped
-    }
-}
-
 extension Concept: Equatable {
     public static func == (lhs: Concept, rhs: Concept) -> Bool {
         lhs.term == rhs.term
-        && lhs.termLinks == rhs.termLinks
         && lhs.beliefs == rhs.beliefs
     }
 }
@@ -81,11 +74,6 @@ extension NARS: Equatable {
 
 /// Convenience
 
-extension WrappedBag where I == Belief {
-    /// convenience for iterating over both dictionaries
-    var items: [String : I] { bag.items.merging(wrapped?.items ?? [:], uniquingKeysWith: max)}
-}
-
 extension Belief: Comparable {
     public static func < (lhs: Belief, rhs: Belief) -> Bool {
         let c = choice(j1: lhs.judgement, j2: rhs.judgement)
@@ -97,7 +85,7 @@ extension Belief: Comparable {
 
 extension Concept: CustomStringConvertible {
     public var description: String {
-        "\(term)".uppercased() + "\n.  \(termLinks)" + ".  \(beliefs)"
+        "\(term)".uppercased() + ".  \(beliefs)"
     }
 }
 
@@ -122,10 +110,8 @@ extension Sentence: CustomStringConvertible {
             return "\(goal)"
         case .question(let question):
             return "\(question)"
-        case .pause(let t):
-            return "💤 \(Double(t)/1000) seconds"
         case .cycle(let n):
-            return "🔄 \(Double(n * Sentence.defaultPause)/1000) seconds"
+            return "🔄 \(n) cycles"
         }
     }
 }
@@ -138,11 +124,61 @@ extension Bag: CustomStringConvertible {
     }
 }
 
-extension WrappedBag: CustomStringConvertible {
-    public var description: String {
-        let b = "\(bag)"
-        let w = wrapped == nil ? "" : "\(wrapped!)"
-        return b + "\n---\n" + w
+
+/// Utility
+
+extension Array where Element == Sentence {
+    mutating func enqueue(_ js: [Judgement]) {
+        let js: [Sentence] = js.reversed().map({.judgement($0)})
+        insert(contentsOf: js, at: 0)
+    }
+    mutating func cleanup(_ statement: Statement) {
+        let idx = firstIndex(where: { s in
+            if case .question(let q) = s {
+                if q.statement == statement {
+                    return true
+                }
+            }
+            if case .goal(let g) = s {
+                if g.statement == statement {
+                    return true
+                }
+            }
+            return false
+        })
+        if let i = idx {
+            self = Array(prefix(upTo: i))
+        }
     }
 }
 
+extension Array where Element == Judgement {
+    func remove(matching sentence: Sentence, keepOrder: Bool = true) -> [Judgement] {
+        //TODO: use choice to additionally resolve duplicates
+        
+        let filtered = filter { j in
+            if j.truthValue.confidence == 0 {
+                return false
+            }
+            if j.statement.isTautology {
+                return false
+            }
+            if case .judgement(let judgement) = sentence,
+                j == judgement || judgement.statement.isTautology {
+                return false
+            }
+//            if case .question(let question) = sentence, question.statement.isTautology {
+//                return false
+//            }
+//            if case .goal(let goal) = sentence, goal.statement.isTautology {
+//                return false
+//            }
+            return true
+        }
+        if keepOrder {
+            return filtered
+        } else {
+            return Array(Set(filtered)) // TODO: not a good way to do this
+        }
+    }
+}

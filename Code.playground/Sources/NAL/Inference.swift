@@ -49,7 +49,7 @@ public func contraposition(j1: Judgement) -> Judgement? {
         return nil // invalid statement
     }
     let (f, c) = (j1.truthValue.f, j1.truthValue.c)
-    let c1 = (1 - f) * c / ((1 - f) * (c + k))
+    let c1 = (f == 1) ? 0 : (1 - f) * c / ((1 - f) * (c + k))
     let cs = neg(p) => neg(s)
     let cj = cs + (0, c1, ETERNAL)
     return Judgement(cs, TruthValue(0, c1, .contraposition), Judgement.mergeEvidence(j1, cj), tense: j1.tense, timestamp: j1.timestamp)
@@ -64,34 +64,10 @@ private func neg(_ s: Statement) -> Statement {
 }
 
 public extension Rules {
+
     var allRules: [Rule] {
         let rules = firstOrder + higherOrder + compositional + conditionalSyllogistic
-        var permutations: [Rule] = []
-        for r in rules {
-            let (p1, p2, c, tf) = r
-            var sp1: Statement!
-            var sp2: Statement!
-            if case .statement(let s, let copula, let p) = p1 {
-                if copula == .similarity || copula == .equivalence {
-                    sp1 = .statement(p, copula, s)
-                }
-            }
-            if case .statement(let s, let copula, let p) = p2 {
-                if copula == .similarity || copula == .equivalence {
-                    sp2 = .statement(p, copula, s)
-                }
-            }
-            if sp1 != nil {
-                permutations.append((sp1, p2, c, tf))
-            }
-            if sp2 != nil {
-                permutations.append((p1, sp2, c, tf))
-            }
-            if sp1 != nil && sp2 != nil {
-                permutations.append((sp1, sp2, c, tf))
-            }
-        }
-        return rules + permutations
+        return rules + permutations(rules) + decomposition
     }
 
     var higherOrder: [Rule] {
@@ -152,7 +128,7 @@ public extension Rules {
                 ( M => T1,    M => T2 ,    M => (T1 && T2), tf),
                 ( T1 => M,    T2 => M ,    (T1 || T2) --> M, tf),
                 /// conditional
-                (      T1,          T2,    (T1 && T2), tf) // TODO: verify nothing else needs to be checked
+                (T1 --> T2,   T2 --> T1,   ((T1 --> T2) && (T2 --> T1)), tf) // TODO: verify nothing else needs to be checked
             ]
         case .union:
             return [ /// first order
@@ -162,7 +138,7 @@ public extension Rules {
                 ( M => T1,    M => T2 ,    M => (T1 || T2), tf),
                 ( T1 => M,    T2 => M ,    (T1 && T2) --> M, tf),
                 /// conditional
-                (      T1,          T2,    (T1 || T2), tf) // TODO: verify nothing else needs to be checked
+                (T1 --> T2,   T2 --> T1,   ((T1 --> T2) || (T2 --> T1)), tf) // TODO: verify nothing else needs to be checked
             ]
         case .difference:
             return [
@@ -170,6 +146,30 @@ public extension Rules {
                 (M --> T1,    M --> T2,    M --> (T2 - T1), tfi),
                 (T1 --> M,    T2 --> M,    (T1 ~ T2) --> M, tf),
                 (T1 --> M,    T2 --> M,    (T2 ~ T1) --> M, tfi)
+            ]
+        default:
+            return []
+        }
+    }
+    
+    var decomposition: [Rule] {
+        let M = Term.var("M")
+        let T1 = Term.var("T1")
+        let T2 = Term.var("T2")
+
+        switch self {
+        case .deduction:
+            return [
+                (-(M --> (T1 & T2)),     (M --> T1),    -(M --> T2), tf),
+                ( (M --> (T1 | T2)),    -(M --> T1),     (M --> T2), tf),
+                (-(M --> (T1 - T2)),     (M --> T1),     (M --> T2), tf),
+                (-(M --> (T2 - T1)),    -(M --> T1),    -(M --> T2), tf),
+                (-((T2 | T1) --> M),     (T1 --> M),    -(T2 --> M), tf),
+                ( ((T2 & T1) --> M),    -(T1 --> M),     (T2 --> M), tf),
+                (-((T1 ~ T2) --> M),     (T1 --> M),     (T2 --> M), tf),
+                (-((T2 ~ T1) --> M),    -(T1 --> M),    -(T2 --> M), tf),
+                (       -(T1 && T2),           (T1),          -(T2), tf),
+                (        (T1 || T2),          -(T1),           (T2), tf)
             ]
         default:
             return []
@@ -221,6 +221,10 @@ public extension Rules {
             return [
                 (             T1,                T2,        (T1 && T2), tf) // TODO: verify nothing else needs to be checked
             ]
+        case .union:
+            return [
+                (             T1,                T2,        (T1 || T2), tf) // TODO: verify nothing else needs to be checked
+            ]
         default:
             return []
         }
@@ -239,33 +243,117 @@ public extension Rules {
         }
     }
     
+    // Private
+    
+    private func permutations(_ rules: [Rule]) -> [Rule] {
+        var permutations: [Rule] = []
+        for r in rules {
+            let (p1, p2, c, tf) = r
+            var sp1: Statement!
+            var sp2: Statement!
+            if case .statement(let s, let copula, let p) = p1 {
+                if copula == .similarity || copula == .equivalence {
+                    sp1 = .statement(p, copula, s)
+                }
+            }
+            if case .statement(let s, let copula, let p) = p2 {
+                if copula == .similarity || copula == .equivalence {
+                    sp2 = .statement(p, copula, s)
+                }
+            }
+            if sp1 != nil {
+                permutations.append((sp1, p2, c, tf))
+            }
+            if sp2 != nil {
+                permutations.append((p1, sp2, c, tf))
+            }
+            if sp1 != nil && sp2 != nil {
+                permutations.append((sp1, sp2, c, tf))
+            }
+        }
+        return permutations
+    }
 }
 
 extension Theorems {
     public var rules: [Statement] {
         let S = Term.var("S")
         let P = Term.var("P")
+        let M = Term.var("M")
+        
         let S1 = Term.var("S1")
         let S2 = Term.var("S2")
+        let S3 = Term.var("S3")
+        let P1 = Term.var("P1")
+        let P2 = Term.var("P2")
 
         let T1 = Term.var("T1")
         let T2 = Term.var("T2")
+        
+        let R = Term.var("R")
+        let T = Term.var("T")
 
         switch self {
         case .inheritance:
             return [
                 (T1 & T2) --> (T1),
-                (T1 - T2) --> (T1)
+                (T1) --> (T1 | T2),
+                (T1 - T2) --> (T1),
+                (T1) --> (T1 ~ T2),
+                
+                ((ç.e_(R, .º, T) * T) --> R),
+                (R --> (ç.i_(R, .º, T) * T))
             ]
         case .similarity:
             return [
-                -(-T1) <-> (T1)
+                -(-T) <-> (T),
+                 
+                 // TODO: need to verify if this is correct and that it handles multiple components
+                 
+                 .compound(.U, [.instance(T1), .instance(T2)]) <-> .compound(.extSet, [T1, T2]),
+                 .compound(.Ω, [.property(T1), .property(T2)]) <-> .compound(.intSet, [T1, T2]),
+                 
+                 (.compound(.l, [.compound(.extSet, [T1, T2]), .instance(T2)])) <-> .instance(T1),
+                 (.compound(.ø, [.compound(.intSet, [T1, T2]), .property(T2)])) <-> .property(T1),
+
+                 ç.e_((T1 * T2), .º, T2) <-> T1,
+                 ç.i_((T1 * T2), .º, T2) <-> T1
             ]
         case .implication:
             return [
                 (S <-> P) => (S --> P),
                 (S <=> P) => (S => P),
-                (S1 && S2) => (S1)
+                
+                (S1 && S2) => (S1),
+                (S1) => (S1 || S2),
+                
+                (S --> P) => ((S | M) --> (P | M)),
+                (S --> P) => ((S & M) --> (P & M)),
+                (S <-> P) => ((S | M) --> (P | M)),
+                (S <-> P) => ((S & M) --> (P & M)),
+
+                (S  => P) => ((S || M)  => (P || M)),
+                (S  => P) => ((S && M)  => (P && M)),
+                (S <=> P) => ((S || M) <=> (P || M)),
+                (S <=> P) => ((S && M) <=> (P && M)),
+                
+                (S --> P) => ((S - M) --> (P - M)),
+                (S --> P) => ((M - P) --> (M - S)),
+                (S --> P) => ((S ~ M) --> (P ~ M)),
+                (S --> P) => ((M ~ P) --> (M ~ S)),
+
+                (S <-> P) => ((S - M) <-> (P - M)),
+                (S <-> P) => ((M - P) <-> (M - S)),
+                (S <-> P) => ((S ~ M) <-> (P ~ M)),
+                (S <-> P) => ((M ~ P) <-> (M ~ S)),
+
+                (M --> (T1 - T2)) => -(M --> T2),
+                ((T1 ~ T2) --> M) => -(T2 --> M),
+                
+                (S --> P) => (ç.e_(S, .º, M) --> ç.e_(P, .º, M)),
+                (S --> P) => (ç.i_(S, .º, M) --> ç.i_(P, .º, M)),
+                (S --> P) => (ç.e_(M, .º, P) --> ç.e_(M, .º, S)),
+                (S --> P) => (ç.i_(M, .º, P) --> ç.i_(M, .º, S)),
             ]
         case .equivalence:
             return [
@@ -276,7 +364,35 @@ extension Theorems {
                 (S <-> P) <=> (.property(S) <-> .property(P)),
                 
                 (S --> .instance(P)) <=> (S <-> .instance(P)),
-                (.property(S) --> P) <=> (.property(S) <-> P)
+                (.property(S) --> P) <=> (.property(S) <-> P),
+                
+                ((S1 * S2) --> (P1 * P2)) <=> ((S1 --> P1) && (S2 --> P2)),
+                ((S1 * S2) <-> (P1 * P2)) <=> ((S1 <-> P1) && (S2 <-> P2)),
+                
+                (S --> P) <=> ((M * S) --> (M * P)),
+                (S --> P) <=> ((S * M) --> (P * M)),
+                (S <-> P) <=> ((M * S) <-> (M * P)),
+                (S <-> P) <=> ((S * M) <-> (P * M)),
+
+                (*[T1, T2] --> R) <=> (T1 --> ç.e_(R, .º, T2)),
+                (*[T1, T2] --> R) <=> (T2 --> ç.e_(R, T1, .º)),
+                (R --> *[T1, T2]) <=> (ç.i_(R, .º, T2) --> T1),
+                (R --> *[T1, T2]) <=> (ç.i_(R, T1, .º) --> T2),
+                
+                ((S1 => (S2 => S3)) <=> ((S1 && S2) => S3)),
+                
+                -(S1 && S2) <=> .compound(.d, [-(S1), -(S2)]),
+                -(S1 || S2) <=> .compound(.c, [-(S1), -(S2)]),
+                
+                (S1 <=> S2) <=> (-(S1) <=> -(S2)),
+
+                // EXTRA RULES
+                // not in the book but
+                // alternative forms and/or derived from above rules
+                // goal is to ease some derivations
+                // note: nars will work without these
+                // but will have to derive them during its lifetime
+                (T1 --> ç.e_(R, .º, T2)) <=> (T2 --> ç.e_(R, T1, .º))
             ]
         }
     }

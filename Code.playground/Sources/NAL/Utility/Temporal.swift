@@ -42,3 +42,21 @@ extension Copula {
         self == .retrospectiveImp || self == .retrospectiveEq
     }
 }
+
+public extension Term {
+    func anticipation(for t: Term) -> Term? {
+        switch self {
+        case .statement(let s, let c, _):
+            if s == t && c.isPredictive {
+                return self
+            }
+            return nil
+            
+        case .compound(_, _):
+            fallthrough // TODO: finish using temporal connectors
+            
+        default:
+            return nil
+        }
+    }
+}
