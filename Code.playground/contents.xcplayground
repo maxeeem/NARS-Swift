@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<playground target-platform="ios" version="6.0" requires-full-environment="false">
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<playground version='6.0' target-platform='ios'>
     <pages>
-        <page name="Experimental"/>
-        <page name="Language"/>
-        <page name="Multiplication"/>
-        <page name="Multiplication 2"/>
-        <page name="Sample"/>
-        <page name="Esperanto"/>
+        <page name='Experimental'/>
+        <page name='Language'/>
+        <page name='Multiplication'/>
+        <page name='Multiplication 2'/>
+        <page name='Sample'/>
+        <page name='Esperanto'/>
     </pages>
 </playground>

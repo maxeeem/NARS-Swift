@@ -15,6 +15,12 @@ let nars = NARS(timeProviderMs: timeProviderMs) { s in
 
 var __ : NARS { nars }
 
+__.perform(
+    ("dog" --> "animal")-*,
+    ("Sandy" --> "dog")-*,
+    .cycle(100)
+)
+
 func rep(_ t: Term) -> Term {
     ç.e_("represent", .º, t)
 }

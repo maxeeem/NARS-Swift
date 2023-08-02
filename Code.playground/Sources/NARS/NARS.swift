@@ -92,11 +92,35 @@ public final class NARS: Item {
 
     public func perform(_ script: [Sentence]) { // blocking
         for s in script {
-            processRecent(s)
+            if case .cycle(let n) = s {
+                for _ in 0..<n {
+//                    print(memory)
+                    if var concept = memory.get() {
+//                        print(concept)
+//                        print(concept.tasks)
+//                        print(concept.beliefs)
+                        let derived = concept.cycle()
+                        for j in derived {
+                            output(". ⏱ \(j)")
+                            _ = memory.consider(.judgement(j), derive: false)
+                        }
+                        concept.adjustPriority(derived)
+                        memory.put(concept)
+                    }
+                }
+            }
             
-            processInput(s)
+            if case .judgement(let j) = s {
+                output("• \(s)")
+
+                _ = memory.consider(s, derive: false)
+            }
             
-            process(anticipations: s)
+//            processRecent(s)
+//
+//            processInput(s)
+//
+//            process(anticipations: s)
         }
     }
     
@@ -539,6 +563,12 @@ extension NARS {
             results.forEach { j in
                 process(.judgement(j), recurse: true)
             }
+        }
+    }
+    
+    private func cycle() {
+        if let c = memory.get(), let t = c.tasks.get(), let b = c.beliefs.get() {
+            
         }
     }
 }

@@ -3,8 +3,30 @@ extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
         case .judgement(let j):
+            
+            func addTask(_ s: Sentence, to: Statement) {
+                if let concept = get(to.description) {
+                    concept.tasks.put(Task(sentence: s))
+                    put(concept)
+                } else {
+                    let concept = Concept(term: to)
+//                    concept.tasks.put(Task(sentence: s))
+                    concept.beliefs.put(j + 0.9)
+                    put(concept)
+                }
+            }
+            
+            addTask(s, to: j.statement)
+//            print("one")
+            for t in j.statement.terms {
+//                print(t.description)
+                addTask(s, to: t)
+            }
+            
+            
+            return []
             // recurse here means processing elements of judgement
-            return consider(j.statement, recurse: true) { c, s in c.accept(j, derive: derive, store: s) }
+//            return consider(j.statement, recurse: true) { c, s in c.accept(j, derive: derive, store: s) }
         case .question(let q):
             return consider(q.statement, true, recurse: derive) { c, _ in c.answer(q.statement) }
         case .goal(let g):

@@ -16,11 +16,11 @@ public struct Belief: Item {
     public let judgement: Judgement
 }
 
-//public struct Task: Item {
-//    public var identifier: String { sentence.description }
-//    public var priority: Double = 0.9
-//    public let sentence: Sentence
-//}
+public struct Task: Item {
+    public var identifier: String { sentence.description }
+    public var priority: Double = 0.9
+    public let sentence: Sentence
+}
 
 // MARK: Concept
 
@@ -30,7 +30,8 @@ public struct Concept: Item {
     
     let term: Term
     
-    //let tasks = Bag<TermLink>() // sentences
+    //let links = Bag<TermLink>() // terms
+    internal var tasks = Bag<Task>()
     internal var beliefs = Bag<Belief>()
     
     public var anticipations: [String: (Term, TruthValue)] = [:]
@@ -56,6 +57,45 @@ public struct Concept: Item {
 }
 
 extension Concept {
+    
+    func cycle() -> [Judgement] {
+        if var t = tasks.get(), var b = beliefs.get() {
+            // forward inference
+            if case .judgement(let j) = t.sentence, j != b.judgement {
+                var derived: [Judgement] = []
+                // apply rules
+                let results = Rules.allCases
+                    .flatMap { r in
+                        r.apply((b.judgement, j))
+                    }
+                    .compactMap { $0 }
+
+                derived.append(contentsOf: results)
+                
+                // modify "usefullness" value
+                t.adjustPriority(results)
+                b.adjustPriority(results)
+                tasks.put(t) // put back
+                beliefs.put(b) // put back
+                
+                
+                derived = derived.removeDuplicates().filter {
+                    beliefs.peek($0.identifier) == nil
+                }
+//                    && $0.statement != j.statement }
+                
+
+                return derived
+                
+            }
+            
+            return []
+        }
+        
+        return []
+    }
+
+    
     // returns derived judgements if any
     func accept(_ j: Judgement, derive: Bool, store: Bool = true) -> [Judgement] {
 //        if j == lastInput { return Array(lastAccepted) }
