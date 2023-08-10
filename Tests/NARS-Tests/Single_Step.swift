@@ -181,7 +181,7 @@ class Single_Step: XCTestCase {
             ("bird" --> "animal")-?,
             .cycle(10),
             ("dog" --> "person")-*,
-            .cycle(10)
+            .cycle(100)
         )
         outputMustContain("💡 <bird -> animal>.")
         outputMustContain("💡 <dog -> person>. %1.00;0.90%.")
@@ -191,21 +191,12 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("a" --> "b")-*,
             ("b" --> "c")-*,
-//            ("a" --> "c")-?,
-//            .cycle(10),
             ("u" --> "v")-*,
-            ("+y" --> "+z")-*,
+            ("y" --> "z")-*,
             ("c" --> "d")-*,
-//            .cycle(5),
+            .cycle(20),
             ("a" --> "d")-?
-//            .cycle
-//            .pause
         )
-        
-//        print(nars.foobar)
-//        print(nars.memory)
-//        print("RECENT")
-//        print(nars.recent)
         outputMustContain("💡 <a -> d>. %1.00;0.73%")
     }
     /*
@@ -251,7 +242,7 @@ class Single_Step: XCTestCase {
             ("robin" --> "bird")-*,
             .cycle(10)
         )
-        outputMustContain("<robin -> animal>")//. %1.00;0.81%")
+        outputMustContain("<robin -> animal>. %1.00;0.81%")
 //        nars.perform(
 //            ("robin" --> "animal")-?,
 //            .cycle(10)
@@ -293,10 +284,9 @@ class Single_Step: XCTestCase {
     func testNal1_05() throws {
         /// conversion
         nars.perform(
-            ("bird" --> "swimmer")-*,
-            ("swimmer" --> "bird")-?
+            ("bird" --> "swimmer")-*
         )
-        outputMustContain("💡 <swimmer -> bird>. %1.00;0.47%")
+        outputMustContain("<swimmer -> bird>. %1.00;0.47%")
     }
 
     func testNal1_06() throws {
@@ -354,7 +344,7 @@ class Single_Step: XCTestCase {
             ("bird" --> "swimmer")-*,
             ("{?1}" --> "swimmer")-?,
 //            ("?1" --> "swimmer")-?,
-            .cycle(100)
+            .cycle(10)
         )
         outputMustContain("<{?1} -> bird>?")
     }
@@ -432,8 +422,9 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("bright" <-> "smart")-*(0.9),
-           .cycle(20),
-           ("[smart]" --> "[bright]")-?
+           .cycle(100),
+           ("[smart]" --> "[bright]")-?,
+           .cycle(100)
        )
        outputMustContain("💡 <[smart] -> [bright]>.")// %0.90;0.66%")
     }
@@ -452,6 +443,7 @@ class Single_Step: XCTestCase {
        /// structure transformation
        nars.perform(
            ("Birdie" <-> "Tweety")-*(0.9),
+//           .cycle(50),
            ("{Birdie}" <-> "{Tweety}")-?
        )
        outputMustContain("💡 <{Birdie} <–> {Tweety}>. %0.90;0.81%")
@@ -582,7 +574,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             (-("robin" --> "swimmer"))-*,
             (-("robin" --> ("mammal" - "swimmer")))-*,
-            .cycle
+            .cycle(10)
         )
         outputMustContain("<¬(robin -> mammal)>. %1.00;0.81%")
     }

@@ -23,7 +23,10 @@ public func choice(j1: Judgement, j2: Judgement) -> Judgement {
 
 /// Immediate
 
-public func negation(j1: Judgement) -> Judgement {
+public func negation(j1: Judgement) -> Judgement? {
+    if j1.truthValue.rule == .negation {
+        return nil // avoid cyclic conversion
+    }
     let f = 1 - j1.truthValue.f
     let c = j1.truthValue.c
     let cs = neg(j1.statement)
@@ -32,6 +35,9 @@ public func negation(j1: Judgement) -> Judgement {
 }
 
 public func conversion(j1: Judgement) -> Judgement? {
+    if j1.truthValue.rule == .conversion {
+        return nil // avoid cyclic conversion
+    }
     guard case .statement(let s, let copula, let p) = j1.statement,
           copula == .inheritance || copula == .implication else {
         return nil // invalid statement
@@ -44,6 +50,9 @@ public func conversion(j1: Judgement) -> Judgement? {
 }
 
 public func contraposition(j1: Judgement) -> Judgement? {
+    if j1.truthValue.rule == .contraposition {
+        return nil // avoid cyclic conversion
+    }
     guard case .statement(let s, let copula, let p) = j1.statement,
           copula == .implication else {
         return nil // invalid statement

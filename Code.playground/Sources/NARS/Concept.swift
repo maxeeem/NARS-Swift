@@ -58,43 +58,106 @@ public struct Concept: Item {
 
 extension Concept {
     
-    func cycle() -> [Judgement] {
-        if var t = tasks.get(), var b = beliefs.get() {
+    func cycle() -> [String: [Judgement]] {
+        if var t = tasks.get() {
             // forward inference
-            if case .judgement(let j) = t.sentence, j != b.judgement {
-                var derived: [Judgement] = []
-                // apply rules
-                let results = Rules.allCases
-                    .flatMap { r in
-                        r.apply((b.judgement, j))
+            if case .judgement(let j) = t.sentence,
+               var b = beliefs.get() {
+                if j != b.judgement {
+                    
+                    var derived: [Judgement] = []
+                    // apply rules
+                    let results = Rules.allCases
+                        .flatMap { r in
+                            r.apply((b.judgement, j))
+                        }
+                        .compactMap { $0 }
+                    
+                    derived.append(contentsOf: results)
+                    
+                    // modify "usefullness" value
+                    t.adjustPriority(results)
+                    b.adjustPriority(results)
+                    tasks.put(t) // put back
+                    beliefs.put(b) // put back
+                    
+                    
+                    derived = derived.removeDuplicates().filter {
+                        beliefs.peek($0.identifier) == nil
                     }
-                    .compactMap { $0 }
-
-                derived.append(contentsOf: results)
-                
-                // modify "usefullness" value
-                t.adjustPriority(results)
-                b.adjustPriority(results)
-                tasks.put(t) // put back
-                beliefs.put(b) // put back
-                
-                
-                derived = derived.removeDuplicates().filter {
-                    beliefs.peek($0.identifier) == nil
+                    //                    && $0.statement != j.statement }
+                    
+                    
+                    return ["Judgement": derived]
+                    
+                } else {
+                    beliefs.put(b) // put back
                 }
-//                    && $0.statement != j.statement }
-                
-
-                return derived
-                
             }
             
-            return []
+            if case .question(let q) = t.sentence {
+                             
+                let results = answer(q.statement)
+
+                // modify "usefullness" value
+                t.adjustPriority(results)
+                tasks.put(t) // put back
+
+                return ["Question": results]
+            }
+            
+            tasks.put(t) // put back
+
+            return [:]
         }
         
-        return []
+        return [:]
     }
 
+    
+    func accept(belief j: Judgement) -> [Judgement] {
+        // revise existing belief
+        if let b = beliefs.get(j.identifier) {
+            let originalPriority = b.priority
+            var judgement: Judgement = j
+            let sameRule: Bool = {
+                let r1 = j.truthValue.rule
+                let r2 = b.judgement.truthValue.rule
+                if (r1 == nil && r2 == nil) {
+                    return false // both user input – revise
+                }
+                return r1 == r2
+            }()
+            if sameRule || j.evidenceOverlap(b.judgement) {
+                judgement = choice(j1: j, j2: b.judgement)
+            } else {
+                if j.truthValue.rule == .conversion {
+                    judgement = b.judgement
+                } else if b.judgement.truthValue.rule == .conversion {
+                    judgement = j
+                } else {
+                    judgement = revision(j1: b.judgement, j2: j)
+                }
+            }
+
+            beliefs.put(judgement + originalPriority)
+
+            if judgement != j {
+                if let originalTask = tasks.get(Sentence.judgement(j).description) { // remove old
+                    tasks.put(Task(priority: originalTask.priority, sentence: .judgement(judgement)))
+                }
+                return [judgement]
+            }
+
+            return []
+
+        } else { // new belief
+            
+            beliefs.put(j + 0.9)
+                        
+            return []
+        }
+    }
     
     // returns derived judgements if any
     func accept(_ j: Judgement, derive: Bool, store: Bool = true) -> [Judgement] {

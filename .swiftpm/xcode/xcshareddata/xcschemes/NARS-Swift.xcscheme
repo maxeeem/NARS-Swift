@@ -52,8 +52,8 @@
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
-      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
-      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      selectedDebuggerIdentifier = ""
+      selectedLauncherIdentifier = "Xcode.IDEFoundation.Launcher.PosixSpawn"
       shouldUseLaunchSchemeArgsEnv = "YES"
       codeCoverageEnabled = "YES"
       onlyGenerateCoverageForSpecifiedTargets = "YES">
@@ -89,6 +89,12 @@
                   Identifier = "Experimental/testEsperanto2()">
                </Test>
                <Test
+                  Identifier = "Experimental/testOp()">
+               </Test>
+               <Test
+                  Identifier = "Experimental/testOp2()">
+               </Test>
+               <Test
                   Identifier = "Experimental/testSample()">
                </Test>
                <Test
@@ -111,6 +117,12 @@
                </Test>
                <Test
                   Identifier = "Single_Step/testLogicRules()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testNal7_02()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testNal7_X()">
                </Test>
                <Test
                   Identifier = "Single_Step/testPattern()">

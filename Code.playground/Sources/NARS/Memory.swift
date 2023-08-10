@@ -3,32 +3,116 @@ extension AbstractBag where I == Concept {
     func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
         switch s {
         case .judgement(let j):
+            var derived: [Judgement] = []
             
             func addTask(_ s: Sentence, to: Statement) {
                 if let concept = get(to.description) {
                     concept.tasks.put(Task(sentence: s))
+                    derived.append(contentsOf: concept.cycle()["Judgement"] ?? [])
+                    
+                    // revision
+                    
+                    let revised = concept.accept(belief: j)
+                    derived.append(contentsOf: revised)
+                    
+                    // local inference
+                    
+//                    if derive {
+                        let immediate = Rules.immediate(j)
+                        let structural = Theorems.apply(j)
+                        
+                        let results = (immediate + structural)
+//                        .filter({ jud in
+//                            !derived.contains(where: {
+//                                $0.statement == jud.statement
+//                            })
+//                        })
+                        derived.append(contentsOf: results)
+                        
+                        results.forEach { j in
+                            let revised = concept.accept(belief: j)
+                            derived.append(contentsOf: revised)
+                        }
+//                    }
+                    
+                    // storage
                     put(concept)
+                    
                 } else {
                     let concept = Concept(term: to)
 //                    concept.tasks.put(Task(sentence: s))
-                    concept.beliefs.put(j + 0.9)
+                    
+                    // revision
+                    
+                    let revised = concept.accept(belief: j)
+                    derived.append(contentsOf: revised)
+                    
+                    // local inference
+//                    if derive {
+                        let immediate = Rules.immediate(j)
+                        let structural = Theorems.apply(j)
+                        
+                        let results = (immediate + structural)
+//                        .filter({ jud in
+//                            !derived.contains(where: {
+//                                $0.statement == jud.statement
+//                            })
+//                        })
+                        derived.append(contentsOf: results)
+                        
+                        results.forEach { j in
+                            let revised = concept.accept(belief: j)
+                            derived.append(contentsOf: revised)
+                        }
+//                    }
+                    
+                    // storage
                     put(concept)
                 }
             }
             
-            addTask(s, to: j.statement)
-//            print("one")
+//            addTask(s, to: j.statement)
+
             for t in j.statement.terms {
-//                print(t.description)
                 addTask(s, to: t)
+
+                for t1 in Term.getTerms(t) {
+                    if t1 != t {
+                        addTask(s, to: t1)
+                    }
+                }
             }
             
             
-            return []
+            return derived.removeDuplicates()
+            
             // recurse here means processing elements of judgement
 //            return consider(j.statement, recurse: true) { c, s in c.accept(j, derive: derive, store: s) }
         case .question(let q):
-            return consider(q.statement, true, recurse: derive) { c, _ in c.answer(q.statement) }
+            var answers: [Judgement] = []
+            
+            func addTask(_ s: Sentence, to: Statement) {
+                let concept = get(to.description) ?? Concept(term: to)
+                concept.tasks.put(Task(sentence: s))
+
+                let results = concept.answer(q.statement)
+                answers.append(contentsOf: results)
+                
+                put(concept)
+            }
+            
+            for t in q.statement.terms {
+                addTask(s, to: t)
+                
+                for t1 in Term.getTerms(t) {
+                    if t1 != t {
+                        addTask(s, to: t1)
+                    }
+                }
+            }
+
+            return answers
+//            return consider(q.statement, true, recurse: derive) { c, _ in c.answer(q.statement) }
         case .goal(let g):
             return consider(g, derive: derive) // TODO: finish implementation
         case .cycle: return []
