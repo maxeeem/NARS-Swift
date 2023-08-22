@@ -29,20 +29,20 @@ extension Theorems {
 
         let results: [[Judgement]] = res.flatMap{$0}.map { t in
             var results = Rules.strong.flatMap {
-                $0.apply((j, t-*(1.0, reliance, ETERNAL)))
+                $0.apply((j, t-*(1.0, 1.0, ETERNAL)))
             }.compactMap { $0 }
             
             if case .statement(let s, let c, let p) = j.statement, c == .similarity || c == .equivalence {
                 results.append(contentsOf:
                     Rules.strong.flatMap {
-                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
+                    $0.apply((Judgement(.statement(p, c, s), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,1.0, ETERNAL)))
                     }.compactMap { $0 }
                )
             }
             if case .compound(let conn, let terms) = j.statement, conn == .c || conn == .U || conn == .Ω {
                 results.append(contentsOf:
                     Rules.strong.flatMap {
-                    $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,reliance, ETERNAL)))
+                    $0.apply((Judgement(.compound(conn, terms.reversed()), j.truthValue, j.derivationPath, tense: j.tense, timestamp: j.timestamp), t-*(1.0 ,1.0, ETERNAL)))
                     }.compactMap { $0 }
                 )
             }

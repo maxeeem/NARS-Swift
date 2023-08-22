@@ -85,7 +85,7 @@ extension Belief: Comparable {
 
 extension Concept: CustomStringConvertible {
     public var description: String {
-        "\(term)".uppercased() + ".  \(beliefs)"
+        "\(term)".uppercased() + ".  \(tasks) -- \(beliefs)"
     }
 }
 
@@ -119,7 +119,7 @@ extension Sentence: CustomStringConvertible {
 extension Bag: CustomStringConvertible {
     public var description: String {
         let x = I.self == Concept.self ? "" : ".  "
-        let o = items.values.reduce("", { $0 + "\($1)\n" + x })
+        let o = items.values.reduce("\n\(x)", { $0 + "\($1)\n" + x })
         return String(o.dropLast(x.count))
     }
 }

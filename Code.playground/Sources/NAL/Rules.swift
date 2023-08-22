@@ -108,14 +108,38 @@ extension Rules {
         j1 = Judgement(t1, j1.truthValue, j1.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
         j2 = Judgement(t2, j2.truthValue, j2.derivationPath, tense: j1.tense, timestamp: j1.timestamp)
                 
-        // apply rules
-        self.allRules.forEach { r in
-            x.append(rule_applicator(r)((j1, j2)))
+//        // apply rules
+//        self.allRules.forEach { r in
+//            x.append(rule_applicator(r)((j1, j2)))
+//        }
+//        // switch order of premises
+//        self.allRules.forEach { r in
+//            x.append(rule_applicator(r)((j2, j1)))
+//        }
+        func _apply(_ jj1: Judgement, _ jj2: Judgement) {
+            let i1: [Judgement] = []//Rules.immediate(jj1)
+            let i2: [Judgement] = []//Rules.immediate(jj2)
+//            let s1 = Theorems.apply(jj1)
+//            let s2 = Theorems.apply(jj2)
+
+            let a1 = [jj1] + i1 //+ s1
+            let a2 = [jj2] + i2 //+ s2
+//            print("a1", a1, "a2", a2)
+            for j1 in a1 {
+                for j2 in a2 {
+//                    print("j1", j1, "j2", j2)
+                    // apply rules
+                    self.allRules.forEach { r in
+                        x.append(rule_applicator(r)((j1, j2)))
+                    }
+                    // switch order of premises
+                    self.allRules.forEach { r in
+                        x.append(rule_applicator(r)((j2, j1)))
+                    }
+                }
+            }
         }
-        // switch order of premises
-        self.allRules.forEach { r in
-            x.append(rule_applicator(r)((j2, j1)))
-        }
+        _apply(j1, j2)
         /*
         // MARK: Variable introduction
         // “In all these rules a dependent variable is only introduced into a conjunction or intersection, and an independent variable into (both sides of) an implication or equivalence.”

@@ -6,77 +6,59 @@ extension AbstractBag where I == Concept {
             var derived: [Judgement] = []
             
             func addTask(_ s: Sentence, to: Statement) {
-                if let concept = get(to.description) {
-                    concept.tasks.put(Task(sentence: s))
-                    derived.append(contentsOf: concept.cycle()["Judgement"] ?? [])
-                    
-                    // revision
-                    
-                    let revised = concept.accept(belief: j)
-                    derived.append(contentsOf: revised)
-                    
-                    // local inference
-                    
-//                    if derive {
-                        let immediate = Rules.immediate(j)
-                        let structural = Theorems.apply(j)
-                        
-                        let results = (immediate + structural)
+                let concept = get(to.description) ?? Concept(term: to)
+                
+//                if derive {
+                    if let originalTask = concept.tasks.get(s.description) { // remove old
+                        concept.tasks.put(
+                            Task(priority: originalTask.priority, sentence: s))
+                    } else {
+                        concept.tasks.put(Task(sentence: s))
+                    }
+//                }
+                
+                // revision
+                
+                let revised = concept.accept(belief: j)
+                derived.append(contentsOf: revised)
+                
+                // local inference
+                
+                if derive {
+                    let immediate = Rules.immediate(j)
+                    let structural = Theorems.apply(j)
+                    let results = (immediate + structural)
 //                        .filter({ jud in
 //                            !derived.contains(where: {
 //                                $0.statement == jud.statement
 //                            })
 //                        })
-                        derived.append(contentsOf: results)
-                        
-                        results.forEach { j in
-                            let revised = concept.accept(belief: j)
-                            derived.append(contentsOf: revised)
-                        }
+                        .removeDuplicates()
+                        .filter({ $0.truthValue.confidence != 0 })
+                    
+                    derived.append(contentsOf: results)
+
+//                    put(concept)
+
+//                    results.forEach { j in
+////                            let revised = concept.accept(belief: j)
+//                        let revised = consider(.judgement(j), derive: false)
+//                        derived.append(contentsOf: revised)
 //                    }
+//                } else {
                     
-                    // storage
-                    put(concept)
-                    
-                } else {
-                    let concept = Concept(term: to)
-//                    concept.tasks.put(Task(sentence: s))
-                    
-                    // revision
-                    
-                    let revised = concept.accept(belief: j)
-                    derived.append(contentsOf: revised)
-                    
-                    // local inference
-//                    if derive {
-                        let immediate = Rules.immediate(j)
-                        let structural = Theorems.apply(j)
-                        
-                        let results = (immediate + structural)
-//                        .filter({ jud in
-//                            !derived.contains(where: {
-//                                $0.statement == jud.statement
-//                            })
-//                        })
-                        derived.append(contentsOf: results)
-                        
-                        results.forEach { j in
-                            let revised = concept.accept(belief: j)
-                            derived.append(contentsOf: revised)
-                        }
-//                    }
-                    
-                    // storage
-                    put(concept)
                 }
+                    
+                // storage
+                put(concept)
             }
             
 //            addTask(s, to: j.statement)
 
-            for t in j.statement.terms {
+            for t in Set(j.statement.terms) {
                 addTask(s, to: t)
 
-                for t1 in Term.getTerms(t) {
+                for t1 in Set(Term.getTerms(t)) {
                     if t1 != t {
                         addTask(s, to: t1)
                     }
@@ -84,7 +66,7 @@ extension AbstractBag where I == Concept {
             }
             
             
-            return derived.removeDuplicates()
+            return derived.removeDuplicates().filter({ $0.truthValue.confidence != 0 })
             
             // recurse here means processing elements of judgement
 //            return consider(j.statement, recurse: true) { c, s in c.accept(j, derive: derive, store: s) }
@@ -95,16 +77,17 @@ extension AbstractBag where I == Concept {
                 let concept = get(to.description) ?? Concept(term: to)
                 concept.tasks.put(Task(sentence: s))
 
-                let results = concept.answer(q.statement)
-                answers.append(contentsOf: results)
-                
+                if derive {
+                    let results = concept.answer(q.statement)
+                    answers.append(contentsOf: results)
+                }
                 put(concept)
             }
             
-            for t in q.statement.terms {
+            for t in Set(q.statement.terms) {
                 addTask(s, to: t)
                 
-                for t1 in Term.getTerms(t) {
+                for t1 in Set(Term.getTerms(t)) {
                     if t1 != t {
                         addTask(s, to: t1)
                     }

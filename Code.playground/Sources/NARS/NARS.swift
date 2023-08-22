@@ -84,6 +84,7 @@ public final class NARS: Item {
         
         memory = Bag<Concept>()
         recent = Bag<Belief>(4,40)
+        buffer = Bag<Task>(4,40)
     }
     
     public func perform(_ script: Sentence...) { // blocking
@@ -92,22 +93,30 @@ public final class NARS: Item {
 
     private func cycle() {
         if var concept = memory.get() {
-//                        print(concept.tasks)
-//                        print(concept.beliefs)
+//            print("cycle", concept.term.description)
             let results = concept.cycle()
-            
+                        
             if let derived = results["Judgement"] {
+                concept.adjustPriority(derived)
+                memory.put(concept)
                 
                 for j in derived {
-                    output(". ⏱ \(j)")
-                    
+                    output("--. ⏱ \(j)")
+
+                    buffer.put(Task(sentence: .judgement(j)))
+
                     let revised = memory.consider(.judgement(j), derive: false)
-                    
+
                     for r in revised {
-                        output(". ⏱ \(r)")
+                        if r.statement == j.statement {
+                            output("++. ⏱ \(r)")
+                        } else {
+                            // will not happen if derive=false
+//                            buffer.put(Task(sentence: .judgement(r)))
+                        }
                     }
                 }
-                concept.adjustPriority(derived)
+//                concept.adjustPriority(derived)
             }
             
             if let answers = results["Question"] {
@@ -118,8 +127,8 @@ public final class NARS: Item {
                         let source = chunk.removeFirst()
                         chunk.reversed().forEach { j in
                             let q1 = Sentence.question(Question(j.statement))
-                            output(". ⏱ \(q1)") // derived questions
-                            _ = memory.consider(q1, derive: false)
+//                            output(". ⏱ \(q1)") // derived questions
+//                            _ = memory.consider(q1, derive: false)
                         }
                     }
                     
@@ -133,6 +142,8 @@ public final class NARS: Item {
         }
     }
     
+    public var buffer = Bag<Task>(4,40)
+    
     public func perform(_ script: [Sentence]) { // blocking
         for s in script {
             
@@ -140,35 +151,52 @@ public final class NARS: Item {
                 for _ in 0..<n {
 //                    print(memory)
                     cycle()
+                    
+                    if let t = buffer.get() {
+                        output(". ⏱ \(t.sentence)")
+                               
+                        let revised = memory.consider(t.sentence, derive: false)
+
+                        for r in revised {
+
+                            if case .judgement(let judgement) = t.sentence,
+                               r.statement == judgement.statement {
+                                output(". ⏱ \(r)") // revision
+                            } else {
+                                // local inference
+//                                buffer.put(Task(sentence: .judgement(r)))
+                            }
+
+        //                    memory.consider(.judgement(r), derive: false)
+                        }
+
+                    }
                 }
             }
             
             if case .judgement(let j) = s {
                 output("• \(s)")
 
-                for j in process(recent: j) {
-                    
-                    // add stable patterns from recent memory
-                    let revised = memory.consider(.judgement(j), derive: false)
-                    for r in revised {
-                        output("++. ⏱ \(r)")
+//                for j in process(recent: j) {
+//                    
+//                    // add stable patterns from recent memory
+//                    let revised = memory.consider(.judgement(j), derive: true)
+//                    for r in revised {
+//                        output(". ⏱ \(r)")
+//
+////                        memory.consider(.judgement(r), derive: false)
+//                    }
+//                }
 
-//                        memory.consider(.judgement(r), derive: false)
-                    }
-                }
-                /*
-                <a --> b>.
-                <b --> c>.
-                <u --> v>.
-                <y --> z>.
-                <c --> d>.
-                50
-                <a --> d>?
-                */
-                let revised = memory.consider(s, derive: false)
+                let revised = memory.consider(s, derive: true)
                 
                 for r in revised {
-                    output("--. ⏱ \(r)")
+                    if r.statement == j.statement {
+                        output(". ⏱ \(r)") // revision
+                    } else {
+                        // local inference
+                        buffer.put(Task(sentence: .judgement(r)))
+                    }
 
 //                    memory.consider(.judgement(r), derive: false)
                 }
@@ -177,25 +205,25 @@ public final class NARS: Item {
             if case .question(let question) = s {
                 output("• \(s)")
 
-                if case .statement(let sub, _, _) = question.statement {
-                    // check recent memory first
-                    if let answer = recent.peek(question.identifier)?.judgement {
-                        // check main memory if the answer is already present
-                        let c = memory.items[sub.description]
-                        if c == nil || c!.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
-                            /// ANSWER
-                            process(.judgement(answer), recurse: false)
-                            let revised = memory.consider(.judgement(answer), derive: false)
-
-                            for r in revised {
-                                output(". ⏱ \(r)")
-                            }
-                        }
-                    }
-                }
+//                if case .statement(let sub, _, _) = question.statement {
+//                    // check recent memory first
+//                    if let answer = recent.peek(question.identifier)?.judgement {
+//                        // check main memory if the answer is already present
+//                        let c = memory.items[sub.description]
+//                        if c == nil || c!.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
+//                            /// ANSWER
+//                            process(.judgement(answer), recurse: false)
+//                            let revised = memory.consider(.judgement(answer), derive: false)
+//
+//                            for r in revised {
+//                                output(". ⏱ \(r)")
+//                            }
+//                        }
+//                    }
+//                }
 
                 
-                let answers = memory.consider(s, derive: false)
+                let answers = memory.consider(s, derive: true)
                 
                 if answers.first?.statement == .NULL {
                     

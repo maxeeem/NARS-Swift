@@ -89,6 +89,9 @@
                   Identifier = "Experimental/testEsperanto2()">
                </Test>
                <Test
+                  Identifier = "Experimental/testLang()">
+               </Test>
+               <Test
                   Identifier = "Experimental/testOp()">
                </Test>
                <Test
@@ -117,6 +120,9 @@
                </Test>
                <Test
                   Identifier = "Single_Step/testLogicRules()">
+               </Test>
+               <Test
+                  Identifier = "Single_Step/testMultiStep()">
                </Test>
                <Test
                   Identifier = "Single_Step/testNal7_02()">

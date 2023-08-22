@@ -25,7 +25,7 @@ public extension TruthValue {
 public extension TruthValue {
     static var tautology: TruthValue { TruthValue(1, 1) }
     static var guess: TruthValue { TruthValue(0.1, reliance) }
-    static var theorem: TruthValue { TruthValue(1, reliance) }
+    static var theorem: TruthValue { TruthValue(1, 1) }
 }
 
 public typealias TruthFunction = (TruthValue, TruthValue) -> TruthValue

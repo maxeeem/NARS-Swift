@@ -124,7 +124,7 @@ class Experimental: XCTestCase {
             knowledge-*,
 //            .cycle(20),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-            .cycle(20)
+            .cycle(200)
         )
         outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }
@@ -220,7 +220,7 @@ class Experimental: XCTestCase {
         narsy.perform(
             (("dog" --> "$x") => ("$x" --> "[live]"))-*,
             ("dog" --> "animal")-*,
-            .cycle(10)
+            .cycle(60)
         )
         outputMustContain("<animal -> [live]>.")
     }
@@ -367,7 +367,7 @@ class Experimental: XCTestCase {
             //            (__("translate", "t001", "en"))-!,
             //            .cycle(10),
             //            (__("translate", "t001", "fr"))-*,
-                .cycle(40)
+                .cycle(100)
         )
         
         //        __.perform(

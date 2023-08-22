@@ -47,6 +47,8 @@ public final class Bag<I: Item>: AbstractBag {
             return nil
         }
         let item = buckets[currentLevel].removeFirst()
+//        let idx = Int.random(in: 0..<buckets[currentLevel].count)
+//        let item = buckets[currentLevel].remove(at: idx)
         items.removeValue(forKey: item.identifier)
         return item
     }
@@ -66,6 +68,7 @@ public final class Bag<I: Item>: AbstractBag {
         }
         currentLevel = selectNonEmptyLevel()
         return buckets[currentLevel].first
+//        return buckets[currentLevel].randomElement()
     }
     
     public func peek(_ identifier: String) -> I? {

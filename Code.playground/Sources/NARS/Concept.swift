@@ -61,10 +61,18 @@ extension Concept {
     func cycle() -> [String: [Judgement]] {
         if var t = tasks.get() {
             // forward inference
-            if case .judgement(let j) = t.sentence,
-               var b = beliefs.get() {
-                if j != b.judgement {
-                    
+            if case .judgement(let j) = t.sentence {
+               var b = beliefs.get()
+                
+                if j == b?.judgement {
+                    let oldB = b!
+                    b = beliefs.get()
+                    beliefs.put(oldB) // put back
+                }
+                
+                if var b = b, !b.judgement.evidenceOverlap(j) {
+//                    print("%%", j, b.judgement)
+//                    print(j, negation(j1: j))
                     var derived: [Judgement] = []
                     // apply rules
                     let results = Rules.allCases
@@ -72,9 +80,9 @@ extension Concept {
                             r.apply((b.judgement, j))
                         }
                         .compactMap { $0 }
-                    
+                        .removeDuplicates()
                     derived.append(contentsOf: results)
-                    
+//                    print("%%", results)
                     // modify "usefullness" value
                     t.adjustPriority(results)
                     b.adjustPriority(results)
@@ -82,16 +90,13 @@ extension Concept {
                     beliefs.put(b) // put back
                     
                     
-                    derived = derived.removeDuplicates().filter {
+                    derived = derived.filter {
                         beliefs.peek($0.identifier) == nil
-                    }
+                        //                    }
+                        && $0.truthValue.confidence != 0 }
                     //                    && $0.statement != j.statement }
                     
-                    
                     return ["Judgement": derived]
-                    
-                } else {
-                    beliefs.put(b) // put back
                 }
             }
             
@@ -310,7 +315,7 @@ extension Concept {
             }
             
             // apply term decomposition
-            let judgement = Judgement(s, TruthValue(1.0, reliance)) // TODO: should we handle this better and pass actual timestamp?
+            let judgement = Judgement(s, TruthValue(1.0, 0.73)) // TODO: should we handle this better and pass actual timestamp?
             let decomposed = Theorems.apply(judgement)
                 .filter { beliefs.peek($0.identifier) != nil }
             if let answer = decomposed.first,

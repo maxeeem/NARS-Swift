@@ -116,7 +116,12 @@ public extension Rules {
                     (M <-> P,     S --> M, S --> P, tfi),
                     (M <-> P,     M --> S, P --> S, tfi)]
         case .resemblance:
-            return [(M <-> P,     S <-> M, S <-> P, tf)]
+            return [(M <-> P,     S <-> M, S <-> P, tf),
+                    
+                    // not in the book
+                    // -- conversion between inheritance and similarity
+                    (S --> P,     P --> S, S <-> P, tf),
+                    (S --> P,     P <-> S, P --> S, tf)]
             
         default:
             return [] // other rules are handled separately

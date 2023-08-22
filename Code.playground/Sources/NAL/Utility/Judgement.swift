@@ -5,8 +5,7 @@ public extension Array where Element == Judgement {
             $0.identifier
         }.values.compactMap {
             $0.max { j1, j2 in
-                let j = choice(j1: j1, j2: j2)
-                return j.statement == j2.statement
+                return j2 == choice(j1: j1, j2: j2)
             }
         }
         return unique

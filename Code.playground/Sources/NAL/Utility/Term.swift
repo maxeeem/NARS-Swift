@@ -36,6 +36,9 @@ extension Term {
             if terms.count == 1, c == .intSet || c == .extSet {
                 return [self]
             }
+            if terms.count == 1, c == .n {
+                return terms[0].terms
+            }
             return terms
         case .statement(let subject, _, let predicate):
             return [subject, predicate]
