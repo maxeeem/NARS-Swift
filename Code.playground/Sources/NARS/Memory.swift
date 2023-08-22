@@ -8,14 +8,14 @@ extension AbstractBag where I == Concept {
             func addTask(_ s: Sentence, to: Statement) {
                 let concept = get(to.description) ?? Concept(term: to)
                 
-//                if derive {
+                if derive {
                     if let originalTask = concept.tasks.get(s.description) { // remove old
                         concept.tasks.put(
                             Task(priority: originalTask.priority, sentence: s))
                     } else {
                         concept.tasks.put(Task(sentence: s))
                     }
-//                }
+                }
                 
                 // revision
                 
