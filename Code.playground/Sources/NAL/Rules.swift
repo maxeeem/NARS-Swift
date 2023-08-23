@@ -48,7 +48,7 @@ extension Rules {
         var x: [Judgement?] = []
         
         // apply rules
-        self.allRules.forEach { r in
+        self.backward.forEach { r in
             let (p1, p2, c, tf) = r
 
             let q = j1

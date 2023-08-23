@@ -1,7 +1,7 @@
 
 extension Question {
-    public init(_ f: @autoclosure () -> Statement) {
-        self.init(f(), Quest.truth, nil)
+    public init(_ f: @autoclosure () -> Statement, _ s: Judgement? = nil) {
+        self.init(f(), Quest.truth, nil, s)
     }
     public var variableTerm: Term! {
         if case .statement(let s, _ , let p) = statement {
@@ -76,8 +76,7 @@ extension NARS: Equatable {
 
 extension Belief: Comparable {
     public static func < (lhs: Belief, rhs: Belief) -> Bool {
-        let c = choice(j1: lhs.judgement, j2: rhs.judgement)
-        return c.statement == rhs.judgement.statement
+        rhs.judgement == choice(j1: lhs.judgement, j2: rhs.judgement)
     }
 }
 

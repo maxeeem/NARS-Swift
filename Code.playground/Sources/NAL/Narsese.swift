@@ -109,6 +109,8 @@ public struct Question: Hashable {
     public let type: Quest
     
     public let tense: Tense?
+    
+    public let source: Judgement? // for derived questions
 }
 
 public enum Tense: String, Hashable {

@@ -75,7 +75,10 @@ extension Concept {
             
             if var b = b {
                 guard !b.judgement.evidenceOverlap(j) else {
+                    b.priority = max(b.priority - 0.01, 0.01)
                     beliefs.put(b) // put back
+                    
+                    t.priority = max(t.priority - 0.01, 0.01)
                     tasks.put(t) // put back
                     return [:]
                 }
@@ -89,17 +92,25 @@ extension Concept {
                     .compactMap { $0 }
                     .removeDuplicates()
                 derived.append(contentsOf: results)
-                // modify "usefullness" value
-//                t.adjustPriority(results)
-//                b.adjustPriority(results)
-                beliefs.put(b) // put back
-                tasks.put(t) // put back
-
+                
                 derived = derived.filter {
                     beliefs.peek($0.identifier) == nil
                     //                    }
                     && $0.truthValue.confidence != 0 }
                 //                    && $0.statement != j.statement }
+                
+                // modify "usefullness" value
+                if !derived.isEmpty {
+                    // increase
+                    b.priority = min(b.priority + 0.01, 0.9)
+                } else {
+                    // decrease
+                    b.priority = max(b.priority - 0.01, 0.01)
+                }
+                beliefs.put(b) // put back
+                
+                t.priority = max(t.priority - 0.01, 0.01)
+                tasks.put(t) // put back
                 
                 return ["Judgement": derived]
             }
@@ -107,22 +118,39 @@ extension Concept {
         
         if case .question(let q) = t.sentence {
             
-            let results = answer(q.statement)
+            var results = answer(q.statement)
+            
+            if results.count == 1, results.first != .NULL-* {
+                // check if this was a derived question
+                if let source = q.source {
+                    // answer source question
+                    let answer = results[0]
+                    let rule = answer.truthValue.rule ?? .deduction
+                    let derived = rule.apply((source, answer)).compactMap{$0}
+                    for d in derived {
+                        if let revised = accept(belief: d) {
+                            results.append(revised)
+                        } else {
+                            results.append(d)
+                        }
+                    }
+                }
+            }
             
             // modify "usefullness" value
-//            t.adjustPriority(results)
+            t.priority = max(t.priority - 0.01, 0.01)
             tasks.put(t) // put back
-
+            
             return ["Question": results]
         }
         
         if case .goal(let g) = t.sentence {
-            print("Goal", g, "\n")
+//            print("Goal", g, "\n")
             let q: Question = ("?" >>|=> g.statement)-?
             let results = answer(q.statement)
             
             // modify "usefullness" value
-//            t.adjustPriority(results)
+            t.priority = max(t.priority - 0.01, 0.01)
             tasks.put(t) // put back
 
             return ["Goal": results]
@@ -131,6 +159,7 @@ extension Concept {
         // CLEANUP
         
         if tasks.peek(t.identifier) == nil {
+            t.priority = max(t.priority - 0.01, 0.01)
             tasks.put(t) // put back
         }
 
@@ -198,18 +227,20 @@ extension Concept {
 //    }
     
     public func answer(_ s: Statement) -> [Judgement] {
-        if let b = beliefs.get(s.description) {
+        if var b = beliefs.get(s.description) {
+            // increase
+            b.priority = min(b.priority + 0.01, 0.9)
             beliefs.put(b) // put back
             return [b.judgement]
-        } else if let c = conversion(j1: s-*), let b = beliefs.get(c.statement.description) {
+        } else if let c = conversion(j1: s-*), var b = beliefs.get(c.statement.description) {
+            // increase
+            b.priority = min(b.priority + 0.01, 0.9)
             beliefs.put(b) // put back
             let conv = conversion(j1: b.judgement)!
             beliefs.put(conv + 0.9)
             return [conv]
             
         } else {
-            print("\ncycling ", term.description)
-            print("beliefs\n", beliefs)
             let answer = beliefs.items.filter { b in
                 let t1 = b.value.judgement.statement
                 return Term.logic_match(t1: t1, t2: s)
@@ -218,12 +249,19 @@ extension Concept {
             }.max { j1, j2 in
                 j2 == choice(j1: j1, j2: j2)
             }
-//            print("answer\n", answer)
             
             if let ans = answer {
                 if let solution = Term.logic_solve(t1: ans.statement, t2: s) {
-//                    print("YAY!", solution)
-                    return [Judgement(solution, ans.truthValue, ans.derivationPath, tense: ans.tense, timestamp: ans.timestamp)]
+                    let j = Judgement(solution, ans.truthValue, ans.derivationPath, tense: ans.tense, timestamp: ans.timestamp)
+                    
+                    if var b = beliefs.get(solution.description) {
+                        // increase
+                        b.priority = min(b.priority + 0.01, 0.9)
+                        beliefs.put(b) // put back
+                    } else {
+                        beliefs.put(j + 0.9)
+                    }
+                    return [j]
                 }
             }
             
@@ -235,16 +273,20 @@ extension Concept {
                let j = beliefs.items.values.first(where: { $0.judgement.statement == answer.statement })?.judgement {
                 let f = and(j.truthValue.f, answer.truthValue.f)
                 let c = and(j.truthValue.c, answer.truthValue.c)
-                let tv = TruthValue(f, c) // intersection
-                return [Judgement(s, tv)]
+                let tv = TruthValue(f, c, j.truthValue.rule) // intersection
+                let jj = Judgement(s, tv)
+                beliefs.put(jj + 0.9)
+                return [jj]
             }
 
-            if let b = beliefs.get() {
-                beliefs.put(b) // put back
+            if var b = beliefs.get() {
                 // all other rules // backward inference
                 let theorems = Theorems.apply(b.judgement)
                     .filter { beliefs.peek($0.identifier) == nil }
                 if let answer = theorems.first(where: { $0.statement == s }) {
+                    // increase
+                    b.priority = min(b.priority + 0.01, 0.9)
+                    beliefs.put(b) // put back
                     return [answer]
                     
                 } else if case .statement(let qs, let qc, _) = s, !(qc == .predictiveImp && qs.description.hasPrefix("?")) {
@@ -252,8 +294,15 @@ extension Concept {
                         r.backward((s-*, b.judgement))
                     }.compactMap { $0 }
 
-                    return [.NULL-*] + backward
+                    if !backward.isEmpty {
+                        // increase
+                        b.priority = min(b.priority + 0.01, 0.9)
+                        beliefs.put(b) // put back
+                    }
+                    return [.NULL-*, b.judgement] + backward
                 }
+
+                beliefs.put(b) // put back
             }
         }
         return [] // no results found

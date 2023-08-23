@@ -79,6 +79,11 @@ public extension Rules {
         return rules + permutations(rules) + decomposition
     }
 
+    var backward: [Rule] { // exclude compositional and conditionalSyllogistic
+        let rules = firstOrder + higherOrder
+        return rules + permutations(rules) + decomposition
+    }
+    
     var higherOrder: [Rule] {
         return firstOrder.map { (arg) in
             var (p1, p2, c, tf) = arg

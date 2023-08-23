@@ -61,11 +61,9 @@ class Experimental: XCTestCase {
             ("{sky}" --> "[blue]")-*,
             ("{tom}" --> "cat")-*,
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
-            .cycle(500),
             ("[blue]" --> ç.e_("likes", "cat", .º))-?,
             .cycle(200)
         )
-        
         outputMustContain("💡 <[blue] -> (/ likes cat º)>.") // c should be 0.37%
     }
     
@@ -123,9 +121,9 @@ class Experimental: XCTestCase {
         narsy.perform(
 //            image-*,
             knowledge-*,
-//            .cycle(20),
+            .cycle(20),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-            .cycle(100)
+            .cycle(200)
         )
         outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }
@@ -405,7 +403,7 @@ class Experimental: XCTestCase {
             ((("ball" --> "[left]") >>|=> (.operation("move", [.SELF, "[left]"]))) >>|=> ("ball" --> "[center]"))-*,
             (("ball" --> "[center]") >>|=> "G")-*,
             ||("ball" --> "[left]")-*,
-            .cycle(100)
+            .cycle(200)
         )
         outputMustContain("🤖 ^move SELF [left]")
 //        print(narsy.memory)

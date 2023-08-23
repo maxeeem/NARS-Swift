@@ -1,9 +1,10 @@
 
 extension Question {
-    public init(_ statement: Statement, _ type: Quest, _ tense: Tense? = nil) {
+    public init(_ statement: Statement, _ type: Quest, _ tense: Tense? = nil, _ source: Judgement? = nil) {
         self.statement = statement
         self.type = type
         self.tense = tense
+        self.source = source
     }
 }
 

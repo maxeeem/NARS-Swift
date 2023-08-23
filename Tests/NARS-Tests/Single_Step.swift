@@ -171,14 +171,14 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("bird" --> "animal")-*,
             ("dog" --> "person")-?,
-            .cycle(10),
+//            .cycle(10),
             ("o" --> "x")-?,
-            .cycle(10),
+//            .cycle(10),
             ("bird" --> "[flying]")-*,
             ("bird" --> "animal")-?,
-            .cycle(10),
+//            .cycle(10),
             ("dog" --> "person")-*,
-            .cycle(10)
+            .cycle(100)
         )
         outputMustContain("💡 <bird -> animal>.")
         outputMustContain("💡 <dog -> person>. %1.00;0.90%.")
@@ -697,7 +697,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("{Tweety}" --> "_P")-*,
             ((.instance(.variable(.independent("x"))) --> "_P") => (.instance(.variable(.independent("x"))) --> "_Q"))-*,
-            .cycle(1000)
+            .cycle(100)
         ) /// <{Tweety} -> Q>. %1.00;0.81%.ded
         outputMustContain("⏱ <{Tweety} -> _Q>. %1.00;0.81%")
     }
@@ -765,7 +765,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             (("robin" --> "bird") => ("robin" --> "animal"))-*,
             (("robin" --> "[flying]") => ("robin" --> "bird"))-*,
-            .cycle(1000)
+            .cycle(100)
         )
         outputMustContain("<(robin -> [flying]) => (robin -> animal)>. %1.00;0.81%")
     }

@@ -1,13 +1,13 @@
 
 extension AbstractBag where I == Concept {
 
-    func consider(_ s: Sentence, derive: Bool) -> [Judgement] {
+    func consider(_ s: Sentence, derive: Bool = false) -> [Judgement] {
         switch s {
         case .judgement(let j):
             var derived: [Judgement] = []
             
             func addTask(_ s: Sentence, to: Statement) {
-                let concept = get(to.description) ?? Concept(term: to)
+                var concept = get(to.description) ?? Concept(term: to)
 
                 // revision
                 
@@ -34,7 +34,7 @@ extension AbstractBag where I == Concept {
                     
                     derived.append(contentsOf: results)
                 }
-                    
+                
                 // storage
                 put(concept)
             }
