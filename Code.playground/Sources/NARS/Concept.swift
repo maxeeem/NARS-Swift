@@ -62,7 +62,7 @@ extension Concept {
         guard var t = tasks.get() else {
             return [:] // empty task bag
         }
-        
+
         // forward inference
         if case .judgement(let j) = t.sentence {
             var b = beliefs.get()
@@ -90,8 +90,8 @@ extension Concept {
                     .removeDuplicates()
                 derived.append(contentsOf: results)
                 // modify "usefullness" value
-                t.adjustPriority(results)
-                b.adjustPriority(results)
+//                t.adjustPriority(results)
+//                b.adjustPriority(results)
                 beliefs.put(b) // put back
                 tasks.put(t) // put back
 
@@ -110,10 +110,22 @@ extension Concept {
             let results = answer(q.statement)
             
             // modify "usefullness" value
-            t.adjustPriority(results)
+//            t.adjustPriority(results)
             tasks.put(t) // put back
 
             return ["Question": results]
+        }
+        
+        if case .goal(let g) = t.sentence {
+            print("Goal", g, "\n")
+            let q: Question = ("?" >>|=> g.statement)-?
+            let results = answer(q.statement)
+            
+            // modify "usefullness" value
+//            t.adjustPriority(results)
+            tasks.put(t) // put back
+
+            return ["Goal": results]
         }
         
         // CLEANUP
@@ -196,19 +208,21 @@ extension Concept {
             return [conv]
             
         } else {
-            
+            print("\ncycling ", term.description)
+            print("beliefs\n", beliefs)
             let answer = beliefs.items.filter { b in
                 let t1 = b.value.judgement.statement
                 return Term.logic_match(t1: t1, t2: s)
             }.map { b in
                 b.value.judgement
             }.max { j1, j2 in
-                let c = choice(j1: j1, j2: j2)
-                return c.statement == j2.statement
+                j2 == choice(j1: j1, j2: j2)
             }
+//            print("answer\n", answer)
             
             if let ans = answer {
                 if let solution = Term.logic_solve(t1: ans.statement, t2: s) {
+//                    print("YAY!", solution)
                     return [Judgement(solution, ans.truthValue, ans.derivationPath, tense: ans.tense, timestamp: ans.timestamp)]
                 }
             }

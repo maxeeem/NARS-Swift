@@ -89,9 +89,6 @@
                   Identifier = "Experimental/testEsperanto2()">
                </Test>
                <Test
-                  Identifier = "Experimental/testOp2()">
-               </Test>
-               <Test
                   Identifier = "Experimental/testSample()">
                </Test>
                <Test

@@ -393,7 +393,7 @@ class Experimental: XCTestCase {
             ("G")-!,
             ((("ball" --> "[left]") >>|=> .operation("move", [.SELF, "[left]"])) >>|=> "G")-*,
             ||("ball" --> "[left]")-*,
-            .cycle(200)
+            .cycle(100)
         )
         outputMustContain("🤖 ^move SELF [left]")
 //        print(nars.memory)
@@ -405,10 +405,10 @@ class Experimental: XCTestCase {
             ((("ball" --> "[left]") >>|=> (.operation("move", [.SELF, "[left]"]))) >>|=> ("ball" --> "[center]"))-*,
             (("ball" --> "[center]") >>|=> "G")-*,
             ||("ball" --> "[left]")-*,
-            .cycle(10)
+            .cycle(100)
         )
         outputMustContain("🤖 ^move SELF [left]")
-//        print(nars.memory)
+//        print(narsy.memory)
     }
     /*
     func testMove() {

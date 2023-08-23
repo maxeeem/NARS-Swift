@@ -8,7 +8,7 @@ extension AbstractBag where I == Concept {
             
             func addTask(_ s: Sentence, to: Statement) {
                 let concept = get(to.description) ?? Concept(term: to)
-                
+
                 // revision
                 
                 if let revised = concept.accept(belief: j) {
@@ -66,7 +66,9 @@ extension AbstractBag where I == Concept {
                 }
                 put(concept)
             }
-            
+
+//            addTask(s, to: q.statement)
+
             for t in Set(q.statement.terms) {
                 addTask(s, to: t)
                 
@@ -80,7 +82,34 @@ extension AbstractBag where I == Concept {
             return answers
 
         case .goal(let g):
-            return consider(g, derive: derive) // TODO: finish implementation
+            var answers: [Judgement] = []
+            
+            func addTask(_ s: Sentence, to: Statement) {
+                let concept = get(to.description) ?? Concept(term: to)
+                concept.tasks.put(Task(sentence: s))
+
+                if derive {
+                    let q: Question = ("?" >>|=> g.statement)-?
+                    let results = concept.answer(q.statement)
+                    answers.append(contentsOf: results)
+                }
+                put(concept)
+            }
+            
+//            addTask(s, to: g.statement)
+
+            for t in Set(g.statement.terms) {
+                addTask(s, to: t)
+                
+                for t1 in Set(Term.getTerms(t)) {
+                    if t1 != t {
+                        addTask(s, to: t1)
+                    }
+                }
+            }
+
+            return answers
+            
         case .cycle: return []
         }
     }

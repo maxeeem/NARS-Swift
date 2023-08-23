@@ -77,8 +77,8 @@ extension Term {
     public static func getTerms(_ t: Term) -> [Term] {
         if t.terms.count == 1 {
             if case .compound(let c, let terms) = t,
-                c == .intSet || c == .extSet {
-                return terms
+               c == .intSet || c == .extSet || c == .n {
+                return terms + t.terms
             }
             return t.terms
         }

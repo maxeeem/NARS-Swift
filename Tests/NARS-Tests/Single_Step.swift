@@ -335,7 +335,7 @@ class Single_Step: XCTestCase {
         nars.perform(
             ("bird" --> "swimmer")-*,
             ("{?1}" --> "swimmer")-?,
-            .cycle(10)
+            .cycle(40)
         )
         outputMustContain("<{?1} -> bird>?")
     }

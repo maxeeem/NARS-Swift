@@ -99,11 +99,10 @@ public final class NARS: Item {
             return // no concepts in memory
         }
         
-        // print("cycle", concept.term.description)
         let results = concept.cycle()
                     
         if let derived = results["Judgement"] {
-            concept.adjustPriority(derived)
+//            concept.adjustPriority(derived)
             
             for j in derived {
                 buffer.put(Task(sentence: .judgement(j)))
@@ -111,7 +110,8 @@ public final class NARS: Item {
         }
         
         if let answers = results["Question"] {
-            
+//            concept.adjustPriority(answers)
+
             if answers.first?.statement == .NULL {
 
                 // TODO: finish this !!!
@@ -125,9 +125,18 @@ public final class NARS: Item {
                 
             } else if let a = answers.first {
                 output(". 💡 \(a)")
-                
-                if case .statement(let sub, let cop, let pre) = a.statement {
-                    if cop == .predictiveImp, pre == "G" { // TODO: needs to be done properly
+
+            }
+
+        }
+        
+        if let answers = results["Goal"] {
+//            concept.adjustPriority(answers)
+
+//            print("A\n", answers, "\n")
+            if let a = answers.first {
+                if case .statement(let sub, let cop, _) = a.statement {
+                    if cop == .predictiveImp { // TODO: needs to be done properly
                         // subject is the subgoal
                         if case .statement(_, let c, let p) = sub {
                             // TODO: how to check preconditions?
@@ -141,12 +150,14 @@ public final class NARS: Item {
                                         output("Unknown operation \(op)")
                                     }
                                 }
+                            } else {
+                                let gs = Goal(sub)
+                                buffer.put(Task(sentence: .goal(gs)))
                             }
                         }
                     }
                 }
             }
-
         }
         
         memory.put(concept)
@@ -175,9 +186,9 @@ public final class NARS: Item {
             // set time stamp if not yet set
             let s = s.setTimestamp(timeProviderMs)
 
-            
+            output("• \(s)")
+
             if case .judgement(let j) = s {
-                output("• \(s)")
 
                 recentInput.append(j)
                 
@@ -199,7 +210,6 @@ public final class NARS: Item {
             }
             
             if case .question(let question) = s {
-                output("• \(s)")
 
                 if case .statement(let sub, _, _) = question.statement {
                     // check recent memory first
@@ -256,8 +266,8 @@ public final class NARS: Item {
                                 }
                             }
                         } else {
-                            let qs = Question("?" >>|=> s)
-                            buffer.put(Task(sentence: .question(qs)))
+//                            let qs = Question("?" >>|=> s)
+//                            buffer.put(Task(sentence: .question(qs)))
                         }
                     }
                 }
