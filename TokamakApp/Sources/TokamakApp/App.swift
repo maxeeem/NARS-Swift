@@ -69,10 +69,12 @@ struct TokamakApp: App {
 }
 
 
+private let defaultInput = "<[blue] -> (/ likes cat º)>?"
+
 struct ContentView: View {
     @EnvironmentObject var nars: NARS_Singleton
-
-    @State var input = "<[blue] -> (/ likes cat º)>?"
+    
+    @State var input = defaultInput
     
     let dialects = Array(Dialect.allCases.reversed())
         .filter({$0 != .ona}) // TODO: need to add mappings
@@ -187,6 +189,9 @@ struct ContentView: View {
         let s = input.trimmingCharacters(in: .whitespaces)
         if let x = Sentence(s, parser: nars.narsese) {
             nars.instance.perform(x)
+            if input == defaultInput {
+                nars.instance.perform(.cycle(200))
+            }
             input = ""
         } else {
             nars.output("Parsing error")
