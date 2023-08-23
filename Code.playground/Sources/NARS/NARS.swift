@@ -45,10 +45,14 @@ public final class NARS: Item {
     public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
     public internal(set) var memory = Bag<Concept>()
     
+    public internal(set) var buffer = Bag<Task>(4,40) // TODO: need to use actual buffer not just a bag
+
+    private var recentInput: [Judgement] = []
+
+    
     // TODO: rename to stdout and add stderr
     public var output: (String) -> Void
     
-    //    fileprivate var lastPerformance = DispatchWallTime.now()
 
     public typealias Op = ([Term]) -> Term
     public var operations: [String: Op] = [:]
@@ -77,14 +81,13 @@ public final class NARS: Item {
     }
     
     public func reset() {
-        derivedBuffer.removeAll()
-        derivedQuestions.removeAll()
-        
         Theorems.cache.removeAll() // TODO: temporary workaround, needs better implementation
         
         memory = Bag<Concept>()
         recent = Bag<Belief>(4,40)
         buffer = Bag<Task>(4,40)
+        
+        recentInput.removeAll()
     }
     
     public func perform(_ script: Sentence...) { // blocking
@@ -92,101 +95,96 @@ public final class NARS: Item {
     }
 
     private func cycle() {
-        if var concept = memory.get() {
-//            print("cycle", concept.term.description)
-            let results = concept.cycle()
-                        
-            if let derived = results["Judgement"] {
-                concept.adjustPriority(derived)
-                memory.put(concept)
-                
-                for j in derived {
-                    output("--. ⏱ \(j)")
-
-                    buffer.put(Task(sentence: .judgement(j)))
-
-                    let revised = memory.consider(.judgement(j), derive: false)
-
-                    for r in revised {
-                        if r.statement == j.statement {
-                            output("++. ⏱ \(r)")
-                        } else {
-                            // will not happen if derive=false
-//                            buffer.put(Task(sentence: .judgement(r)))
-                        }
-                    }
-                }
-//                concept.adjustPriority(derived)
-            }
-            
-            if let answers = results["Question"] {
-                
-                if answers.first?.statement == .NULL {
-                    
-                    for var chunk in answers.split(separator: .NULL-*) {
-                        let source = chunk.removeFirst()
-                        chunk.reversed().forEach { j in
-                            let q1 = Sentence.question(Question(j.statement))
-//                            output(". ⏱ \(q1)") // derived questions
-//                            _ = memory.consider(q1, derive: false)
-                        }
-                    }
-                    
-                } else if let a = answers.first {
-                    output(". 💡 \(a)")
-                }
-
-            }
-            
-            memory.put(concept)
+        guard var concept = memory.get() else {
+            return // no concepts in memory
         }
+        
+        // print("cycle", concept.term.description)
+        let results = concept.cycle()
+                    
+        if let derived = results["Judgement"] {
+            concept.adjustPriority(derived)
+            
+            for j in derived {
+                buffer.put(Task(sentence: .judgement(j)))
+            }
+        }
+        
+        if let answers = results["Question"] {
+            
+            if answers.first?.statement == .NULL {
+
+                // TODO: finish this !!!
+                
+//                for chunk in answers.split(separator: .NULL-*) {
+//                    chunk.reversed().forEach { j in
+//                        let q1 = Sentence.question(Question(j.statement))
+//                        buffer.put(Task(sentence: q1))
+//                    }
+//                }
+                
+            } else if let a = answers.first {
+                output(". 💡 \(a)")
+                
+                if case .statement(let sub, let cop, let pre) = a.statement {
+                    if cop == .predictiveImp, pre == "G" { // TODO: needs to be done properly
+                        // subject is the subgoal
+                        if case .statement(_, let c, let p) = sub {
+                            // TODO: how to check preconditions?
+                            if c == .predictiveImp { // TODO: `s` precondition need to be checked
+                                if case .operation(let op, let ts) = p {
+                                    output(". 🤖 \(p)")
+                                    if let operation = operations[op] {
+                                        let result = operation(ts) // execute
+                                        output(result.description)
+                                    } else {
+                                        output("Unknown operation \(op)")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+        
+        memory.put(concept)
     }
-    
-    public var buffer = Bag<Task>(4,40)
-    
+        
     public func perform(_ script: [Sentence]) { // blocking
         for s in script {
             
             if case .cycle(let n) = s {
                 for _ in 0..<n {
-//                    print(memory)
+
                     cycle()
                     
                     if let t = buffer.get() {
-                        output(". ⏱ \(t.sentence)")
+                        output(". ⏱ \(t.sentence)") // task
                                
                         let revised = memory.consider(t.sentence, derive: false)
 
                         for r in revised {
-
-                            if case .judgement(let judgement) = t.sentence,
-                               r.statement == judgement.statement {
-                                output(". ⏱ \(r)") // revision
-                            } else {
-                                // local inference
-//                                buffer.put(Task(sentence: .judgement(r)))
-                            }
-
-        //                    memory.consider(.judgement(r), derive: false)
+                            output(". ⏱ \(r)") // revision
                         }
-
                     }
                 }
             }
+                        
+            // set time stamp if not yet set
+            let s = s.setTimestamp(timeProviderMs)
+
             
             if case .judgement(let j) = s {
                 output("• \(s)")
 
-//                for j in process(recent: j) {
-//                    
-//                    // add stable patterns from recent memory
-//                    let revised = memory.consider(.judgement(j), derive: true)
-//                    for r in revised {
-//                        output(". ⏱ \(r)")
-//
-////                        memory.consider(.judgement(r), derive: false)
-//                    }
-//                }
+                recentInput.append(j)
+                
+                for j in process(recent: j) {
+                    // add stable patterns from recent memory
+                    buffer.put(Task(sentence: .judgement(j)))
+                }
 
                 let revised = memory.consider(s, derive: true)
                 
@@ -197,42 +195,33 @@ public final class NARS: Item {
                         // local inference
                         buffer.put(Task(sentence: .judgement(r)))
                     }
-
-//                    memory.consider(.judgement(r), derive: false)
                 }
             }
             
             if case .question(let question) = s {
                 output("• \(s)")
 
-//                if case .statement(let sub, _, _) = question.statement {
-//                    // check recent memory first
-//                    if let answer = recent.peek(question.identifier)?.judgement {
-//                        // check main memory if the answer is already present
-//                        let c = memory.items[sub.description]
-//                        if c == nil || c!.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
-//                            /// ANSWER
-//                            process(.judgement(answer), recurse: false)
-//                            let revised = memory.consider(.judgement(answer), derive: false)
-//
-//                            for r in revised {
-//                                output(". ⏱ \(r)")
-//                            }
-//                        }
-//                    }
-//                }
+                if case .statement(let sub, _, _) = question.statement {
+                    // check recent memory first
+                    if let answer = recent.peek(question.identifier)?.judgement {
+                        // check main memory if the answer is already present
+                        let c = memory.items[sub.description]
+                        if c == nil || c!.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
+                            /// ANSWER
+                            buffer.put(Task(sentence: .judgement(answer)))
+                            output(". 💡 \(answer)")
+                        }
+                    }
+                }
 
-                
                 let answers = memory.consider(s, derive: true)
-                
+
                 if answers.first?.statement == .NULL {
                     
-                    for var chunk in answers.split(separator: .NULL-*) {
-                        let source = chunk.removeFirst()
+                    for chunk in answers.split(separator: .NULL-*) {
                         chunk.reversed().forEach { j in
                             let q1 = Sentence.question(Question(j.statement))
-                            output(". ⏱ \(q1)") // derived questions
-                            _ = memory.consider(q1, derive: false)
+                            buffer.put(Task(sentence: q1))
                         }
                     }
                     
@@ -241,68 +230,48 @@ public final class NARS: Item {
                 }
             }
             
-//            processInput(s)
-//
-//            process(anticipations: s)
+            if case .goal(let g) = s { // TODO: take desireValue into account
+                let derived = memory.consider(s, derive: true)
+                
+                for d in derived { // process statements
+                    if case .statement(let s, let c, let p) = d.statement,
+                       /*case .operation(let op, let args) = s,*/ c == .predictiveImp, p == g.statement {
+                        if case .operation(let op, let args) = s {
+                            output(". 🤖 \(s)")
+                            if let operation = operations[op] {
+                                let result = operation(args) // execute
+                                output(result.description)
+                            } else {
+                                output("Unknown operation \(op)")
+                            }
+                        } else if case .statement(_, let opc, let opp) = s,
+                                  opc == .predictiveImp { // need to verify the the other term?
+                            if case .operation(let op, let args) = opp {
+                                output(". 🤖 \(opp)")
+                                if let operation = operations[op] {
+                                    let result = operation(args) // execute
+                                    output(result.description)
+                                } else {
+                                    output("Unknown operation \(op)")
+                                }
+                            }
+                        } else {
+                            let qs = Question("?" >>|=> s)
+                            buffer.put(Task(sentence: .question(qs)))
+                        }
+                    }
+                }
+            }
+            
+            // ANTICIPATIONS
+            
+            process(anticipations: s)
         }
     }
     
     public func perform(_ statement: Statement) { // convenience
         perform(statement-*)
     }
-
-    
-    // stores sentences for subsequent processing in imagination
-    private var derivedBuffer = [Sentence]()
-    
-    // stores derived questions and their roots for backward inference
-    private var derivedQuestions = [Statement: (judgement: Judgement, rule: Rules)]()
-    
-    
-    // MARK: Recent
-
-    private func processRecent(_ s: Sentence) {
-        if case .judgement(let j) = s {
-            for j in process(recent: j) {
-                // add stable patterns from recent memory
-                process(.judgement(j), recurse: false)
-            }
-        }
-    }
-    
-    // MARK: Input
-    
-    private func processInput(_ s: Sentence) {
-        //
-        // TODO: account for tense in question answering
-        //
-        
-        // set time stamp if not yet set
-        let s = s.setTimestamp(timeProviderMs)
-        
-        /// JUDGEMENT
-        if case .judgement(let judgement) = s {
-            recentInput.append(judgement)
-        }
-        
-        /// QUESTION
-        if case .question(let q) = s, case .statement(let sub, _, _) = q.statement {
-            // check recent memory first
-            if let answer = recent.peek(q.identifier)?.judgement {
-                // check main memory if the answer is already present
-                let c = memory.items[sub.description]
-                if c == nil || c!.beliefs.items.contains(where: { $0.value.judgement.statement == answer.statement }) == false {
-                    /// ANSWER
-                    process(.judgement(answer), recurse: false)
-                }
-            }
-        }
-        
-        /// SENTENCE
-        process(s, label: "•") // process in main memory
-    }
-    
-    private var recentInput: [Judgement] = []
 }
 
 
@@ -335,10 +304,14 @@ extension NARS {
                                 
                                 if concept.term == p { // isPredicate
                                     if let subject = memory.get(s.description) { // get subject concept
-                                        subject.accept(observed, derive: false)
+                                        if let revised = subject.accept(belief: observed) {
+                                            output(". ⏱ \(revised)")
+                                        }
                                         memory.put(subject)
                                     }
-                                    concept.accept(observed, derive: false)
+                                    if let revised = concept.accept(belief: observed) {
+                                        output(". ⏱ \(revised)")
+                                    }
                                 }
                             }
                         }
@@ -445,247 +418,5 @@ extension NARS {
         }
         
         return stable
-    }
-    
-    /// Main processign function
-    /// - Parameters:
-    ///   - input: input `Sentence`
-    ///   - recurse: determines if derived judgements are produced
-    ///   - label: `.` prefix to use in output
-    fileprivate func process(_ input: Sentence, recurse: Bool = true, label: String = ".") {
-        let label = label + (recurse ? "" : "  ⏱") + " "
-        
-        // set time stamp if not yet set
-        let input = input.setTimestamp(timeProviderMs)
-        
-        output(label + "\(input)")
-        
-        // process in memory
-        var derived = memory.consider(input, derive: recurse)
-        
-        //        print("processed \(input)\n\tderived \(derived)")
-        
-        /*
-         * MAIN
-         */
-        switch input {
-            
-        case .judgement:
-            // clean up duplicates and tautologies
-            /// TODO: filter open compound terms: Definition 10.4
-            derived = derived.remove(matching: input)
-            derivedBuffer.enqueue(derived)
-            
-        case .goal(let g): // TODO: take desireValue into account
-            var accomplished = false
-            
-            for d in derived { // process statements
-                if case .statement(let s, let c, let p) = d.statement,
-                   /*case .operation(let op, let args) = s,*/ c == .predictiveImp, p == g.statement {
-                    if case .operation(let op, let args) = s {
-                        output(label + "🤖 \(s)")
-                        accomplished = true
-                        if let operation = operations[op] {
-                            let result = operation(args) // execute
-                            output(result.description)
-                        } else {
-                            output("Unknown operation \(op)")
-                        }
-                    } else if case .statement(_, let opc, let opp) = s,
-                              opc == .predictiveImp { // need to verify the the other term?
-                        if case .operation(let op, let args) = opp {
-                            output(label + "🤖 \(opp)")
-                            accomplished = true
-                            if let operation = operations[op] {
-                                let result = operation(args) // execute
-                                output(result.description)
-                            } else {
-                                output("Unknown operation \(op)")
-                            }
-                        }
-                    } else {
-                        let qs = Question("?" >>|=> s)
-                        if derivedQuestions[qs.statement] == nil {
-                            derivedQuestions[qs.statement] = (d, d.truthValue.rule ?? .deduction)
-                            derivedBuffer.insert(contentsOf: [input, .question(qs)], at: 0)
-                        }
-                    }
-                }
-            }
-            
-            if !accomplished {
-                // re-process goal
-                derivedBuffer.insert(input, at: 0) // TODO: need to only do this if goal has not been achieved yet
-            }
-            
-        case .question(let question):
-            // consider a question
-            if case .statement = question.statement, !derived.isEmpty {
-                if let winner = derived.first(where: { $0.statement == question.statement }) {
-                    
-                    // cancel in-flight activities
-                    derivedBuffer.cleanup(winner.statement)
-                    
-                    if let (source, rule) = derivedQuestions[winner.statement] {
-                        derivedQuestions.removeValue(forKey: winner.statement)
-                        
-                        let answers = rule.apply((source, winner)) .compactMap {$0} .map {Sentence($0)}
-                        derivedBuffer.append(contentsOf: answers)
-                    }
-                    
-                    output("• 💡 \(winner)")
-                    print("}}", winner.derivationPath)
-                    
-                    derivedBuffer.append(.judgement(winner))
-                    
-                } else if let winner = derived.first(where: {
-                    let match = Term.logic_match(t1: $0.statement, t2: question.statement)
-                    if match {
-                        let request = Term.getTerms(question.statement).filter({ $0 != "º" && !$0.description.hasPrefix("?") })
-                        let result = Term.getTerms($0.statement)
-                        return request.allSatisfy({result.contains($0)})
-                    }
-                    return match
-                }) {
-                    // cancel in-flight activities
-                    derivedBuffer.cleanup(question.statement)
-                    
-                    if let (source, rule) = derivedQuestions[question.statement] {
-                        derivedQuestions.removeValue(forKey: question.statement)
-                        
-                        let answers = rule.apply((source, winner)) .compactMap {$0} .map {Sentence($0)}
-                        
-                        if case .goal(let goal) = derivedBuffer.last {
-                            if case .judgement(let jud) = answers.first {
-                                if case .statement(let sub, let cop, let pre) = jud.statement {
-                                    if cop == .predictiveImp, pre == goal.statement {
-                                        // subject is the subgoal
-                                        if case .statement(_, let c, let p) = sub {
-                                            // TODO: how to check preconditions?
-                                            if c == .predictiveImp { // TODO: `s` precondition need to be checked
-                                                if case .operation(let op, let ts) = p {
-                                                    _ = derivedBuffer.removeLast()
-                                                    
-                                                    output(label + "🤖 \(p)")
-                                                    if let operation = operations[op] {
-                                                        let result = operation(ts) // execute
-                                                        output(result.description)
-                                                    } else {
-                                                        output("Unknown operation \(op)")
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        
-                                        return // EXIT
-                                    }
-                                }
-                            }
-                        }
-                        
-                        derivedBuffer.append(contentsOf: answers)
-                    }
-                    
-                    output("• 💡 \(winner)")
-                    print("}}", winner.derivationPath)
-                    
-                    derivedBuffer.append(.judgement(winner))
-                    
-                    if case .statement(let s, let c, let p) = winner.statement, c == .inheritance {
-                        if case .compound(let con, let terms) = p, con == .e, terms.count > 2, terms.first == .represent {
-                            let op = terms.filter {
-                                if case .operation = $0 {
-                                    return true
-                                }
-                                return false
-                            }
-                            
-                            if op.isEmpty {
-                                let relation = terms[2] // kiu -> [dormas]
-                                let followUp = relation --> ç.e_(.represent, .º, "?")
-                                derivedBuffer.append(.question(.init(followUp)))
-                                
-                            } else {
-                                for o in op {
-                                    if case .operation(let op, let args) = o {
-                                        output(label + "🤖 \(s)")
-                                        if let operation = operations[op] {
-                                            let result = operation(args) // execute
-                                            output(result.description)
-                                        } else {
-                                            output("Unknown operation \(op)")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                } else {
-                    /*
-                     * IMAGINATION -- derived questions
-                     */
-                    // maybe?
-                    var buff: [Sentence] = []
-                    for var chunk in derived.split(separator: .NULL-*) {
-                        let source = chunk.removeFirst()
-                        let qs: [Sentence] = chunk.reversed().flatMap { j -> [Sentence] in
-                            if derivedQuestions[j.statement] == nil {
-                                derivedQuestions[j.statement] = (source, j.truthValue.rule ?? .deduction)
-                                return [.question(question), .question(.init(j.statement))]
-                            } else { // no idea; take a guess
-                                let guess = Judgement(j.statement, .guess, j.derivationPath, tense: j.tense, timestamp: j.timestamp)
-                                return [.question(question), .judgement(guess)]
-                            }
-                        }
-                        buff.append(contentsOf: qs)
-                    }
-                    
-                    derivedBuffer.insert(contentsOf: buff, at: 0)
-                    
-                    output("\tI don't know 🤷‍♂️")
-                    // TODO: additionally process sentence *["SELF", question.statement] --> -("[know]")
-                    
-                }
-            } else {
-                //output("\t(3)I don't know 🤷‍♂️")
-                derivedBuffer.insert(input, at: 0)
-            }
-            
-            /// CYCLE
-            
-        case .cycle(let n):
-            for _ in 0 ..< n {
-                if let s = derivedBuffer.popLast() {
-                    process(s, recurse: false)
-                } else {
-                    mainCycle()
-                }
-            }
-            output("Completed \(n) cycles")
-        }
-    }
-    
-    
-    // MARK: Cycles
-    
-    private func mainCycle() {
-        // TODO: potentially get items from recent memory and process them in imagination
-        //        if let r = recent.get() {
-        //            recent.put(r)
-        //            self.process(.judgement(b.judgement))
-        //        }
-        
-        if let c = memory.peek(), let b = c.beliefs.peek() {
-            
-            let immediate = Rules.immediate(b.judgement)
-            let structural = Theorems.apply(b.judgement)
-            
-            let results = (immediate + structural)
-            
-            results.forEach { j in
-                process(.judgement(j), recurse: true)
-            }
-        }
     }
 }

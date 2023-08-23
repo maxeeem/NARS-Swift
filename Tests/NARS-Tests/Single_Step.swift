@@ -132,12 +132,9 @@ class Single_Step: XCTestCase {
         nars.perform(
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "door_101") --> "open"))-*,
             ((("John" * "key_101") --> "hold") >>|=> (("John" * "room_101") --> "enter"))-*,
-//            ((("John" * "room_101") --> "enter") >>|=> (("John" * "door_101") --> "open"))-*(0, 0.9),
-//            ((("John" * "room_101") --> "enter") <<|=> (("John" * "door_101") --> "open"))-*,
-            .cycle(20),
+            .cycle(40),
             ||(("John" * "door_101") --> "open")-*,
-            .cycle(20)
-//            ||(("John" * "room_101") --> "enter")-*,
+            .cycle(10)
         )
         /*
          
@@ -181,7 +178,7 @@ class Single_Step: XCTestCase {
             ("bird" --> "animal")-?,
             .cycle(10),
             ("dog" --> "person")-*,
-            .cycle(100)
+            .cycle(10)
         )
         outputMustContain("💡 <bird -> animal>.")
         outputMustContain("💡 <dog -> person>. %1.00;0.90%.")
@@ -194,7 +191,7 @@ class Single_Step: XCTestCase {
             ("u" --> "v")-*,
             ("y" --> "z")-*,
             ("c" --> "d")-*,
-            .cycle(200),
+            .cycle(20),
             ("a" --> "d")-?
         )
         outputMustContain("💡 <a -> d>. %1.00;0.73%")
@@ -408,7 +405,7 @@ class Single_Step: XCTestCase {
        nars.perform(
            ("swan" --> "bird")-*,
            ("bird" <-> "swan")-*(0.1),
-           .cycle(10)
+           .cycle(20)
        )
        outputMustContain("<bird -> swan>. %0.10;0.81%") // %0.10;0.73%"
     }

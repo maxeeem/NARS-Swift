@@ -59,215 +59,114 @@ public struct Concept: Item {
 extension Concept {
     
     func cycle() -> [String: [Judgement]] {
-        if var t = tasks.get() {
-            // forward inference
-            if case .judgement(let j) = t.sentence {
-               var b = beliefs.get()
-                
-                if j == b?.judgement {
-                    let oldB = b!
-                    b = beliefs.get()
-                    beliefs.put(oldB) // put back
-                }
-                
-                if var b = b, !b.judgement.evidenceOverlap(j) {
-//                    print("%%", j, b.judgement)
-//                    print(j, negation(j1: j))
-                    var derived: [Judgement] = []
-                    // apply rules
-                    let results = Rules.allCases
-                        .flatMap { r in
-                            r.apply((b.judgement, j))
-                        }
-                        .compactMap { $0 }
-                        .removeDuplicates()
-                    derived.append(contentsOf: results)
-//                    print("%%", results)
-                    // modify "usefullness" value
-                    t.adjustPriority(results)
-                    b.adjustPriority(results)
-                    tasks.put(t) // put back
-                    beliefs.put(b) // put back
-                    
-                    
-                    derived = derived.filter {
-                        beliefs.peek($0.identifier) == nil
-                        //                    }
-                        && $0.truthValue.confidence != 0 }
-                    //                    && $0.statement != j.statement }
-                    
-                    return ["Judgement": derived]
-                }
-            }
-            
-            if case .question(let q) = t.sentence {
-                             
-                let results = answer(q.statement)
-
-                // modify "usefullness" value
-                t.adjustPriority(results)
-                tasks.put(t) // put back
-
-                return ["Question": results]
-            }
-            
-            tasks.put(t) // put back
-
-            return [:]
+        guard var t = tasks.get() else {
+            return [:] // empty task bag
         }
         
+        // forward inference
+        if case .judgement(let j) = t.sentence {
+            var b = beliefs.get()
+            
+            if j == b?.judgement {
+                let oldB = b!
+                b = beliefs.get()
+                beliefs.put(oldB) // put back
+            }
+            
+            if var b = b {
+                guard !b.judgement.evidenceOverlap(j) else {
+                    beliefs.put(b) // put back
+                    tasks.put(t) // put back
+                    return [:]
+                }
+                
+                var derived: [Judgement] = []
+                // apply rules
+                let results = Rules.allCases
+                    .flatMap { r in
+                        r.apply((b.judgement, j))
+                    }
+                    .compactMap { $0 }
+                    .removeDuplicates()
+                derived.append(contentsOf: results)
+                // modify "usefullness" value
+                t.adjustPriority(results)
+                b.adjustPriority(results)
+                beliefs.put(b) // put back
+                tasks.put(t) // put back
+
+                derived = derived.filter {
+                    beliefs.peek($0.identifier) == nil
+                    //                    }
+                    && $0.truthValue.confidence != 0 }
+                //                    && $0.statement != j.statement }
+                
+                return ["Judgement": derived]
+            }
+        }
+        
+        if case .question(let q) = t.sentence {
+            
+            let results = answer(q.statement)
+            
+            // modify "usefullness" value
+            t.adjustPriority(results)
+            tasks.put(t) // put back
+
+            return ["Question": results]
+        }
+        
+        // CLEANUP
+        
+        if tasks.peek(t.identifier) == nil {
+            tasks.put(t) // put back
+        }
+
         return [:]
     }
 
     
-    func accept(belief j: Judgement) -> [Judgement] {
-        // revise existing belief
-        if let b = beliefs.get(j.identifier) {
-            let originalPriority = b.priority
-            var judgement: Judgement = j
-            let sameRule: Bool = {
-                let r1 = j.truthValue.rule
-                let r2 = b.judgement.truthValue.rule
-                if (r1 == nil && r2 == nil) {
-                    return false // both user input – revise
-                }
-                return r1 == r2
-            }()
-            if sameRule || j.evidenceOverlap(b.judgement) {
-                judgement = choice(j1: j, j2: b.judgement)
-            } else {
-                if j.truthValue.rule == .conversion {
-                    judgement = b.judgement
-                } else if b.judgement.truthValue.rule == .conversion {
-                    judgement = j
-                } else {
-                    judgement = revision(j1: b.judgement, j2: j)
-                }
-            }
-
-            beliefs.put(judgement + originalPriority)
-
-            if judgement != j {
-                if let originalTask = tasks.get(Sentence.judgement(j).description) { // remove old
-                    tasks.put(Task(priority: originalTask.priority, sentence: .judgement(judgement)))
-                }
-                return [judgement]
-            }
-
-            return []
-
-        } else { // new belief
-            
+    func accept(belief j: Judgement) -> Judgement? {
+        guard let b = beliefs.get(j.identifier) else {
+            // new belief
             beliefs.put(j + 0.9)
-                        
-            return []
+            return nil
         }
-    }
-    
-    // returns derived judgements if any
-    func accept(_ j: Judgement, derive: Bool, store: Bool = true) -> [Judgement] {
-//        if j == lastInput { return Array(lastAccepted) }
-//        lastInput = j
-
-        var j = j
-        var originalPriority: Double?
-        var derived: [Judgement] = []
         
-        // revision goes first
-        if let b = beliefs.get(j.identifier) {
-            originalPriority = b.priority
-            var judgement: Judgement
-            let sameRule: Bool = {
-                let r1 = j.truthValue.rule
-                let r2 = b.judgement.truthValue.rule
-                if (r1 == nil && r2 == nil) {
-                    return false // both user input – revise
-                }
-                return r1 == r2
-            }()
-            if sameRule || j.evidenceOverlap(b.judgement) {
-                judgement = choice(j1: j, j2: b.judgement)
+        // revise existing belief
+        let originalPriority = b.priority
+        var judgement: Judgement = j
+        let sameRule: Bool = {
+            let r1 = j.truthValue.rule
+            let r2 = b.judgement.truthValue.rule
+            if (r1 == nil && r2 == nil) {
+                return false // both user input – revise
+            }
+            return r1 == r2
+        }()
+        if sameRule || j.evidenceOverlap(b.judgement) {
+            judgement = choice(j1: j, j2: b.judgement)
+        } else {
+            if j.truthValue.rule == .conversion {
+                judgement = b.judgement
+            } else if b.judgement.truthValue.rule == .conversion {
+                judgement = j
             } else {
-                if j.truthValue.rule == .conversion {
-                    judgement = b.judgement
-                } else if b.judgement.truthValue.rule == .conversion {
-                    judgement = j
-                } else {
-                    judgement = revision(j1: b.judgement, j2: j)
-                }
-            }
-            // wait to put back original belief to process another one
-            if j != judgement {
-                j = judgement
-                derived.append(judgement)
+                judgement = revision(j1: b.judgement, j2: j)
             }
         }
 
-        
-        defer {
-            if store {
-                // store original belief
-                var b = j + (originalPriority ?? 0.9)
-                b.adjustPriority(derived)
-                beliefs.put(b)
-            }
-        }
+        beliefs.put(judgement + originalPriority)
 
-        /// apply theorems
-        derived.append(contentsOf: Theorems.apply(j))
-        derived = derived.removeDuplicates().filter {
-            beliefs.peek($0.identifier) == nil
-        }
-
-
-        /*
-         * EXIT – return if no recursion
-         */
-        guard derive else { return derived }
-        
-        
-        /// apply two-premise rules
-        twoPremiseRules:
-        if var b = beliefs.get() {            
-            // apply rules
-            let results = Rules.allCases
-                .flatMap { r in
-                    r.apply((b.judgement, j))
-                }
-                .compactMap { $0 }
-            
-            derived.append(contentsOf: results)
-            
-            // TODO: wait to put back
-            // modify its "usefullness" value
-            b.adjustPriority(results)
-            beliefs.put(b) // put back another belief
-
-//            lastAccepted = Set(derived)
-            if !derived.isEmpty {
-//                print("because...")
-//                print("+++", j, "\n", "&&", b)
-//                print("it follows...")
-            }
+        if judgement == j {
+            return nil // no revision happened
         }
         
-        derived = derived.removeDuplicates().filter {
-            beliefs.peek($0.identifier) == nil
-        }//&& $0.statement != j.statement }
-
-        
-        derived.compactMap { $0.represent(j) }
-            .filter {
-                beliefs.peek($0.identifier) == nil
-            }.forEach { jr in
-                derived.append(jr) // add represented belief
+        if let oldTask = tasks.get(Sentence.judgement(j).description) { // remove old
+            tasks.put(Task(priority: oldTask.priority, sentence: .judgement(judgement)))
         }
-        
-        // TODO: process `values`
-        // like rules but modifiable by the system
-        // statements using variables
-        
-        return derived
+    
+        return judgement
     }
     
     
@@ -333,14 +232,13 @@ extension Concept {
                     .filter { beliefs.peek($0.identifier) == nil }
                 if let answer = theorems.first(where: { $0.statement == s }) {
                     return [answer]
+                    
                 } else if case .statement(let qs, let qc, _) = s, !(qc == .predictiveImp && qs.description.hasPrefix("?")) {
                     let backward = Rules.allCases.flatMap { r in
                         r.backward((s-*, b.judgement))
                     }.compactMap { $0 }
-                    if !(theorems.isEmpty && backward.isEmpty) {
-                        // .NULL is a separator for derived questions
-                        return [.NULL-*, b.judgement] + theorems + backward
-                    }
+
+                    return [.NULL-*] + backward
                 }
             }
         }

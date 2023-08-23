@@ -61,6 +61,7 @@ class Experimental: XCTestCase {
             ("{sky}" --> "[blue]")-*,
             ("{tom}" --> "cat")-*,
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
+            .cycle(500),
             ("[blue]" --> ç.e_("likes", "cat", .º))-?,
             .cycle(200)
         )
@@ -124,7 +125,7 @@ class Experimental: XCTestCase {
             knowledge-*,
 //            .cycle(20),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-            .cycle(200)
+            .cycle(100)
         )
         outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }
@@ -392,7 +393,7 @@ class Experimental: XCTestCase {
             ("G")-!,
             ((("ball" --> "[left]") >>|=> .operation("move", [.SELF, "[left]"])) >>|=> "G")-*,
             ||("ball" --> "[left]")-*,
-            .cycle(20)
+            .cycle(200)
         )
         outputMustContain("🤖 ^move SELF [left]")
 //        print(nars.memory)
