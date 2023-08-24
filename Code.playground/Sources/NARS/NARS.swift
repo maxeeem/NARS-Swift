@@ -114,6 +114,9 @@ public final class NARS: Item {
                         }
                     }
                 }
+                
+                output(". ⏱ \(s)")
+                continue
             }
                         
             // set time stamp if not yet set

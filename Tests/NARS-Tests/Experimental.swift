@@ -408,7 +408,7 @@ class Experimental: XCTestCase {
         outputMustContain("🤖 ^move SELF [left]")
 //        print(narsy.memory)
     }
-    /*
+    
     func testMove() {
         __.register("move") { ts in
             .NULL
@@ -430,31 +430,31 @@ class Experimental: XCTestCase {
 //              .cycle(10),
             ||("G")-*,
             ("G")-!,
-            .cycle(10),
-            ||("ball" --> "[left]")-*,
-//            .cycle(100),
-            ||("ball" --> "[center]")-*,
-//            .cycle(10),
-            ||("G")-*,
-            ("G")-!,
-            .cycle(20),
-            ||("ball" --> "[center]")-*,
-//            ||(("ball" --> "[left]") >>|=> (.operation("move", ["left"])))-*,
-//               ||("G")-*,
-//              .cycle(10),
-            ||("ball" --> "[right]")-*,
-            ||("ball" --> "[right]")-*,
-            ||("ball" --> "[right]")-*,
-            .cycle(10),
-            ||("ball" --> "[right]")-*,
-            ||("ball" --> "[right]")-*,
             .cycle(40)
+//            ||("ball" --> "[left]")-*,
+////            .cycle(100),
+//            ||("ball" --> "[center]")-*,
+////            .cycle(10),
+//            ||("G")-*,
+//            ("G")-!,
+//            .cycle(20),
+//            ||("ball" --> "[center]")-*,
+////            ||(("ball" --> "[left]") >>|=> (.operation("move", ["left"])))-*,
+////               ||("G")-*,
+////              .cycle(10),
+//            ||("ball" --> "[right]")-*,
+//            ||("ball" --> "[right]")-*,
+//            ||("ball" --> "[right]")-*,
+//            .cycle(10),
+//            ||("ball" --> "[right]")-*,
+//            ||("ball" --> "[right]")-*,
+//            .cycle(40)
         )
         
         outputMustContain("🤖 ^move SELF [left]")
         outputMustContain("🤖 ^move SELF [right]")
     }
-    */
+    
     
     func testMultiply() {
         // full syntax for more complex operations

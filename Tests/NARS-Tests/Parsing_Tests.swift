@@ -20,6 +20,19 @@ final class Parsing_Tests: XCTestCase {
         XCTAssertEqual(term, ("a" --> "b"))
     }
 
+    func testOperation() {
+        var op = "(*,{SELF}) --> ^left"
+        
+        let comp = op.components(separatedBy: " --> ")
+        
+        if comp.count == 2 { // reformat operation syntax
+            if comp[0].hasPrefix("(*") && comp[1].hasPrefix("^") {
+                op = comp[0].replacingOccurrences(of: "*", with: comp[1])
+            }
+        }
+        
+        XCTAssertEqual(op, "(^left,{SELF})")
+    }
 //    func testPerformanceExample() throws {
 //        // This is an example of a performance test case.
 //        self.measure {

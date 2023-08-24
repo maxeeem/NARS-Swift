@@ -87,6 +87,7 @@ let main = command(
     
     print("------          \n")
     print("v - verbose toggle [default: off]")
+    print("m - print memory")
     print("q - quit\n")
 
     print("Ready for input \n")
@@ -114,6 +115,12 @@ let main = command(
                     input = ""
                     verbose.toggle()
                     print("Verbose:", verbose ? "ON" : "OFF")
+                    fflush(stdout)
+                    continue
+                }
+                if input == "m" {
+                    input = ""
+                    print(nars.memory)
                     fflush(stdout)
                     continue
                 }
@@ -149,8 +156,8 @@ let main = command(
                     continue // run alias
                 }
                 guard let s = Sentence(input, parser: narsese) else {
-                    input = ""
                     print("invalid query: \(input)")
+                    input = ""
                     fflush(stdout)
                     continue
                 }

@@ -6,7 +6,15 @@ func contents(_ s: String) -> String {
     // TODO: parse :|: and %0.9% etc
     let start = s.index(s.startIndex, offsetBy: 0)
     let end = s.index(s.endIndex, offsetBy: -1)
-    let contents = String(s[start..<end])
+    var contents = String(s[start..<end])
+    // --- convert operation syntax to canonical form
+        let comp = contents.components(separatedBy: " --> ")
+        if comp.count == 2 { // check if it is an operation
+            if comp[0].hasPrefix("<(*") && comp[1].hasPrefix("^") {
+                contents = comp[0].replacingOccurrences(of: "*", with: comp[1].dropLast()) + ">"
+            }
+        }
+    // --- end conversion
     return contents
 }
 
