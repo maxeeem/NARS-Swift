@@ -20,6 +20,14 @@ public struct Task: Item {
     public var identifier: String { sentence.description }
     public var priority: Double = 0.9
     public let sentence: Sentence
+    
+    public init(sentence: Sentence) {
+        self.sentence = sentence
+    }
+    public init(priority: Double, sentence: Sentence) {
+        self.priority = priority
+        self.sentence = sentence
+    }
 }
 
 // MARK: Concept
@@ -31,16 +39,16 @@ public struct Concept: Item {
     let term: Term
     
     //let links = Bag<TermLink>() // terms
-    internal var tasks = Bag<Task>()
-    internal var beliefs = Bag<Belief>()
+    public var tasks = Bag<Task>()
+    public var beliefs = Bag<Belief>()
     
     public var anticipations: [String: (Term, TruthValue)] = [:]
 
-    init(string: String) {
+    public init(string: String) {
         self.init(term: Term(stringLiteral: string))
     }
     
-    init(term: Term) {
+    public init(term: Term) {
         self.term = term
     }
     
@@ -57,6 +65,77 @@ public struct Concept: Item {
 }
 
 extension Concept {
+    public func pickOut() -> (Task, Belief) {
+        let t = tasks.get() ?? Task(sentence: .NULL-*)
+        var b = beliefs.get() ?? Belief(judgement: .NULL-*)
+        switch t.sentence {
+        case .judgement(let j):
+            if j == b.judgement {
+                let oldB = b
+                b = beliefs.get() ?? Belief(judgement: .NULL-*)
+                beliefs.put(oldB) // put back
+            }
+        case .goal(_):
+            ()
+        case .question(_):
+            ()
+        case .cycle(_):
+            ()
+        }
+//        if t.sentence == b?.judgement {
+//            let oldB = b!
+//            b = beliefs.get()
+//            beliefs.put(oldB) // put back
+//        }
+        
+//        if var b = b {
+
+        return (t, b)
+    }
+    
+    public func forward(_ pair: (Task, Belief)) -> [Judgement] {
+        var (t, b) = pair
+        guard case .judgement(let j) = t.sentence,
+              !b.judgement.evidenceOverlap(j) else {
+//            b.priority = max(b.priority - 0.01, 0.01)
+//            beliefs.put(b) // put back
+//
+//            t.priority = max(t.priority - 0.01, 0.01)
+//            tasks.put(t) // put back
+            return []
+        }
+        
+        var derived: [Judgement] = []
+        // apply rules
+        let results = Rules.allCases
+            .flatMap { r in
+                r.apply((b.judgement, j))
+            }
+            .compactMap { $0 }
+            .removeDuplicates()
+        derived.append(contentsOf: results)
+        
+        derived = derived.filter {
+            beliefs.peek($0.identifier) == nil
+            //                    }
+            && $0.truthValue.confidence != 0 }
+        //                    && $0.statement != j.statement }
+        
+        // modify "usefullness" value
+//        if !derived.isEmpty {
+//            // increase
+//            b.priority = min(b.priority + 0.01, 0.99)
+//        } else {
+//            // decrease
+//            b.priority = max(b.priority - 0.01, 0.01)
+//        }
+//        beliefs.put(b) // put back
+//
+//        t.priority = max(t.priority - 0.01, 0.01)
+//        tasks.put(t) // put back
+        
+        return derived
+    }
     
     func cycle() -> [String: [Judgement]] {
         guard var t = tasks.get() else {
@@ -102,7 +181,7 @@ extension Concept {
                 // modify "usefullness" value
                 if !derived.isEmpty {
                     // increase
-                    b.priority = min(b.priority + 0.01, 0.9)
+                    b.priority = min(b.priority + 0.01, 0.99)
                 } else {
                     // decrease
                     b.priority = max(b.priority - 0.01, 0.01)
@@ -205,6 +284,8 @@ extension Concept {
         
         if let oldTask = tasks.get(Sentence.judgement(j).description) { // remove old
             tasks.put(Task(priority: oldTask.priority, sentence: .judgement(judgement)))
+        } else {
+            tasks.put(Task(sentence: .judgement(judgement)))
         }
     
         return judgement

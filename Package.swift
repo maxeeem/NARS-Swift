@@ -23,6 +23,9 @@ let package = Package(
         .executable(
             name: "nar",
             targets: ["nar"]),
+        .executable(
+            name: "View",
+            targets: ["View"])
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -45,6 +48,10 @@ let package = Package(
             name: "nar",
             dependencies: ["NARS", "Narsese"],
             resources: [.copy("Commander/LICENSE")]),
+        .executableTarget(
+            name: "View",
+            dependencies: ["NAL"],
+            resources: nil),
         
         .testTarget(
             name: "NARS-Tests",

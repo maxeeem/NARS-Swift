@@ -1,12 +1,15 @@
 
 extension AbstractBag where I == Concept {
 
-    func consider(_ s: Sentence, derive: Bool = false) -> [Judgement] {
+    public func consider(_ s: Sentence, derive: Bool = false) -> [Judgement] {
         switch s {
         case .judgement(let j):
             var derived: [Judgement] = []
             
             func addTask(_ s: Sentence, to: Statement) {
+//                if to == .NULL {
+//                    return
+//                }
                 var concept = get(to.description) ?? Concept(term: to)
 
                 // revision
@@ -19,7 +22,7 @@ extension AbstractBag where I == Concept {
                     
                     if let oldTask = concept.tasks.get(s.description) { // remove old
                         concept.tasks.put(
-                            Task(priority: oldTask.priority, sentence: s))
+                            Task(priority: max(0, oldTask.priority - 0.01), sentence: s))
                     } else {
                         concept.tasks.put(Task(sentence: s))
                     }
@@ -30,7 +33,7 @@ extension AbstractBag where I == Concept {
                     let structural = Theorems.apply(j)
                     let results = (immediate + structural)
                         .removeDuplicates()
-                        .filter({ $0.truthValue.confidence != 0 })
+                        .filter({ $0.truthValue.confidence > 0 && $0.statement.complexity < 20 })
                     
                     derived.append(contentsOf: results)
                 }
@@ -67,8 +70,6 @@ extension AbstractBag where I == Concept {
                 put(concept)
             }
 
-//            addTask(s, to: q.statement)
-
             for t in Set(q.statement.terms) {
                 addTask(s, to: t)
                 
@@ -96,8 +97,6 @@ extension AbstractBag where I == Concept {
                 put(concept)
             }
             
-//            addTask(s, to: g.statement)
-
             for t in Set(g.statement.terms) {
                 addTask(s, to: t)
                 

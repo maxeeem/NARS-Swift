@@ -31,7 +31,7 @@ __.register("ask") { ts in
     }
     return .operation("ask", ts)
 }
-        
+        /*
 __.perform((*["$x", "dormas"] --> rep("$x" --> "[dormas]")))
         
 __.perform(*["Sandy", "dormas"])
@@ -40,7 +40,7 @@ __.perform((("kiu" --> "$x") --> rep(.operation("ask", ["?kiu" --> "$x"]))))
                 
 __.perform(((*["kiu", "dormas"]) --> rep("?"))-?)
 __.perform(.cycle(20))
-
+*/
 
 let robin = Term.word("robin")
 let bird = Term.word("bird")

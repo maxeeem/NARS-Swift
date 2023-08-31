@@ -277,7 +277,7 @@ public var rule_applicator: (_ rule: Rule) -> Apply {
                 
                 // TODO: use LogicVariableFactory to avoid collision with terms
                 // i.e. terms names "S" and "P" will fail a check below and produce no conclusion
-                
+                                
                 if let sol = substitution {
                     let ts = (p1.terms + p2.terms + c.terms).flatMap({ $0.terms.map({ $0.logic() }) })
                     let valid = sol.allSatisfy { (v, _) in
@@ -290,8 +290,77 @@ public var rule_applicator: (_ rule: Rule) -> Apply {
                         }
                     }
                 }
-                                
-                return (result == t) ? nil : result
+
+                if result == t {
+                    return nil // substitution was not successful
+                }
+                
+                //
+                // conjunctive conditional rules have to be handled separately
+                //
+                // TODO: is the order of elements in conjunction important?
+                //
+                func eval(_ t: Term) -> Term {
+                    // perform operation associated with a given rule
+                    func helper(_ ts: [Term]) -> [Term] {
+                        let ts0 = ts[0].flatten().terms // convert to canonical form
+                        let ts1: Term
+                        var m: Term?
+                        // ex. given rule in the form of (C && S) => P, M => S |- (C && M) => P
+                        if case .statement(let s1, let c1, let p1) = ts[1], c1 == .implication {
+                            ts1 = p1    // we want to remove S which is the predicate
+                            m = s1      // and add in M to produce the conclusion
+                        } else {        // otherwise we're dealing with (C && S) => P, S |- C => P
+                            ts1 = ts[1] // so just use S by itself
+                            m = nil     // no need to add anything
+                        }
+                        var diff = Array(Set(ts0).subtracting(ts1.terms))
+                        if diff == ts0 {
+                            return [.NULL] // element is not contained in conjunction
+                        }
+                        if let m = m {
+                            diff.append(contentsOf: m.flatten().terms) // place other element into conjunction
+                        }
+                        return diff
+                    }
+
+                    func extract(_ ts: [Term]) -> Term {
+                        if case .compound(let c0, _) = ts[0], c0 == .c {
+                            let diff = helper(ts)
+                            if diff.count == 1 {
+                                return diff[0] // (&& S) - single element
+                            } else {
+                                return .compound(c0, diff.sorted())
+                            }
+                        }
+                        return .NULL
+                    }
+                    
+                    // conclusion is an operation
+                    if case .operation(let op, let ts) = t, op == "_diff" {
+                        return extract(ts)
+                    }
+                    
+                    // conclusion is an implication containing operations
+                    if case .statement(var s, let c, var p) = t, c == .implication {
+                        // operation is subject term
+                        if case .operation(let op, let ts) = s, op == "_diff" {
+                            s = extract(ts)
+                        }
+                        // operation is predicate term
+                        if case .operation(let op, let ts) = p, op == "_diff" {
+                            p = extract(ts)
+                        }
+                        // return conclusion
+                        return [s, p].contains(.NULL) ? .NULL : .statement(s, c, p)
+                    }
+                    
+                    return t // conclusion does not contain an operation
+                }
+                
+                result = eval(result)
+                
+                return (result == .NULL) ? nil : result
             }
             
             func determineOrder() -> Term {

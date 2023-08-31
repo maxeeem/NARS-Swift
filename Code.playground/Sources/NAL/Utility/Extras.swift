@@ -82,6 +82,27 @@ extension Term: CustomStringConvertible {
     public var description: String {
         switch self {
         case .symbol(let word):
+            if word == "NULL" {
+                return "➰"
+            }
+            if word == "SELF" {
+                return "⛄️"
+            }
+            if word == "•" {
+                return "🌨️"
+            }
+            if word == "%" {
+                return "☃️"
+            }
+            if word == "\\" {
+                return "⛄️"
+            }
+            if word == "/" {
+                return "⛄️"
+            }
+//            if word == "º" {
+//                return " i "
+//            }
             return word
         case .compound(let connector, let terms):
             if connector == .intSet || connector == .extSet {

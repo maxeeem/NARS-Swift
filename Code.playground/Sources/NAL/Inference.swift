@@ -220,16 +220,23 @@ public extension Rules {
         let C = Term.var("C")
         let T1 = Term.var("T1")
         let T2 = Term.var("T2")
+        let X = Term.var("X") // element in conjunction
         switch self {
         case .deduction:
             return [
-                ((C && S) => P,                 S,             C  => P, tf),
-                ((C && S) => P,            M => S,        (C && M) => P, tf)
+                ((C && S) => P,                 S,              C  => P, tf),
+                ((C && S) => P,            M => S,        (C && M) => P, tf),
+                // alternative form
+                ((C && S) => P,                 X,        .operation("_diff", [(C && S), X]) => P, tf),
+                ((C && S) => P,            M => X,        .operation("_diff", [(C && S), M => X]) => P, tf),
             ]
         case .abduction:
             return [
                 ((C && S) => P,            C => P,                   S, tf),
-                ((C && S) => P,     (C && M) => P,              M => S, tf)
+                ((C && S) => P,     (C && M) => P,              M => S, tf),
+                // alternative form
+                ((C && S) => P,            X => P,        .operation("_diff", [(C && S), X]), tf),
+                ((C && S) => P,     (X && M) => P,        .operation("_diff", [(X && M), C]) => .operation("_diff", [(C && S), X]), tf),
             ]
         case .induction:
             return [

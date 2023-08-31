@@ -61,9 +61,12 @@ class Experimental: XCTestCase {
             ("{sky}" --> "[blue]")-*,
             ("{tom}" --> "cat")-*,
             ("{tom}" --> ç.e_("likes", .º, "{sky}"))-*,
-            ("[blue]" --> ç.e_("likes", "cat", .º))-?,
-            .cycle(200)
+            ("[blue]" --> ç.e_("likes", "cat", .º))-?
+//            .cycle(1000)
         )
+        for _ in 0..<1000 {
+            narsy.perform(.cycle)
+        }
         outputMustContain("💡 <[blue] -> (/ likes cat º)>.") // c should be 0.37%
     }
     
@@ -123,7 +126,7 @@ class Experimental: XCTestCase {
             knowledge-*,
             .cycle(20),
             (*["dog", "C", "animal"] --> ç.e_("represent", .º, "?"))-?,
-            .cycle(200)
+            .cycle(2000)
         )
         outputMustContain("💡 <((dog ⨯ C) ⨯ animal) -> (/ represent º (dog ⨯ animal) -> subset)>.")
     }
@@ -398,6 +401,10 @@ class Experimental: XCTestCase {
     }
 
     func testOp2() {
+//        • <G>! %1.00;0.90%.
+//        • <<<ball -> [left]> /=> (^move SELF [left])> /=> <ball -> [center]>>. %1.00;0.90%.
+//        • <<ball -> [center]> /=> G>. %1.00;0.90%.
+//        • <ball -> [left]>. %1.00;0.90%.
         narsy.perform(
             ("G")-!,
             ((("ball" --> "[left]") >>|=> (.operation("move", [.SELF, "[left]"]))) >>|=> ("ball" --> "[center]"))-*,
@@ -407,6 +414,503 @@ class Experimental: XCTestCase {
         )
         outputMustContain("🤖 ^move SELF [left]")
 //        print(narsy.memory)
+    }
+    
+    func testTurn() {
+        let inputA: Term = *["•", .NULL]
+        let inputB: Term = *[.NULL, "•"]
+        
+//        let inputs = [inputA, inputB]
+        
+//        let random = inputs.randomElement()!
+//        let choice: Term = (random == inputA) ? "A" : "B"
+        let rule1 = (inputA >>|=> .operation("take", ["A"])) >>|=> "G"
+        let rule2 = (inputB >>|=> .operation("take", ["B"])) >>|=> "G"
+
+        let game = ("$x" >>|=> .operation("take", [.operation("index", ["$x"])])) >>|=> "G"
+        
+        narsy.register("take") { args in
+            print(args[0])
+            return .NULL
+        }
+        narsy.register("index") { args in
+            
+            return "idx"
+        }
+//        print(game, " | ", inputA)
+        narsy.perform("G"-!)
+//        narsy.perform(rule1-*, rule2-*)
+        narsy.perform(game)
+        narsy.perform(inputB)
+        narsy.perform(.cycle(100))
+    }
+    
+    func testConditional1() {
+        let rule = Rules.deduction.conditional[2]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B", "C", "D"] => "P")-*
+        let j2: Judgement = ("B")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, (&&["A", "C", "D"] => "P")-*(1.0, 0.81))
+    }
+
+    func testConditional2() {
+        let rule = Rules.deduction.conditional[2]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B", "C", "D"] => "P")-*
+        let j2: Judgement = (&&["B", "C"])-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, (&&["A", "D"] => "P")-*(1.0, 0.81))
+    }
+
+    func testConditional3() {
+        let rule = Rules.deduction.conditional[3]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B"] => "P")-*
+        let j2: Judgement = ("C" => "B")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, (&&["A", "C"] => "P")-*(1.0, 0.81))
+    }
+    
+    func testConditional4() {
+        let rule = Rules.deduction.conditional[3]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B", "C", "D"] => "P")-*
+        let j2: Judgement = ("X" => "B")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, (&&["A", "C", "D", "X"] => "P")-*(1.0, 0.81))
+    }
+    
+    func testConditionalAbduction1() {
+        let rule = Rules.abduction.conditional[2]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B"] => "P")-*
+        let j2: Judgement = ("A" => "P")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, ("B")-*(1.0, 0.44751381215469616))
+    }
+    
+    func testConditionalAbduction2() {
+        let rule = Rules.abduction.conditional[2]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B", "C"] => "P")-*
+        let j2: Judgement = ("A" => "P")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, (&&["B", "C"])-*(1.0, 0.44751381215469616))
+    }
+    
+    func testConditionalAbduction3() {
+        let rule = Rules.abduction.conditional[3]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B"] => "P")-*
+        let j2: Judgement = (&&["A", "C"] => "P")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, ("C" => "B")-*(1.0, 0.44751381215469616))
+    }
+    
+    func testConditionalAbduction4() {
+        let rule = Rules.abduction.conditional[3]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B", "D"] => "P")-*
+        let j2: Judgement = (&&["A", "C"] => "P")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, ("C" => &&["B", "D"])-*(1.0, 0.44751381215469616))
+    }
+
+    func testConditionalAbduction5() {
+        let rule = Rules.abduction.conditional[3]
+
+        print(rule.0)
+        print(rule.1)
+        print("----")
+        print(rule.2)
+        
+        let j1: Judgement = (&&["A", "B", "D"] => "P")-*
+        let j2: Judgement = (&&["A", "C", "E"] => "P")-*
+
+        print("\n")
+        print(j1)
+        print(j2)
+        print("----")
+        
+        let res = rule_applicator(rule)((j1, j2))!
+        print(res)
+
+        XCTAssertEqual(res, (&&["C", "E"] => &&["B", "D"])-*(1.0, 0.44751381215469616))
+    }
+    
+    func testNavigate() {
+        
+        typealias Line = [Term]
+        
+        let empty: Line = [.NULL, .NULL, .NULL]
+
+        let lines: [Line] = [
+            [.NULL, .NULL, .NULL],
+            [.NULL, .NULL, .NULL],
+            [.NULL, .NULL, .NULL],
+            [" • ", .NULL, .NULL],
+            [.NULL, " • ", .NULL],
+            [.NULL, .NULL, " • "],
+        ]
+        
+        var screen: [Line] = [
+            [" • ", .NULL, .NULL],
+            [.NULL, " • ", .NULL],
+            [.NULL, .NULL, " • "],
+            [.NULL, .NULL, .NULL],
+            [.NULL, .NULL, .NULL],
+            [.NULL, .SELF, .NULL]
+        ]
+                
+        let actions: [Term] = [" \\ ", .SELF, " / "]
+        
+        var lastAction: Term?
+        
+        narsy.register("move") {
+            var args = $0
+            let a1 = args.removeFirst()
+            if args.isEmpty {
+                lastAction = a1
+                return .NULL
+            }
+            let a2 = args.removeFirst()
+            if args.isEmpty {
+                if a2 == "[forward]" {
+                    lastAction = .SELF
+                }
+                if a2 == "[left]" {
+                    lastAction = " \\ "
+                }
+                if a2 == "[right]" {
+                    lastAction = " / "
+                }
+            }
+            return .NULL
+        }
+        
+        narsy.register("stay") { _ in
+            lastAction = nil
+            return .NULL
+        }
+        
+        var lastLine: Term = .compound(.x, screen.last!)
+        
+        var home = 1
+        var away = 1 {
+            didSet {
+//                usleep(110000)
+//                narsy.perform("G")
+//                if let op = lastAction {
+//                    if op == .SELF {
+//                        narsy.perform(.operation("move", [.SELF, "[forward]"]) >>|=> "G")
+//                        narsy.perform((lastLine >>|=> .operation("move", [.SELF, "[forward]"])) >>|=> "G")
+//                    }
+//                    if op == " \\ " {
+//                        narsy.perform(.operation("move", [.SELF, "[left]"]) >>|=> "G")
+//                        narsy.perform((lastLine >>|=> .operation("move", [.SELF, "[left]"])) >>|=> "G")
+//                    }
+//                    if op == " / " {
+//                        narsy.perform(.operation("move", [.SELF, "[right]"]) >>|=> "G")
+//                        narsy.perform((lastLine >>|=> .operation("move", [.SELF, "[right]"])) >>|=> "G")
+//                    }
+//
+//                }
+                narsy.perform(("G")-!)
+
+//                narsy.perform(.cycle(50))
+
+            }
+        }
+        
+        narsy.perform(("G")-!)
+        
+        let pos: Term = .var("x")
+        narsy.perform(((" • " --> "[forward]") >>|=> .operation("move", [.SELF, "[forward]"])) >>|=> "G")
+        narsy.perform(((" • " --> "[left]") >>|=> .operation("move", [.SELF, "[left]"])) >>|=> "G")
+        narsy.perform(((" • " --> "[right]") >>|=> .operation("move", [.SELF, "[right]"])) >>|=> "G")
+
+        
+        while true {
+            
+//            let snapshot: Term = .compound(.x, screen.map({.compound(.x, $0)}))
+            
+            let snapshot: Term = .compound(.x, screen.last!)
+
+            let ratio = "\(Double(away)/Double(home))".prefix(4)
+            
+            print("\(screen[0].line)\n\(screen[1].line)\n\(screen[2].line)\n\(screen[3].line)\n\(screen[4].line)\n\(screen[5].line) SCORE: \(away)  \(ratio) -- \(output.filter({ $0.contains("🤖") }).count)")
+            
+            
+            let last = screen[5]
+            
+            if last[0] == " • " { home += 1 }
+            if last[1] == " • " { home += 1 }
+            if last[2] == " • " { home += 1 }
+            
+            if last[0] == " % " { away += 1 }
+            if last[1] == " % " { away += 1 }
+            if last[2] == " % " { away += 1 }
+            
+//            narsy.perform(||(.instance(snapshot) --> "ENV")-*)
+//                        narsy.perform(.cycle(10))
+            let pos: Term = {
+                let idx = screen[5].firstIndex(where: { $0 == .SELF || $0 == " % " })!
+                if idx == 0 {
+                    if screen[4][0] == " • " {
+                        return "[forward]"
+                    }
+                    return "[right]"
+                }
+                if idx == 1 {
+                    if screen[4][0] == " • " {
+                        return "[left]"
+                    }
+                    if screen[4][1] == " • " {
+                        return "[forward]"
+                    }
+                    if screen[4][2] == " • " {
+                        return "[right]"
+                    }
+                }
+                if idx == 2 {
+                    if screen[4][2] == " • " {
+                        return "[forward]"
+                    }
+                    return "[left]"
+                }
+                return "[forward]"
+            }()
+            narsy.perform(" • " --> pos)
+//            narsy.perform("G"-!)
+            narsy.perform(.cycle(20))
+            let action: Term
+            if lastAction != nil {
+                action = lastAction!
+                lastAction = nil
+            } else {
+                action = actions.randomElement()!
+                
+                if action == .SELF {
+//                    narsy.perform((snapshot >>|=> .operation("move", [.SELF, "[forward]"])))
+                    _ = narsy.operations["move"]?([.SELF, "[forward]"])
+//                    narsy.perform((.operation("move", [.SELF])))
+                }
+                if action == " \\ " {
+//                    narsy.perform((snapshot >>|=> .operation("move", [.SELF, "[left]"])))
+                    _ = narsy.operations["move"]?([.SELF, "[left]"])
+//                    narsy.perform((.operation("move", [.SELF, "[left]"])))
+                }
+                if action == " / " {
+//                    narsy.perform((snapshot >>|=> .operation("move", [.SELF, "[right]"])))
+                    _ = narsy.operations["move"]?([.SELF, "[right]"])
+//                    narsy.perform((.operation("move", [.SELF, "[right]"])))
+                }
+                
+//                away += 1 // temp
+                
+//                usleep(150000)
+//                narsy.perform(.cycle(10))
+            }
+            
+            if screen[5][0] != .NULL && screen[5][0]  != " • " {
+                screen[5][0] = action
+            }
+            
+            if screen[5][1] != .NULL && screen[5][1]  != " • " {
+                screen[5][1] = action
+            }
+            
+            if screen[5][2] != .NULL && screen[5][2]  != " • " {
+                screen[5][2] = action
+            }
+            
+        
+//            print("\(screen[0].line)\n\(screen[1].line)\n\(screen[2].line)\n\(screen[3].line)\n\(screen[4].line)\n\(screen[5].line) SCORE: \(away)  \(ratio)")
+            
+            
+            
+            if screen[5][0] == " / " {
+                if screen[4][1] != .NULL {
+                    screen[4][1] = " % "
+                } else {
+                    screen[4][1] = .SELF
+                }
+            }
+            
+            
+            if screen[5][1] == " \\ " {
+                if screen[4][0] != .NULL {
+                    screen[4][0] = " % "
+                } else {
+                    screen[4][0] = .SELF
+                }
+            }
+            
+            if screen[5][1] == " / " {
+                if screen[4][2] != .NULL {
+                    screen[4][2] = " % "
+                } else {
+                    screen[4][2] = .SELF
+                }
+            }
+            
+            
+            if screen[5][2] == " \\ " {
+                if screen[4][1] != .NULL {
+                    screen[4][1] = " % "
+                } else {
+                    screen[4][1] = .SELF
+                }
+            }
+            
+            
+            
+            if screen[5][0] == .SELF || screen[5][0] == " \\ " || screen[5][0] == " % " {
+                if screen[4][0] != .NULL {
+                    screen[4][0] = " % "
+                } else {
+                    screen[4][0] = .SELF
+                }
+            }
+            
+            if screen[5][1] == .SELF || screen[5][1] == " % " {
+                if screen[4][1] != .NULL {
+                    screen[4][1] = " % "
+                } else {
+                    screen[4][1] = .SELF
+                }
+            }
+            if screen[5][2] == .SELF || screen[5][2] == " / " || screen[5][2] == " % " {
+                if screen[4][2] != .NULL {
+                    screen[4][2] = " % "
+                } else {
+                    screen[4][2] = .SELF
+                }
+            }
+            
+            
+            
+            lastLine = .compound(.x, screen.removeLast())
+            
+            if screen[0] != empty {
+                screen.insert(empty, at: 0)
+            } else {
+                screen.insert(lines.randomElement()!, at: 0)
+            }
+            
+//            if away > 2 {
+//                print(narsy.memory)
+//                print(narsy.buffer)
+//                break
+//            }
+            
+//            usleep(200000)
+        }
     }
     
     func testMove() {
@@ -586,5 +1090,13 @@ class Experimental: XCTestCase {
         // TODO: what is the expected behavior? need additional triggers to execure operation?
         let y: Term = *["evaluate", .operation("__print__", ["hello", "world"])]
         print(y)
+    }
+}
+
+extension Array<Term> {
+    var line: String {
+//        String(
+            "💱\(self[0])\(self[1])\(self[2])💱"
+//            .prefix(10))
     }
 }

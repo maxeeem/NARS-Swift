@@ -1,6 +1,6 @@
 
 extension Judgement {
-    static func updateTimestamp(_ j: Judgement, _ timeProvider: () -> UInt32) -> Judgement {
+    public static func updateTimestamp(_ j: Judgement, _ timeProvider: () -> UInt32) -> Judgement {
         var j = j
         let now = timeProvider()
         if j.derivationPath.count == 1 { // also update derivationPath

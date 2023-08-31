@@ -31,14 +31,14 @@ extension Connector {
         let t2t = (c == .c || c == .d) ? Set([Term.symbol(t2.description)]) : Set(t2.terms)
         var res = t1t.union(t2t)
         
-        if c == .c || c == .d {
-            if case .compound(let c1, _) = t1, (c1 == .c || c1 == .d) {
-                return nil
-            }
-            if case .compound(let c2, _) = t2, (c2 == .c || c2 == .d) {
-                return nil
-            }
-        }
+//        if c == .c || c == .d {
+//            if case .compound(let c1, _) = t1, (c1 == .c || c1 == .d) {
+//                return nil
+//            }
+//            if case .compound(let c2, _) = t2, (c2 == .c || c2 == .d) {
+//                return nil
+//            }
+//        }
         
         guard case .compound = t1, case .compound = t2, (c != .c || c != .d) else {
             // at least one term is a simple term

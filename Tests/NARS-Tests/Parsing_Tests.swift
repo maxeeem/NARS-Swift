@@ -33,6 +33,15 @@ final class Parsing_Tests: XCTestCase {
         
         XCTAssertEqual(op, "(^left,{SELF})")
     }
+    
+    func testHigherOreder() throws {
+        let st = "<<<ball -> [left]> /=> (^move SELF [left])> /=> <ball -> [center]>>"
+        
+        let term = try Term.init(st, parser: narsese)
+
+        XCTAssertEqual(term, ((("ball" --> "[left]") >>|=> (.operation("move", [.SELF, "[left]"]))) >>|=> ("ball" --> "[center]")))
+
+    }
 //    func testPerformanceExample() throws {
 //        // This is an example of a performance test case.
 //        self.measure {

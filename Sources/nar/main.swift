@@ -12,8 +12,6 @@ import NARS
 import Narsese
 
 /* import Commander */ /// included as source -- credit: Kyle Fuller
-
-import Darwin
  
 var orig_termios = termios()
  
@@ -59,11 +57,11 @@ let main = command(
     
     let nars = NARS(timeProviderMs: timeProviderMs) {
         if verbose {
-            print($0)
+            print($0, terminator: "\r\n")
             
         } else {
             if !$0.hasPrefix(". ⏱") {
-                print($0)
+                print($0, terminator: "\r\n")
             }
         }
     }
@@ -114,20 +112,20 @@ let main = command(
                 if input == "v" {
                     input = ""
                     verbose.toggle()
-                    print("Verbose:", verbose ? "ON" : "OFF")
+                    print("\r\nVerbose:", verbose ? "ON" : "OFF", terminator: "\r\n")
                     fflush(stdout)
                     continue
                 }
                 if input == "m" {
                     input = ""
-                    print(nars.memory)
+                    print("\r\n", nars.memory, terminator: "\r\n")
                     fflush(stdout)
                     continue
                 }
                 if input == "reset" {
                     input = ""
                     nars.reset()
-                    print("Ready for input \n")
+                    print("\r\nReady for input \n", terminator: "\r\n")
                     fflush(stdout)
                     continue
                 }
@@ -156,7 +154,7 @@ let main = command(
                     continue // run alias
                 }
                 guard let s = Sentence(input, parser: narsese) else {
-                    print("invalid query: \(input)")
+                    print("\r\ninvalid query: \(input)", terminator: "\r\n")
                     input = ""
                     fflush(stdout)
                     continue
@@ -169,8 +167,12 @@ let main = command(
                 fflush(stdout)
 
             } else {
-                
+                                
+                let char = String(UnicodeScalar(key)!)
                 input.append(String(UnicodeScalar(key)!))
+
+                print(char, terminator: "")
+                fflush(stdout)
             }
             
         } else {

@@ -92,6 +92,15 @@
                   Identifier = "Experimental/testMove()">
                </Test>
                <Test
+                  Identifier = "Experimental/testNavigate()">
+               </Test>
+               <Test
+                  Identifier = "Experimental/testOp()">
+               </Test>
+               <Test
+                  Identifier = "Experimental/testOp2()">
+               </Test>
+               <Test
                   Identifier = "Single_Step/test4()">
                </Test>
                <Test

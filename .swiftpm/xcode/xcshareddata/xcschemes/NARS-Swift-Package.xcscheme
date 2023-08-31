@@ -90,6 +90,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "View"
+               BuildableName = "View"
+               BlueprintName = "View"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -135,9 +149,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "nars-wasm"
-            BuildableName = "nars-wasm"
-            BlueprintName = "nars-wasm"
+            BlueprintIdentifier = "View"
+            BuildableName = "View"
+            BlueprintName = "View"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -161,9 +175,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "nars-wasm"
-            BuildableName = "nars-wasm"
-            BlueprintName = "nars-wasm"
+            BlueprintIdentifier = "View"
+            BuildableName = "View"
+            BlueprintName = "View"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>

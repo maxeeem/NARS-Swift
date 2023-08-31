@@ -28,11 +28,23 @@ extension Term {
     public static func instance(_ t: Term) -> Term { .compound(ç.extSet, [t]) }
     public static func property(_ t: Term) -> Term { .compound(ç.intSet, [t]) }
     
+    subscript(dynamicMember dynamicMember: String) -> Term {
+        Term(stringLiteral: dynamicMember)
+//        memory.get(dynamicMember.description)
+//        ??
+//        {
+//            let new = Term(stringLiteral: dynamicMember)
+//            memory.put(new)
+//            return new
+//        }()
+    }
+    
     public var terms: [Term] {
         switch self {
         case .symbol:
             return [self]
         case .compound(let c, let terms):
+            /// see testCompount() in NARS_Tests
             if terms.count == 1, c == .intSet || c == .extSet {
                 return [self]
             }
@@ -82,7 +94,7 @@ extension Term {
             }
             return t.terms
         }
-        return t.terms.flatMap { getTerms($0) }
+        return t.terms.flatMap { [$0] + getTerms($0) }
     }
 }
 
@@ -145,6 +157,28 @@ extension Term {
             }
             return self
         }
+    }
+    
+    public func flatten() -> Term {
+        if case .compound(let c, let ts) = self {
+            var x = [Term]()
+            
+            func extract(_ t: Term) {
+                if case .compound(let c1, let ts1) = t, c1 == c {
+                    for t1 in ts1 {
+                        extract(t1)
+                    }
+                } else {
+                    x.append(t)
+                }
+            }
+        
+            for t in ts {
+                extract(t)
+            }
+            return .compound(c, Array(Set(x)).sorted())
+        }
+        return self
     }
 }
 

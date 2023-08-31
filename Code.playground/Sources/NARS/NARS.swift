@@ -42,12 +42,12 @@ public final class NARS: Item {
         return .NULL
     }
     
-    public internal(set) var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
+    public var recent = Bag<Belief>(4,40) // TODO: use tense and therefore identifier for indexing
     public internal(set) var memory = Bag<Concept>()
     
-    public internal(set) var buffer = Bag<Task>(4,40) // TODO: need to use actual buffer not just a bag
+    public internal(set) var buffer = Bag<Task>(1,20) // TODO: need to use actual buffer not just a bag
 
-    private var recentInput: [Judgement] = [] // TODO: needs to be handled properly
+    public var recentInput: [Judgement] = [] // TODO: needs to be handled properly
 
     
     // TODO: rename to stdout and add stderr
@@ -71,7 +71,7 @@ public final class NARS: Item {
         return existing
     }
     
-    private let timeProviderMs: () -> UInt32
+    public let timeProviderMs: () -> UInt32
     
     public init(timeProviderMs: @escaping () -> UInt32, _ output: @escaping (String) -> Void = { print($0) }) {
         self.output = output
@@ -90,6 +90,106 @@ public final class NARS: Item {
         recentInput.removeAll()
     }
     
+    func forward() {
+        if let t = buffer.get() {
+            output("\(t.sentence)") // task
+            
+            if case .question(let q) = t.sentence {
+                let answers = memory.consider(t.sentence, derive: true)
+
+                if answers.first?.statement == .NULL {
+                    for var chunk in answers.split(separator: .NULL-*) {
+                        let source = chunk.removeFirst()
+                        chunk.reversed().forEach { j in
+                            let q1 = Sentence.question(Question(j.statement, source))
+                            buffer.put(Task(sentence: q1))
+                        }
+                    }
+                    
+                } else if let a = answers.first {
+                    output(". 💡 \(a)")
+                }
+            }
+            
+            if case .judgement(let j) = t.sentence {
+                
+                if case .operation(let op, let ts) = j.statement {
+                    _ = operations[op]?(ts)
+                }
+                
+                if case .statement(_, let p, let c) = j.statement {
+                    if case .operation(let op, let ts) = c, p == .predictiveImp {
+                        _ = operations[op]?(ts)
+                    }
+                }
+                
+                // pre-process task
+                var results = memory.consider(t.sentence, derive: true)
+
+//                    results += nars.process(recent: j)
+                
+                if let last = recentInput.last, last.timestamp != ETERNAL && j.timestamp != ETERNAL {
+                    let prediction: Judgement = (last.statement >>|=> j.statement)-*
+                    if prediction.statement.complexity < 20 {
+                        results.append(prediction)
+                    }
+                    recentInput.append(j)
+                }
+                
+                // apply rules
+                results += Set(j.statement.terms)
+                    .map {
+                        memory.peek($0.description) ?? Concept(term: $0)
+                    }
+                    .compactMap {
+                        $0.beliefs.peek() ?? (j + 0.9)
+                    }
+                    .filter {
+                        $0.judgement.statement != j.statement
+                    }
+                    .map {
+                        // forward pass
+                        fforward((t, $0))
+                    }
+                    .flatMap {$0}
+                
+                // add derived to buffer
+                results.removeDuplicates().filter { ($0.truthValue.confidence > 0.1) && $0.statement.complexity < 20 }.forEach {
+                    buffer.put(Task(sentence: .judgement($0)))
+                }
+            }
+        }
+        else if let c = memory.peek(),
+                var t = c.tasks.peek() {
+            buffer.put(t)
+        }
+    }
+    
+    private func fforward(_ pair: (Task, Belief)) -> [Judgement] {
+        var (t, b) = pair
+        
+        guard case .judgement(let j) = t.sentence,
+              !b.judgement.evidenceOverlap(j) else {
+            return []
+        }
+        
+        var derived: [Judgement] = []
+        // apply rules
+        let results = Rules.allCases
+            .flatMap { r in
+                r.apply((b.judgement, j))
+            }
+            .compactMap { $0 }
+            .removeDuplicates()
+        
+        derived.append(contentsOf: results)
+        
+        derived = derived.filter { $0.truthValue.confidence != 0 }
+        
+        return derived
+    }
+
+    
     public func perform(_ statement: Statement) { // convenience
         perform(statement-*)
     }
@@ -103,20 +203,26 @@ public final class NARS: Item {
             
             if case .cycle(let n) = s {
                 for _ in 0..<n {
-
+//                    forward()
                     cycle()
-                    
+
                     if let t = buffer.get() {
                         output(". ⏱ \(t.sentence)") // task
-                               
+
                         memory.consider(t.sentence).forEach { revised in
                             output(". ⏱ \(revised)") // revision
                         }
                     }
                 }
                 
-                output(". ⏱ \(s)")
+                //                output(". ⏱ \(s)")
                 continue
+                
+//            } else {
+//
+//                buffer.put(Task(sentence: s))
+//                //            print(||s)
+//                continue
             }
                         
             // set time stamp if not yet set
@@ -176,27 +282,31 @@ public final class NARS: Item {
             
             if case .goal(let g) = s { // TODO: take desireValue into account
                 let derived = memory.consider(s, derive: true)
-                
+                print(derived)
                 for d in derived { // process statements
                     if case .statement(let s, let c, let p) = d.statement,
                        /*case .operation(let op, let args) = s,*/ c == .predictiveImp, p == g.statement {
                         if case .operation(let op, let args) = s {
-                            output(". 🤖 \(s)")
-                            if let operation = operations[op] {
-                                let result = operation(args) // execute
-                                output(result.description)
-                            } else {
-                                output("Unknown operation \(op)")
-                            }
-                        } else if case .statement(_, let opc, let opp) = s,
-                                  opc == .predictiveImp { // need to verify the the other term?
-                            if case .operation(let op, let args) = opp {
-                                output(". 🤖 \(opp)")
+                            if recentInput.suffix(20).contains(where: { $0.statement == s} ) {
+                                output(". 🤖 \(s)")
                                 if let operation = operations[op] {
                                     let result = operation(args) // execute
                                     output(result.description)
                                 } else {
                                     output("Unknown operation \(op)")
+                                }
+                            }
+                        } else if case .statement(let ops, let opc, let opp) = s,
+                                  opc == .predictiveImp { // need to verify the the other term?
+                            if case .operation(let op, let args) = opp {
+                                if recentInput.suffix(10).contains(where: {$0.statement == ops}) {
+                                    output(". 🤖 \(opp)")
+                                    if let operation = operations[op] {
+                                        let result = operation(args) // execute
+                                        output(result.description)
+                                    } else {
+                                        output("Unknown operation \(op)")
+                                    }
                                 }
                             }
                         } else {
@@ -217,8 +327,17 @@ public final class NARS: Item {
             return // no concepts in memory
         }
         
-        let results = concept.cycle()
-                    
+        
+        var results: [String: [Judgement]] = concept.cycle()
+        
+//        let inputs = concept.pickOut()
+//
+//        let outputs = concept.forward(inputs) // GPT-N
+//
+//        outputs.forEach({ buffer.put(Task(sentence: .judgement($0))) })
+//
+//        results["Judgement"] = outputs
+        
         if let derived = results["Judgement"] {            
             for j in derived {
                 buffer.put(Task(sentence: .judgement(j)))
@@ -254,16 +373,18 @@ public final class NARS: Item {
                 if case .statement(let sub, let cop, _) = a.statement {
                     if cop == .predictiveImp { // TODO: needs to be done properly
                         // subject is the subgoal
-                        if case .statement(_, let c, let p) = sub {
+                        if case .statement(let s, let c, let p) = sub {
                             // TODO: how to check preconditions?
                             if c == .predictiveImp { // TODO: `s` precondition need to be checked
-                                if case .operation(let op, let ts) = p {
-                                    output(". 🤖 \(p)")
-                                    if let operation = operations[op] {
-                                        let result = operation(ts) // execute
-                                        output(result.description)
-                                    } else {
-                                        output("Unknown operation \(op)")
+                                if recentInput.suffix(20).contains(where: { $0.statement == s } ) {
+                                    if case .operation(let op, let ts) = p {
+                                        output(". 🤖 \(p)")
+                                        if let operation = operations[op] {
+                                            let result = operation(ts) // execute
+                                            output(result.description)
+                                        } else {
+                                            output("Unknown operation \(op)")
+                                        }
                                     }
                                 }
                             } else {
@@ -276,8 +397,13 @@ public final class NARS: Item {
             }
         }
         
-        // decrease priority
-        concept.priority = max(concept.priority - 0.01, 0.01)
+        if results.flatMap({$0.value}).isEmpty {
+            // decrease priority
+            concept.priority = max(concept.priority - 0.01, 0.01)
+        } else {
+            // increase priority
+            concept.priority = min(concept.priority + 0.01, 0.99)
+        }
 
         // storage
         memory.put(concept)
@@ -346,7 +472,7 @@ extension NARS {
         }
     }
     
-    fileprivate func process(recent j: Judgement) -> [Judgement] {
+    public func process(recent j: Judgement) -> [Judgement] {
         guard recent.peek(j.identifier) == nil else {
             return []// no need to process what we already know
         }
