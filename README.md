@@ -1,4 +1,4 @@
-# [NARS-Swift <sup>![gh](docs/assets/mark-github.svg)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="docs/assets/online_demo.png">](https://www.i-m.io)
+# [NARS-Swift <sup>![gh](docs/assets/mark-github.svg)</sup>](https://github.com/maxeeem/NARS-Swift) [<img align="right" src="docs/assets/online_demo.png">](https://www.intelligentmachines.io/TokamakApp/Bundle/index.html)
 
 ![](https://user-images.githubusercontent.com/1018034/208796237-f76a0028-a59d-4254-b3dd-f308f5622774.jpg)
 
