@@ -7,9 +7,34 @@
 </head>
 <style>
     body {
-        background-image: radial-gradient(rgb(241, 237, 233), white);
+        background-image: radial-gradient(rgb(121, 188, 188), rgb(255, 160, 96));
         text-align: center;
+        /* color: ; */
     }
+    .myButton {
+	box-shadow: 0px 10px 14px -7px #5b8a3c;
+	background:linear-gradient(to bottom, rgb(190, 209,85) 5%, rgb(190, 209,85) 100%);
+	background-color:rgb(190, 209,85);
+	border-radius:4px;
+	border:1px solid rgb(190, 209,85);
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:28px;
+	font-weight:bold;
+	padding:6px 12px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #5b8a3c;
+    }
+    .myButton:hover {
+        background:linear-gradient(to bottom, #72b352 5%, #77b55a 100%);
+        background-color:#72b352;
+    }
+    .myButton:active {
+        position:relative;
+        top:1px;
+    }        
 </style>
 <body>
     <!-- <center> -->
@@ -17,8 +42,9 @@
         <img src="./docs/assets/studybuddy-logo.png" style="border-radius: 50%; filter: drop-shadow(5px 5px 15px gray);"><br>
         <br><br>
         <!-- <img src="./docs/assets/icon_sm.png"><br> -->
-        <h3>They say the best way to learn is to teach.<br>What will you teach me today?</h3>
-        <a href="https://chatgpt.com/g/g-Q1Bz7r5nv-studybuddy"><img src="./docs/assets/online_demo.png"></a><br>
+        <h2>They say the best way to learn is to teach.<br>What will you teach me today?</h2>
+        <br>
+        <a href="https://chatgpt.com/g/g-Q1Bz7r5nv-studybuddy" class="myButton">Try Online</a><br>
         <br><br><br>
         <h1>StudyBuddy &mdash; AI that asks <i>good</i> questions</h1><br>
         <!-- <br> -->
